@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Audit Cleanup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    select {
+      min-width: 320px;
+    }
+
+    button {
+      background: #2563eb;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .danger {
+      background: #dc2626;
+      color: white;
+      border: none;
+    }
+
+    .danger:hover {
+      background: #b91c1c;
+    }
+
+    .status-line {
+      margin-top: 12px;
+      font-weight: bold;
+      color: #93c5fd;
+    }
+
+    .warning-box {
+      background: rgba(220,38,38,0.12);
+      border: 1px solid rgba(220,38,38,0.45);
+      border-radius: 14px;
+      padding: 16px;
+      color: #fca5a5;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(15,23,42,0.5);
+    }
+
+    .yes {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .no {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .muted {
+      color: #94a3b8;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+<div class="title">Mission Control Audit Cleanup</div>
+  <div class="subtitle">Audit Batch Maintenance & Test Data Removal</div>
+</div>
+
+<div class="container">
+
+<div class="warning-box">
+  <b>Danger Zone:</b> Audit cleanup permanently removes audit batches, audit entries and stored report files.
+  Use this page carefully, especially after testing or importing historical data.
+</div>
+
+<div class="card">
+  <h2>Cleanup Controls</h2>
+
+  <div class="actions">
+    <button onclick="goHome()">Back</button>
+
+    <select id="siteSelect"></select>
+
+    <button onclick="loadAudits()">Load Audit Batches</button>
+
+    <button onclick="loadAllAudits()">Load All</button>
+  </div>
+
+  <p id="status" class="status-line">
+    Select a site to list audit batches.
+  </p>
+</div>
+
+<div class="card">
+  <h2>Audit Batches</h2>
+
+  <div class="table-wrap">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Delete</th>
+          <th>Site</th>
+          <th>Date</th>
+          <th>Stored</th>
+          <th>Entries</th>
+          <th>Report File</th>
+          <th>Batch ID</th>
+        </tr>
+      </thead>
+
+      <tbody id="table"></tbody>
+    </table>
+
+  </div>
+</div>
+
+<div class="footer">
+  Mission Control Audit Platform
+</div>
+
+</div>
+
+<script>
+const API = "/audit-api";
+let currentMode = "site";
+
+function safe(value) {
+  return value ?? "";
+}
+
+function yesNo(value) {
+  return value ? "Yes" : "No";
+}
+
+function yesNoClass(value) {
+  return value ? "yes" : "no";
+}
+
+function goHome() {
+  window.location.href = "/index-platform.html";
+}
+
+function selectedSiteName() {
+  const select = document.getElementById("siteSelect");
+  return select.options[select.selectedIndex]?.textContent || "";
+}
+
+async function loadSites() {
+  const res = await fetch(`${API}/sites`);
+  const sites = await res.json();
+
+  const select = document.getElementById("siteSelect");
+  select.innerHTML = "";
+
+  sites.forEach(site => {
+    const option = document.createElement("option");
+    option.value = site.site_id;
+    option.textContent = site.site_name;
+    select.appendChild(option);
+  });
+
+  document.getElementById("status").textContent =
+    `Sites loaded: ${sites.length}`;
+}
+
+function renderRows(data) {
+  const tbody = document.getElementById("table");
+  tbody.innerHTML = "";
+
+  data.forEach(a => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>
+        <button class="danger" onclick="del('${safe(a.audit_batch_id)}')">
+          Delete
+        </button>
+      </td>
+
+      <td>${safe(a.site_name)}</td>
+
+      <td>${safe(a.audit_date)}</td>
+
+      <td class="${yesNoClass(a.report_generated)}">
+        ${yesNo(a.report_generated)}
+      </td>
+
+      <td>${safe(a.entry_count)}</td>
+
+      <td class="${yesNoClass(a.has_report_file)}">
+        ${yesNo(a.has_report_file)}
+      </td>
+
+      <td>${safe(a.audit_batch_id)}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="muted">
+          No audit batches found.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+async function loadAudits() {
+  currentMode = "site";
+
+  const siteId = document.getElementById("siteSelect").value;
+  const siteName = selectedSiteName();
+
+  if (!siteId) {
+    alert("Please select a site first.");
+    return;
+  }
+
+  const res = await fetch(
+    `${API}/audit-cleanup/list?site_id=${encodeURIComponent(siteId)}`
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    alert("Could not load audit batches.");
+    return;
+  }
+
+  const data = await res.json();
+
+  renderRows(data);
+
+  document.getElementById("status").textContent =
+    `Audit batches loaded: ${siteName} | Batches: ${data.length}`;
+}
+
+async function loadAllAudits() {
+  currentMode = "all";
+
+  const res = await fetch(`${API}/audit-cleanup/list`);
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    alert("Could not load audit batches.");
+    return;
+  }
+
+  const data = await res.json();
+
+  renderRows(data);
+
+  document.getElementById("status").textContent =
+    `All audit batches loaded: ${data.length}`;
+}
+
+async function del(id) {
+  if (!id) {
+    alert("Missing audit batch ID.");
+    return;
+  }
+
+  if (!confirm("⚠️ PERMANENT DELETE\n\nThis will remove:\n- audit batch\n- audit entries\n- stored report file\n\nThis cannot be undone.\n\nContinue?")) return;
+
+  const res = await fetch(
+    `${API}/audit-cleanup/delete/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    alert("Delete failed.");
+    return;
+  }
+
+  if (currentMode === "all") {
+    await loadAllAudits();
+  } else {
+    await loadAudits();
+  }
+}
+
+loadSites();
+</script>
+
+</body>
+</html>

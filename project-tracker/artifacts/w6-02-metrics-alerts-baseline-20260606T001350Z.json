@@ -1,0 +1,52 @@
+{
+  "task_id": "W6-02",
+  "generated_at": "2026-06-06T00:13:50.696952+00:00",
+  "candidate": "W6-02-initial",
+  "probes": [
+    {
+      "name": "platform_health",
+      "url": "http://127.0.0.1:8095/health",
+      "ok": true,
+      "status_code": 200,
+      "body": "{\"status\":\"ok\"}",
+      "error": ""
+    },
+    {
+      "name": "audit_api_root",
+      "url": "http://127.0.0.1:8096/",
+      "ok": true,
+      "status_code": 200,
+      "body": "{\"status\":\"ok\"}",
+      "error": ""
+    }
+  ],
+  "alert_policy_baseline": {
+    "uptime": {
+      "check_interval_seconds": 60,
+      "trigger_condition": "3 consecutive probe failures",
+      "severity": "critical"
+    },
+    "error_rate": {
+      "window_minutes": 5,
+      "warning_threshold_percent": 3.0,
+      "critical_threshold_percent": 5.0,
+      "severity": "warning_or_critical"
+    },
+    "latency_p95": {
+      "window_minutes": 15,
+      "warning_threshold_ms": 800,
+      "critical_threshold_ms": 1500,
+      "severity": "warning_or_critical"
+    },
+    "structured_log_failures": {
+      "window_minutes": 10,
+      "trigger_condition": "missing required JSON fields in >=10 events",
+      "severity": "warning"
+    }
+  },
+  "implementation_notes": [
+    "Baseline thresholds defined for uptime, error rate, and latency p95.",
+    "Health probes captured at generation time for platform and audit services.",
+    "Next step: wire threshold evaluation into monitor pipeline and notification channel."
+  ]
+}

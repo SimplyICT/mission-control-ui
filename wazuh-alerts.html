@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — Events &amp; Alerts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0}
+    .topbar{background:#111827;border-bottom:1px solid #1e293b;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+    .topbar-left .title{font-size:24px;font-weight:bold;color:#f8fafc}
+    .topbar-left .subtitle{font-size:13px;color:#94a3b8;margin-top:4px}
+    .topbar-right{display:flex;gap:10px;align-items:center}
+    .btn{padding:8px 18px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+    .btn:hover{background:#334155}
+    .container{max-width:1800px;margin:auto;padding:24px}
+    .kpi-strip{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+    .kpi-box{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px 24px;min-width:140px;text-align:center;flex:1}
+    .kpi-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-value{font-size:28px;font-weight:bold;margin:6px 0}
+    .text-green{color:#22c55e}.text-red{color:#ef4444}.text-amber{color:#f59e0b}.text-blue{color:#3b82f6}.text-muted{color:#94a3b8}
+    .card{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:22px;margin-bottom:22px}
+    .card h2{margin:0 0 16px 0;font-size:18px;color:#f8fafc}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:10px 12px;border-bottom:1px solid #1e293b;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer}
+    th:hover{color:#e2e8f0}
+    td{padding:10px 12px;border-bottom:1px solid #1e293b1a;font-size:13px}
+    tr:hover{background:#1e293b40}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-green{background:#22c55e22;color:#22c55e}.badge-red{background:#ef444422;color:#ef4444}
+    .badge-amber{background:#f59e0b22;color:#f59e0b}.badge-gray{background:#64748b22;color:#94a3b8}
+    .badge-blue{background:#3b82f622;color:#3b82f6}
+    .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
+    .filter-tab{padding:6px 14px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+    .filter-tab:hover{background:#1e293b;color:#e2e8f0}
+    .filter-tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .loading{text-align:center;padding:40px;color:#94a3b8}
+    .error{text-align:center;padding:40px;color:#ef4444}
+    .nowrap{white-space:nowrap}
+    @media(max-width:900px){.kpi-strip{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="title">Events &amp; Alerts</div>
+      <div class="subtitle">Wazuh SIEM — Real-time alert monitoring</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" onclick="loadAlerts()">↻ Refresh</button>
+      <a href="/wazuh-dashboard.html" class="btn">← Security Center</a>
+      <a href="/index-platform.html" class="btn">← Platform</a>
+    </div>
+  </div>
+  <div class="container">
+    <div id="kpiStrip" class="kpi-strip"><div class="loading">Loading...</div></div>
+    <div class="card">
+      <div class="card-header">
+        <h2 style="margin:0">Recent Alerts</h2>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterEvents('all',this)">All</button>
+          <button class="filter-tab" onclick="filterEvents('critical',this)">Critical</button>
+          <button class="filter-tab" onclick="filterEvents('high',this)">High</button>
+          <button class="filter-tab" onclick="filterEvents('medium',this)">Medium</button>
+          <button class="filter-tab" onclick="filterEvents('low',this)">Low</button>
+        </div>
+      </div>
+      <div id="eventsTable"><div class="loading">Loading alerts...</div></div>
+    </div>
+  </div>
+
+<script>
+var API = '/wazuh-api';
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function severityBadge(s) {
+  s = (s || '').toLowerCase();
+  var m = { critical: 'badge-red', high: 'badge-amber', medium: 'badge-blue', low: 'badge-gray' };
+  return '<span class="badge ' + (m[s] || 'badge-gray') + '">' + s + '</span>';
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  return new Date(d).toLocaleString();
+}
+
+function api(path) {
+  return fetch(API + path).then(function(r) {
+    if (!r.ok) throw new Error('API ' + r.status);
+    return r.json();
+  }).then(function(d) { return d.data || d; });
+}
+
+function loadAlerts() {
+  Promise.all([api('/events?size=200'), api('/events/stats')]).then(function(res) {
+    var events = res[0], stats = res[1];
+    var items = events.affected_items || [];
+    var sev = stats.severity || {};
+    renderKPIs(sev);
+    renderEvents(items);
+  }).catch(function(e) {
+    document.getElementById('kpiStrip').innerHTML = '<div class="error">Failed: ' + esc(e.message) + ' — <button class="btn" onclick="loadAlerts()">Retry</button></div>';
+  });
+}
+
+function renderKPIs(sev) {
+  document.getElementById('kpiStrip').innerHTML =
+    '<div class="kpi-box"><div class="kpi-label">Critical (12+)</div><div class="kpi-value text-red">' + (sev.Critical||0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">High (7-11)</div><div class="kpi-value text-amber">' + (sev.High||0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Medium (4-6)</div><div class="kpi-value text-blue">' + (sev.Medium||0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Low (0-3)</div><div class="kpi-value text-muted">' + (sev.Low||0) + '</div></div>';
+}
+
+function renderEvents(items) {
+  var h = '<table><thead><tr><th>Time</th><th>Level</th><th>Rule</th><th>Description</th><th>Agent</th><th>Groups</th></tr></thead><tbody id="eventsBody">';
+  for (var i = 0; i < items.length; i++) {
+    var e = items[i];
+    var lvl = e.level || 0;
+    var sv = lvl >= 12 ? 'critical' : lvl >= 7 ? 'high' : lvl >= 4 ? 'medium' : 'low';
+    h += '<tr data-severity="' + sv + '">' +
+      '<td class="nowrap">' + formatDate(e.timestamp) + '</td>' +
+      '<td>' + severityBadge(sv) + '</td>' +
+      '<td>' + esc(e.rule_id || '-') + '</td>' +
+      '<td>' + esc((e.description || '').substring(0, 80)) + '</td>' +
+      '<td>' + esc(e.agent ? (e.agent.name || e.agent.id || '-') : '-') + '</td>' +
+      '<td>' + esc((e.groups || []).slice(0,3).join(', ')) + '</td></tr>';
+  }
+  h += '</tbody></table>';
+  document.getElementById('eventsTable').innerHTML = h;
+}
+
+function filterEvents(sev, el) {
+  var tabs = document.querySelectorAll('.filter-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  el.classList.add('active');
+  var rows = document.querySelectorAll('#eventsBody tr');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].style.display = (sev === 'all' || rows[i].getAttribute('data-severity') === sev) ? '' : 'none';
+  }
+}
+
+loadAlerts();
+</script>
+</body>
+</html>

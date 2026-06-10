@@ -1,0 +1,343 @@
+{
+  "schema_version": "1.0",
+  "document_type": "session_archive",
+  "session_id": "simplyclik-modernization-2026-06-06",
+  "archived_at": "2026-06-07T02:52:00.000Z",
+  "scope": "SimplyClik Modernization Program execution \u2014 W2 database migrations through W7 production rollout planning",
+  "git": {
+    "mission_control_repo": "https://github.com/SimplyICT/mission-control",
+    "branch": "oz/simplyclik-modernization-program-final",
+    "commit": "0491fad",
+    "pr": "https://github.com/SimplyICT/mission-control/pull/2"
+  },
+  "related_prs": [
+    {
+      "repo": "SimplyICT/SimplyClik",
+      "pr": 8,
+      "url": "https://github.com/SimplyICT/SimplyClik/pull/8",
+      "title": "feat(w7): W7-01 migration scripts \u2014 Firebase->Supabase data migration, staging setup, full-flow UAT",
+      "state": "OPEN",
+      "ci": "SUCCESS"
+    },
+    {
+      "repo": "SimplyICT/mission-control",
+      "pr": 2,
+      "url": "https://github.com/SimplyICT/mission-control/pull/2",
+      "title": "feat: SimplyClik Modernization Program \u2014 complete W2-W7 artifacts, tracker state, and program closeout",
+      "state": "OPEN",
+      "ci": "SKIPPED (docs-only)"
+    }
+  ],
+  "tracker_final_state": {
+    "total_tasks": 38,
+    "by_status": {
+      "review": 27,
+      "done": 8,
+      "blocked": 2,
+      "not_started": 1
+    },
+    "workstreams": {
+      "W0 Program setup and visibility": [
+        {
+          "id": "W0-01",
+          "status": "review",
+          "title": "Tracker schema and conventions"
+        },
+        {
+          "id": "W0-02",
+          "status": "review",
+          "title": "Tracker dashboard v1"
+        },
+        {
+          "id": "W0-03",
+          "status": "review",
+          "title": "Update automation script"
+        },
+        {
+          "id": "W0-04",
+          "status": "review",
+          "title": "Governance cadence and escalation"
+        }
+      ],
+      "W1 Platform API completion and hardening": [
+        {
+          "id": "W1-01",
+          "status": "done",
+          "title": "Merge and validate PR #7 request timeline/internal notes"
+        },
+        {
+          "id": "W1-02",
+          "status": "review",
+          "title": "Endpoint parity audit against client usage"
+        },
+        {
+          "id": "W1-02.1",
+          "status": "done",
+          "title": "Extract implemented platform-api endpoint surface"
+        },
+        {
+          "id": "W1-02.2",
+          "status": "done",
+          "title": "Audit client backend usage across app surfaces"
+        },
+        {
+          "id": "W1-02.3",
+          "status": "done",
+          "title": "Build parity mapping and identify gaps"
+        },
+        {
+          "id": "W1-02.4",
+          "status": "done",
+          "title": "Implement request notes and timeline read endpoints"
+        },
+        {
+          "id": "W1-03",
+          "status": "blocked",
+          "title": "Data integrity hardening"
+        },
+        {
+          "id": "W1-04",
+          "status": "blocked",
+          "title": "Authorization matrix and negative-path tests"
+        },
+        {
+          "id": "W1-05",
+          "status": "not_started",
+          "title": "OpenAPI contract alignment"
+        }
+      ],
+      "W2 Database and migration reliability": [
+        {
+          "id": "W2-01",
+          "status": "done",
+          "title": "Migration replay validation"
+        },
+        {
+          "id": "W2-02",
+          "status": "review",
+          "title": "Seed/version drift detection"
+        },
+        {
+          "id": "W2-03",
+          "status": "done",
+          "title": "Backfill verification for status events"
+        },
+        {
+          "id": "W2-04",
+          "status": "done",
+          "title": "Rollback strategy documentation"
+        }
+      ],
+      "W3 CI/CD and release gates": [
+        {
+          "id": "W3-01",
+          "status": "review",
+          "title": "Required checks policy enforcement"
+        },
+        {
+          "id": "W3-02",
+          "status": "review",
+          "title": "Pipeline performance baseline"
+        },
+        {
+          "id": "W3-03",
+          "status": "review",
+          "title": "Deployment workflow codification"
+        },
+        {
+          "id": "W3-04",
+          "status": "review",
+          "title": "Release evidence bundle automation"
+        }
+      ],
+      "W4 Client integration migration": [
+        {
+          "id": "W4-01",
+          "status": "review",
+          "title": "Android integration mapping"
+        },
+        {
+          "id": "W4-02",
+          "status": "review",
+          "title": "iOS integration mapping"
+        },
+        {
+          "id": "W4-03",
+          "status": "review",
+          "title": "Web admin integration plan"
+        },
+        {
+          "id": "W4-04",
+          "status": "review",
+          "title": "Portal/public integration impact assessment"
+        },
+        {
+          "id": "W4-05",
+          "status": "review",
+          "title": "Incremental client cutover plan"
+        }
+      ],
+      "W5 Legacy Firebase decommission readiness": [
+        {
+          "id": "W5-01",
+          "status": "review",
+          "title": "Firestore dependency inventory"
+        },
+        {
+          "id": "W5-02",
+          "status": "review",
+          "title": "Function replacement matrix"
+        },
+        {
+          "id": "W5-03",
+          "status": "review",
+          "title": "Storage/object migration parity checks"
+        },
+        {
+          "id": "W5-04",
+          "status": "review",
+          "title": "Decommission go/no-go checklist"
+        }
+      ],
+      "W6 Observability, security, and operations": [
+        {
+          "id": "W6-01",
+          "status": "review",
+          "title": "Structured logging parity"
+        },
+        {
+          "id": "W6-02",
+          "status": "review",
+          "title": "Metrics and alerts baseline"
+        },
+        {
+          "id": "W6-03",
+          "status": "review",
+          "title": "Incident runbook"
+        },
+        {
+          "id": "W6-04",
+          "status": "review",
+          "title": "Secrets and key rotation playbook"
+        }
+      ],
+      "W7 Production rollout and closeout": [
+        {
+          "id": "W7-01",
+          "status": "review",
+          "title": "Staging full-flow UAT signoff"
+        },
+        {
+          "id": "W7-02",
+          "status": "review",
+          "title": "Controlled production canary"
+        },
+        {
+          "id": "W7-03",
+          "status": "review",
+          "title": "Full production rollout verification"
+        },
+        {
+          "id": "W7-04",
+          "status": "review",
+          "title": "Program closeout and deprecation"
+        }
+      ]
+    }
+  },
+  "session_deliverables": [
+    {
+      "workstream": "W2",
+      "items": [
+        "W2-01: Migration replay validation \u2014 21/21 checks pass (PostgreSQL 16, Docker in WSL Ubuntu-24.04)",
+        "W2-02: Seed/version drift detection \u2014 0 high/medium drifts; admin password seed bug found and fixed (commit 403f5cf)",
+        "W2-03: Backfill verification \u2014 request_status_events migration static analysis; 6/7 checks pass",
+        "W2-04: Rollback strategy \u2014 3-phase rollback/containment procedures documented"
+      ]
+    },
+    {
+      "workstream": "W4",
+      "items": [
+        "W4-01: Android integration mapping \u2014 13 Firebase-to-platform mappings",
+        "W4-02: iOS integration mapping \u2014 16 Firebase-to-platform mappings",
+        "W4-03: Web-admin integration plan \u2014 full Firebase feature inventory",
+        "W4-04: Portal/public integration impact assessment",
+        "W4-05: Incremental client cutover plan \u2014 4-phase with per-surface feature flag rollback switches"
+      ]
+    },
+    {
+      "workstream": "W5",
+      "items": [
+        "W5-01: Firestore dependency inventory",
+        "W5-02: Function replacement matrix \u2014 19 Firebase Cloud Functions mapped",
+        "W5-03: Storage/object migration parity checker implemented",
+        "W5-04: Decommission go/no-go checklist with formal gate criteria"
+      ]
+    },
+    {
+      "workstream": "W6",
+      "items": [
+        "W6-01: Structured logging audit automation",
+        "W6-02: Metrics and alerts baseline \u2014 live probes and thresholds",
+        "W6-03: Incident runbook \u2014 outage, migration discrepancy, rollback scenarios",
+        "W6-04: Secrets and key rotation playbook \u2014 dual-publish cutover flow"
+      ]
+    },
+    {
+      "workstream": "W7",
+      "items": [
+        "W7-01: Migration scripts \u2014 migrate_firebase_to_supabase.py, staging_setup.sh, w7-uat.ts (npm run uat); committed via SimplyClik PR #8",
+        "W7-02: Canary rollout plan \u2014 5 phases with abort criteria referencing W6-02 baselines",
+        "W7-03: Rollout verification \u2014 5-gate post-rollout checklist",
+        "W7-04: Program closeout \u2014 Firebase decommission sequence + post-migration handoff"
+      ]
+    }
+  ],
+  "blocked_items": [
+    {
+      "task_id": "W1-03",
+      "title": "Data integrity hardening",
+      "reason": "platform-api source workspace not present in current environment"
+    },
+    {
+      "task_id": "W1-04",
+      "title": "Authorization matrix and negative-path tests",
+      "reason": "platform-api source workspace not present in current environment"
+    },
+    {
+      "task_id": "W1-05",
+      "title": "OpenAPI contract alignment",
+      "reason": "Depends on W1-04 (blocked)"
+    }
+  ],
+  "next_actions": [
+    "Merge SimplyICT/SimplyClik PR #8 after review",
+    "Merge SimplyICT/mission-control PR #2 after review",
+    "Execute W7-02 Phase 1 (internal validation) when staging Supabase credentials are available",
+    "Unblock W1-03/W1-04/W1-05 by providing access to platform-api source workspace"
+  ],
+  "artifacts_committed": [
+    "w2-01-migration-replay-validation.json",
+    "w2-02-seed-drift-report.json",
+    "w2-03-backfill-verification.json",
+    "w2-04-rollback-strategy.json",
+    "w4-01-android-integration-mapping.json",
+    "w4-02-ios-integration-mapping.json",
+    "w4-03-web-admin-integration-plan.json",
+    "w4-04-portal-public-integration-impact-assessment.json",
+    "w4-05-incremental-client-cutover-plan.json",
+    "w5-02-function-replacement-matrix.json",
+    "w5-03-storage-parity-report-20260605T225645Z.json",
+    "w5-03-storage-parity-report-latest.json",
+    "w5-04-decommission-go-no-go-checklist.json",
+    "w6-01-structured-logging-audit-20260605T230814Z.json",
+    "w6-01-structured-logging-audit-latest.json",
+    "w6-02-metrics-alerts-baseline-20260606T001350Z.json",
+    "w6-02-metrics-alerts-baseline-latest.json",
+    "w6-03-incident-runbook.json",
+    "w6-04-secrets-key-rotation-playbook.json",
+    "w7-02-canary-rollout-plan.json",
+    "w7-03-rollout-verification.json",
+    "w7-04-program-closeout.json"
+  ]
+}

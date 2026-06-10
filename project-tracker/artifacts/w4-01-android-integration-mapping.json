@@ -1,0 +1,104 @@
+{
+  "task_id": "W4-01",
+  "generated_at": "2026-06-06T00:04:49Z",
+  "scope": "Android client Firebase backend usage mapping to platform-api targets",
+  "source_root": "android-master/android-master/SimplyclikApp/app/src/main/java/com/simplyclik/mobile",
+  "mappings": [
+    {
+      "area": "launch/bootstrap",
+      "source": "LaunchActivity.kt + FirebaseService.fetchServices",
+      "current_backend": "Firestore enums/serviceTypes document read",
+      "target_backend": "GET /v1/service-types",
+      "migration_status": "planned"
+    },
+    {
+      "area": "request list",
+      "source": "RequestsActivity.kt + FirebaseService.fetchRequests",
+      "current_backend": "Firestore requests query with customer/contractor filters and status whereIn",
+      "target_backend": "GET /v1/requests with role-scoped filters",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request detail",
+      "source": "RequestChangeStatusActivity.kt + FirebaseService.fetchRequestById",
+      "current_backend": "Firestore request document read by id",
+      "target_backend": "GET /v1/requests/:requestId",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request create",
+      "source": "AddRequestActivity.kt + FirebaseService.createRequest",
+      "current_backend": "Firestore requests document create",
+      "target_backend": "POST /v1/requests",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request status update",
+      "source": "RequestChangeStatusActivity.kt + FirebaseService.updateRequestStatus",
+      "current_backend": "Firestore request status patch with contractor/customer role semantics",
+      "target_backend": "PATCH /v1/requests/:requestId/status",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "notes timeline read",
+      "source": "RequestNotesListActivity.kt + FirebaseService.fetchNotes",
+      "current_backend": "Firestore request history sub-collection query with visibility filters",
+      "target_backend": "GET /v1/requests/:requestId/notes and GET /v1/requests/:requestId/timeline",
+      "migration_status": "covered"
+    },
+    {
+      "area": "note create",
+      "source": "RequestNotesListActivity.kt + FirebaseService.addNoteToRequest",
+      "current_backend": "Firestore request history sub-collection create",
+      "target_backend": "POST /v1/requests/:requestId/notes",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "invoice read",
+      "source": "FirebaseService.fetchInvoice",
+      "current_backend": "Firestore requestInvoicing document read",
+      "target_backend": "GET /v1/requests/:requestId/invoice",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "invoice submit/complete",
+      "source": "AddInvoiceActivity.kt + FirebaseService.completeRequest",
+      "current_backend": "Firestore requestInvoicing write + request status update",
+      "target_backend": "POST /v1/requests/:requestId/invoice (and status transition)",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "image upload",
+      "source": "AddRequestActivity.kt/AddInvoiceActivity.kt + FirebaseService.uploadImage",
+      "current_backend": "Firebase Storage putBytes to images/requests/* paths",
+      "target_backend": "Presigned upload flow: POST metadata + upload URL + finalize endpoint",
+      "migration_status": "gap_identified"
+    },
+    {
+      "area": "image read",
+      "source": "RequestDetailsActivity.kt + FirebaseService.fetchImages",
+      "current_backend": "Firebase Storage listAll/getFile + in-memory cache",
+      "target_backend": "GET /v1/requests/:requestId/images metadata + signed download URLs",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "push token registration",
+      "source": "LaunchActivity.kt + FirebaseMessaging token persistence path",
+      "current_backend": "User profile pushToken field update in Firestore",
+      "target_backend": "POST /v1/devices/push-token",
+      "migration_status": "covered"
+    },
+    {
+      "area": "registration OTP validation",
+      "source": "FirebaseService.validatePasscode/deletePasscode",
+      "current_backend": "Firestore oneTimePasscodes document lookup/delete",
+      "target_backend": "Platform auth/registration OTP endpoints",
+      "migration_status": "gap_identified"
+    }
+  ],
+  "migration_notes": [
+    "High-priority Android blockers are image upload/download parity and OTP registration flow replacement.",
+    "Request, notes, timeline, status, invoice, and push-token surfaces have at least partial API coverage and can be migrated incrementally.",
+    "Recommended sequence: request list/detail/create/status -> notes/timeline -> invoice -> image flow -> OTP registration."
+  ]
+}

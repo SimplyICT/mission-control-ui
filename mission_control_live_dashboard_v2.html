@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Control Live Dashboard v2</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: rgba(18, 24, 34, 0.96);
+      --panel2: rgba(12, 18, 26, 0.98);
+      --border: rgba(84, 214, 255, 0.18);
+      --text: #e7f6ff;
+      --muted: #8fa6b5;
+      --cyan: #00e5ff;
+      --green: #00e676;
+      --amber: #ffca28;
+      --red: #ff1744;
+      --blue: #2196f3;
+      --purple: #9c27b0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(0, 229, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 23, 68, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 8, 13, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      color: var(--cyan);
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    select, input {
+      background: #05070a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    input { min-width: 230px; }
+
+    button, a.button {
+      background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(33,150,243,0.35));
+      color: var(--text);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 8px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .wrap {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+    }
+
+    .kpi {
+      grid-column: span 2;
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .kpi .value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .kpi .sub {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .wide { grid-column: span 8; }
+    .side { grid-column: span 4; }
+    .full { grid-column: span 12; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-pill, .sev-pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+    }
+
+    .ONLINE { color: var(--green); border-color: rgba(0,230,118,0.5); background: rgba(0,230,118,0.08); }
+    .OFFLINE { color: var(--red); border-color: rgba(255,23,68,0.5); background: rgba(255,23,68,0.08); }
+    .UNKNOWN { color: var(--amber); border-color: rgba(255,202,40,0.45); background: rgba(255,202,40,0.08); }
+    .DEGRADED { color: var(--purple); border-color: rgba(156,39,176,0.55); background: rgba(156,39,176,0.10); }
+    .DISABLED { color: var(--muted); }
+
+    .CRITICAL { color: var(--red); border-color: rgba(255,23,68,0.7); }
+    .HIGH { color: #ff7a18; border-color: rgba(255,122,24,0.7); }
+    .MEDIUM { color: var(--amber); border-color: rgba(255,202,40,0.6); }
+    .LOW { color: var(--blue); border-color: rgba(33,150,243,0.6); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    th, td {
+      padding: 9px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.8px;
+    }
+
+    tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .scroll {
+      max-height: 475px;
+      overflow: auto;
+      border-radius: 10px;
+    }
+
+    .alert {
+      border-left: 4px solid var(--amber);
+      padding: 10px;
+      background: var(--panel2);
+      margin-bottom: 9px;
+      border-radius: 10px;
+    }
+
+    .alert.critical { border-left-color: var(--red); }
+    .alert.high { border-left-color: #ff7a18; }
+    .alert.medium { border-left-color: var(--amber); }
+    .alert.low { border-left-color: var(--blue); }
+
+    .alert-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .alert-message {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .footerline {
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-top: 8px;
+    }
+
+    .error {
+      color: var(--red);
+      background: rgba(255,23,68,0.08);
+      border: 1px solid rgba(255,23,68,0.3);
+      padding: 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .device-ip {
+      font-family: "Courier New", monospace;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .muted { color: var(--muted); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .amber { color: var(--amber); }
+
+    @media (max-width: 1150px) {
+      .kpi { grid-column: span 4; }
+      .wide, .side { grid-column: span 12; }
+    }
+
+    @media (max-width: 700px) {
+      .kpi { grid-column: span 6; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .controls { justify-content: flex-start; }
+      input { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>🛡️ Mission Control Live Dashboard v2</h1>
+      <span id="subtitle">Single-site detail view</span>
+    </div>
+    <div class="controls">
+      <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
+      
+<a class="button" href="mission_control_all_sites_dashboard_v1.html">🌐 All Sites</a>
+      <select id="siteSelect"></select>
+      <input id="apiBaseInput" type="text" placeholder="API Base e.g. http://10.121.16.176:8000" />
+      <input id="apiKeyInput" type="password" placeholder="MISSION_API_KEY" />
+      <button onclick="saveSettingsAndRefresh()">Connect</button>
+      <button onclick="refreshDashboard()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="full error" id="errorBox"></div>
+
+    <div class="card kpi">
+      <div class="label">Total Devices</div>
+      <div class="value" id="kpiTotal">--</div>
+      <div class="sub">Known on selected site</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Online</div>
+      <div class="value green" id="kpiOnline">--</div>
+      <div class="sub">Seen this cycle</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Offline</div>
+      <div class="value red" id="kpiOffline">--</div>
+      <div class="sub">Expected but missing</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Unknown</div>
+      <div class="value amber" id="kpiUnknown">--</div>
+      <div class="sub">Needs classification</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Open Alerts</div>
+      <div class="value red" id="kpiAlerts">--</div>
+      <div class="sub" id="kpiAlertSub">Active incidents</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Probe Agents</div>
+      <div class="value" id="kpiAgents">--</div>
+      <div class="sub">Online / total</div>
+    </div>
+
+    <div class="card wide">
+      <h2>
+        Device Inventory
+        <span class="muted" id="deviceCountLabel"></span>
+      </h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>IP</th>
+              <th>MAC</th>
+              <th>Name / Vendor</th>
+              <th>Type</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody id="deviceRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card side">
+      <h2>Active Alerts</h2>
+      <div class="scroll" id="alertList"></div>
+    </div>
+
+    <div class="card side">
+      <h2>Probe Agents</h2>
+      <div id="agentList"></div>
+    </div>
+
+    <div class="card wide">
+      <h2>Recent Observations</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Status</th>
+              <th>IP</th>
+              <th>MAC</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody id="observationRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="full footerline" id="lastUpdated">Waiting for data...</div>
+  </div>
+
+  <script>
+    const DEFAULT_API_BASE = localStorage.getItem("mission_api_base") || "http://10.121.16.176:8000";
+    let initialSiteCode = new URLSearchParams(window.location.search).get("site_code") || "";
+    let lastData = null;
+
+    function apiBase() {
+      return document.getElementById("apiBaseInput").value.trim().replace(/\/$/, "");
+    }
+
+    function apiKey() {
+      return document.getElementById("apiKeyInput").value.trim();
+    }
+
+    function headers() {
+      return {
+        "x-api-key": apiKey(),
+        "Content-Type": "application/json"
+      };
+    }
+
+    function saveSettingsAndRefresh() {
+      localStorage.setItem("mission_api_base", apiBase());
+      localStorage.setItem("mission_api_key", apiKey());
+      refreshDashboard();
+    }
+
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function fmtTime(value) {
+      if (!value) return "—";
+      try {
+        return new Date(value).toLocaleString();
+      } catch {
+        return value;
+      }
+    }
+
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return "";
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function selectedSiteCode() {
+      const select = document.getElementById("siteSelect");
+      return select.value || initialSiteCode || "";
+    }
+
+    async function fetchDashboard() {
+      const siteCode = selectedSiteCode();
+      const url = siteCode
+        ? `${apiBase()}/api/v1/dashboard/summary?site_code=${encodeURIComponent(siteCode)}`
+        : `${apiBase()}/api/v1/dashboard/summary`;
+
+      const res = await fetch(url, { headers: headers() });
+      const text = await res.text();
+
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${text}`);
+      }
+
+      return JSON.parse(text);
+    }
+
+    function renderSites(data) {
+      const select = document.getElementById("siteSelect");
+      const current = select.value || initialSiteCode;
+      const sites = data.sites || [];
+      const selected = data.selected_site;
+
+      select.innerHTML = sites.map(site => {
+        const code = site.site_code;
+        const name = site.site_name || code;
+        const isSelected = (current && current === code) || (!current && selected && selected.site_code === code);
+        return `<option value="${escapeHtml(code)}" ${isSelected ? "selected" : ""}>${escapeHtml(name)}</option>`;
+      }).join("");
+
+      if (!select.value && selected && selected.site_code) {
+        select.value = selected.site_code;
+      }
+
+      if (initialSiteCode && sites.some(site => site.site_code === initialSiteCode)) {
+        select.value = initialSiteCode;
+        initialSiteCode = "";
+      }
+    }
+
+    function renderKpis(data) {
+      const c = data.counts || {};
+      document.getElementById("kpiTotal").textContent = c.devices_total ?? 0;
+      document.getElementById("kpiOnline").textContent = c.devices_online ?? 0;
+      document.getElementById("kpiOffline").textContent = c.devices_offline ?? 0;
+      document.getElementById("kpiUnknown").textContent = c.devices_unknown ?? 0;
+      document.getElementById("kpiAlerts").textContent = c.alerts_open ?? 0;
+      document.getElementById("kpiAlertSub").textContent = `${c.alerts_critical || 0} critical · ${c.alerts_high || 0} high`;
+      document.getElementById("kpiAgents").textContent = `${c.agents_online || 0}/${c.agents_total || 0}`;
+      document.getElementById("deviceCountLabel").textContent = `${c.devices_total || 0} devices`;
+    }
+
+    function renderDevices(data) {
+      const rows = document.getElementById("deviceRows");
+      const devices = data.devices || [];
+
+      rows.innerHTML = devices.map(d => {
+        const status = (d.status || "UNKNOWN").toUpperCase();
+        const label = d.friendly_name || d.hostname || d.vendor || "";
+        return `
+          <tr>
+            <td><span class="status-pill ${status}">${escapeHtml(status)}</span></td>
+            <td><span class="device-ip">${escapeHtml(d.ip_address || "—")}</span></td>
+            <td class="muted">${escapeHtml(d.mac_address || "—")}</td>
+            <td>${escapeHtml(label || "—")}</td>
+            <td class="muted">${escapeHtml(d.device_type || "Unknown")}</td>
+            <td class="muted">${escapeHtml(fmtTime(d.last_seen_at))}</td>
+          </tr>
+        `;
+      }).join("");
+
+      if (!devices.length) {
+        rows.innerHTML = `<tr><td colspan="6" class="muted">No devices found.</td></tr>`;
+      }
+    }
+
+    function renderAlerts(data) {
+      const list = document.getElementById("alertList");
+      const alerts = data.alerts || [];
+
+      list.innerHTML = alerts.map(a => {
+        const sev = (a.severity || "LOW").toUpperCase();
+        return `
+          <div class="alert ${sev.toLowerCase()}">
+            <div class="alert-title">
+              <span>${escapeHtml(a.title || a.alert_type || "Alert")}</span>
+              <span class="sev-pill ${sev}">${escapeHtml(sev)}</span>
+            </div>
+            <div class="alert-message">${escapeHtml(a.message || "")}</div>
+            <div class="footerline">${escapeHtml(a.alert_type || "")} · count ${a.count || 1} · ${escapeHtml(fmtTime(a.last_seen_at))}</div>
+          </div>
+        `;
+      }).join("");
+
+      if (!alerts.length) {
+        list.innerHTML = `<div class="muted">No active alerts.</div>`;
+      }
+    }
+
+    function renderAgents(data) {
+      const list = document.getElementById("agentList");
+      const agents = data.agents || [];
+
+      list.innerHTML = agents.map(a => {
+        const status = (a.status || "UNKNOWN").toUpperCase();
+        return `
+          <div class="alert">
+            <div class="alert-title">
+              <span>${escapeHtml(a.agent_name || a.agent_key || "Agent")}</span>
+              <span class="status-pill ${status}">${escapeHtml(status)}</span>
+            </div>
+            <div class="alert-message">${escapeHtml(a.hostname || "")} · ${escapeHtml(a.lan_ip || "no LAN IP")}</div>
+            <div class="footerline">Last heartbeat: ${escapeHtml(fmtTime(a.last_heartbeat_at))}</div>
+          </div>
+        `;
+      }).join("");
+
+      if (!agents.length) {
+        list.innerHTML = `<div class="muted">No probe agents found.</div>`;
+      }
+    }
+
+    function renderObservations(data) {
+      const rows = document.getElementById("observationRows");
+      const observations = data.recent_observations || [];
+
+      rows.innerHTML = observations.map(o => {
+        const status = (o.status || "UNKNOWN").toUpperCase();
+        return `
+          <tr>
+            <td class="muted">${escapeHtml(fmtTime(o.observed_at))}</td>
+            <td><span class="status-pill ${status}">${escapeHtml(status)}</span></td>
+            <td><span class="device-ip">${escapeHtml(o.ip_address || "—")}</span></td>
+            <td class="muted">${escapeHtml(o.mac_address || "—")}</td>
+            <td class="muted">${escapeHtml(o.method || "—")}</td>
+          </tr>
+        `;
+      }).join("");
+
+      if (!observations.length) {
+        rows.innerHTML = `<tr><td colspan="5" class="muted">No observations found.</td></tr>`;
+      }
+    }
+
+    function render(data) {
+      lastData = data;
+      renderSites(data);
+      renderKpis(data);
+      renderDevices(data);
+      renderAlerts(data);
+      renderAgents(data);
+      renderObservations(data);
+
+      const siteName = data.selected_site ? (data.selected_site.site_name || data.selected_site.site_code) : "No site";
+      document.getElementById("subtitle").textContent = `${siteName} · ${data.time}`;
+      document.getElementById("lastUpdated").textContent = `Last updated: ${fmtTime(data.time)} · API: ${apiBase()}`;
+    }
+
+    async function refreshDashboard() {
+      clearError();
+
+      if (!apiBase()) {
+        showError("Enter API base URL.");
+        return;
+      }
+
+      if (!apiKey()) {
+        showError("Enter your MISSION_API_KEY.");
+        return;
+      }
+
+      try {
+        const data = await fetchDashboard();
+        render(data);
+      } catch (err) {
+        showError(`Dashboard load failed: ${err.message}`);
+      }
+    }
+
+    document.getElementById("siteSelect").addEventListener("change", () => {
+      initialSiteCode = "";
+      refreshDashboard();
+    });
+
+    window.onload = () => {
+      document.getElementById("apiBaseInput").value = localStorage.getItem("mission_api_base") || DEFAULT_API_BASE;
+      document.getElementById("apiKeyInput").value = localStorage.getItem("mission_api_key") || "mission-test-key-123";
+      refreshDashboard();
+      setInterval(refreshDashboard, 10000);
+    };
+  </script>
+</body>
+</html>

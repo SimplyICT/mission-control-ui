@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e293b, #111827);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px 0;
+      font-size: 34px;
+      color: #f8fafc;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-width: 850px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .quick-card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .quick-card:hover {
+      transform: translateY(-2px);
+      border-color: #3b82f6;
+    }
+
+    .quick-card h2 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      color: #f8fafc;
+    }
+
+    .quick-card p {
+      color: #94a3b8;
+      min-height: 44px;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.18);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .metric {
+      color: #94a3b8;
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .metric b {
+      color: #e2e8f0;
+    }
+
+    button {
+      margin: 5px 5px 5px 0;
+      padding: 10px 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .audit-button {
+      background: #16a34a;
+    }
+
+    .audit-button:hover {
+      background: #15803d;
+    }
+
+    .director-button {
+      background: #7c3aed;
+    }
+
+    .director-button:hover {
+      background: #6d28d9;
+    }
+
+    .tools-button {
+      background: #0ea5e9;
+    }
+
+    .tools-button:hover {
+      background: #0284c7;
+    }
+
+    .GREEN {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .AMBER {
+      color: #fcd34d;
+      font-weight: bold;
+    }
+
+    .RED {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .UNKNOWN {
+      color: #94a3b8;
+      font-weight: bold;
+    }
+
+    .status-pill {
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      background: #0f172a;
+    }
+
+    pre {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 18px;
+      color: #cbd5e1;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      min-height: 80px;
+      margin-top: 24px;
+    }
+
+    .section-title {
+      margin: 24px 0 14px 0;
+      color: #f8fafc;
+      font-size: 22px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
+
+<div class="title">Mission Control</div>
+  <div class="subtitle">Operations Dashboard · Fleet Services · Audit & Compliance</div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>Mission Control Platform</h1>
+    <p>
+      Central operational command for service health, audit workflows,
+      device compliance, logs, restarts and future automation tooling.
+    </p>
+  </div>
+
+  <div class="quick-grid">
+
+    <div class="quick-card">
+      <h2>Audit Center</h2>
+      <p>Open the full device audit, reporting, compliance and cleanup module.</p>
+      <button class="audit-button" onclick="window.location.href='/index-platform.html'">
+        Open Audit Center
+      </button>
+    </div>
+
+    <div class="quick-card">
+      <h2>Director Dashboard</h2>
+      <p>Executive overview of site compliance, risk and recent audit outcomes.</p>
+      <button class="director-button" onclick="window.location.href='/director-view.html'">
+        Open Director View
+      </button>
+    </div>
+
+    <div class="quick-card">
+      <h2>Device Records</h2>
+      <p>Manage site devices, active status, assignments and device metadata.</p>
+      <button onclick="window.location.href='/device-records.html'">
+        Open Device Records
+      </button>
+    </div>
+
+    <div class="quick-card">
+      <h2>Operations Tools</h2>
+      <p>Future home for backups, health checks, service controls and scripts.</p>
+      <button class="tools-button" onclick="alert('Operations Tools page not built yet.')">
+        Coming Soon
+      </button>
+    </div>
+
+  </div>
+
+  <h2 class="section-title">Fleet Status</h2>
+
+  <div id="fleet" class="grid"></div>
+
+  <h2 class="section-title">Command Output</h2>
+  <pre id="output">Waiting for fleet data...</pre>
+
+  <div class="footer">
+    Mission Control Platform
+  </div>
+
+</div>
+
+<script>
+async function loadFleet() {
+  try {
+    const res = await fetch('/api/fleet');
+    const data = await res.json();
+    const fleet = document.getElementById('fleet');
+    fleet.innerHTML = '';
+
+    data.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      let buttons = '';
+
+      s.services.forEach(service => {
+        buttons += `
+          <button onclick="viewLogs('${s.name}','${service}')">Logs ${service}</button>
+          <button onclick="restart('${s.name}','${service}')">Restart ${service}</button>
+        `;
+      });
+
+      card.innerHTML = `
+        <h2>
+          ${s.name}
+          <span class="status-pill ${s.status}">${s.status}</span>
+        </h2>
+        <div class="metric"><b>Host:</b> ${s.host}</div>
+        <div class="metric"><b>Load:</b> ${s.load}</div>
+        <div class="metric"><b>Disk:</b> ${s.disk}%</div>
+        <div class="metric"><b>Memory:</b> ${s.memory}%</div>
+        <div class="metric"><b>Failed:</b> ${s.failed}</div>
+        <div style="margin-top:12px;">${buttons}</div>
+      `;
+
+      fleet.appendChild(card);
+    });
+
+    if (!data.length) {
+      fleet.innerHTML = '<div class="card">No fleet data returned.</div>';
+    }
+
+  } catch (err) {
+    document.getElementById('output').textContent =
+      'Fleet load failed: ' + err.message;
+  }
+}
+
+async function viewLogs(server, service) {
+  const res = await fetch(`/api/logs/${server}/${service}`);
+  const data = await res.json();
+  document.getElementById('output').textContent = data.logs;
+}
+
+async function restart(server, service) {
+  if (!confirm(`Restart ${service} on ${server}?`)) return;
+
+  const res = await fetch(`/api/restart/${server}/${service}`, {
+    method:'POST'
+  });
+
+  const data = await res.json();
+
+  document.getElementById('output').textContent = data.result;
+}
+
+loadFleet();
+setInterval(loadFleet, 10000);
+</script>
+
+</body>
+</html>

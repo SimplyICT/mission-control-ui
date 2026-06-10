@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Management - Mission Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .topbar { background: #111827; padding: 16px 28px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { font-size: 22px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 3px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 16px 0; font-size: 18px; color: #f8fafc; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    button { padding: 9px 18px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
+    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-secondary:hover { background: #334155; color: #f8fafc; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #1e293b; color: #f8fafc; padding: 10px 12px; text-align: left; border-bottom: 2px solid #334155; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
+    tr:hover td { background: rgba(30,41,59,0.5); }
+    .role-badge { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+    .role-admin       { background: #1e3a5f; color: #60a5fa; }
+    .role-coordinator { background: #1a2e2e; color: #2dd4bf; }
+    .role-director    { background: #1a2e1a; color: #4ade80; }
+    .role-viewer      { background: #2d2305; color: #fbbf24; }
+    .active-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-on  { background: #22c55e; }
+    .dot-off { background: #64748b; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus { border-color: #3b82f6; }
+    .form-group .hint { font-size: 11px; color: #475569; }
+    .toggle-row { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+    .toggle input { display: none; }
+    .toggle .slider { position: absolute; inset: 0; background: #334155; border-radius: 11px; transition: background 0.2s; }
+    .toggle .slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #e2e8f0; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .slider { background: #22c55e; }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+    .toggle-label { font-size: 13px; color: #94a3b8; }
+    .status-msg { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+    .status-msg.success { display: block; background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .status-msg.error   { display: block; background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .panel { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #1e293b; }
+    .panel.open { display: block; }
+    .panel h3 { margin: 0 0 16px 0; font-size: 15px; color: #f8fafc; }
+    .section-heading { font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px 0; }
+    .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
+    .page-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; background: #1e293b; font-size: 13px; color: #94a3b8; }
+    .page-item input[type="checkbox"] { accent-color: #3b82f6; width: 14px; height: 14px; cursor: pointer; }
+    .page-item.role-default { color: #60a5fa; background: #0c1929; }
+    .page-item label { cursor: pointer; flex: 1; }
+    .divider { height: 1px; background: #1e293b; margin: 16px 0; }
+    .empty-state { text-align: center; color: #475569; padding: 24px; font-size: 13px; }
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #64748b; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">User Management</div>
+    <div class="subtitle">Create and manage platform users, roles and page permissions</div>
+  </div>
+  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Platform Users</h2>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="openNewPanel()">+ New User</button>
+      <button class="btn-secondary" onclick="loadUsers()">Refresh</button>
+    </div>
+    <div id="usersTableWrap">
+      <div class="empty-state"><span class="spinner"></span>Loading...</div>
+    </div>
+
+    <!-- New user panel -->
+    <div class="panel" id="newPanel">
+      <h3>Create New User</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" id="newUsername" placeholder="e.g. jsmith" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="newFullName" placeholder="e.g. Jane Smith">
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="newPassword" placeholder="Minimum 8 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="newRole" onchange="updatePageDefaults('new')">
+            <option value="viewer">Viewer</option>
+            <option value="coordinator">Coordinator</option>
+            <option value="director">Director</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-heading">Page Access</div>
+      <div class="toggle-row" style="margin-bottom:12px;">
+        <label class="toggle">
+          <input type="checkbox" id="newCustomPages" onchange="toggleCustomPages('new')">
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label" id="newCustomLabel">Use role defaults</span>
+      </div>
+      <div id="newPagePicker" style="display:none;">
+        <div id="newPageList" class="page-grid"></div>
+      </div>
+      <div id="newRoleDefaultsNote" style="font-size:12px;color:#475569;margin-bottom:12px;"></div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn-success" onclick="createUser()">Create User</button>
+        <button class="btn-secondary" onclick="closeNewPanel()">Cancel</button>
+      </div>
+      <div class="status-msg" id="newStatus"></div>
+    </div>
+
+    <!-- Edit user panel -->
+    <div class="panel" id="editPanel">
+      <h3 id="editTitle">Edit User</h3>
+      <input type="hidden" id="editUserId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="editUsername" readonly style="opacity:0.5;cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="editFullName">
+        </div>
+        <div class="form-group">
+          <label>New Password <span style="color:#475569;">(leave blank to keep)</span></label>
+          <input type="password" id="editPassword" autocomplete="new-password" placeholder="Leave blank to keep current">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="editRole" onchange="updatePageDefaults('edit')">
+            <option value="viewer">Viewer</option>
+            <option value="coordinator">Coordinator</option>
+            <option value="director">Director</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Active</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="editActive" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Active</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-heading">Page Access</div>
+      <div class="toggle-row" style="margin-bottom:12px;">
+        <label class="toggle">
+          <input type="checkbox" id="editCustomPages" onchange="toggleCustomPages('edit')">
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label" id="editCustomLabel">Use role defaults</span>
+      </div>
+      <div id="editPagePicker" style="display:none;">
+        <div id="editPageList" class="page-grid"></div>
+      </div>
+      <div id="editRoleDefaultsNote" style="font-size:12px;color:#475569;margin-bottom:12px;"></div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn-success" onclick="saveUser()">Save Changes</button>
+        <button class="btn-danger btn-sm" onclick="deleteUser()">Delete User</button>
+        <button class="btn-secondary" onclick="closeEditPanel()">Cancel</button>
+      </div>
+      <div class="status-msg" id="editStatus"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Role Definitions</h2>
+    <table>
+      <thead><tr><th>Role</th><th>Description</th><th>Default Page Access</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="role-badge role-admin">Admin</span></td>
+          <td>Full access to all pages and user management</td>
+          <td>All pages</td>
+        </tr>
+        <tr>
+          <td><span class="role-badge role-coordinator">Coordinator</span></td>
+          <td>Auditing, compliance, site onboarding and reports</td>
+          <td>Auditing + Compliance + Onboarding</td>
+        </tr>
+        <tr>
+          <td><span class="role-badge role-director">Director</span></td>
+          <td>Read-only executive view, reports and compliance overview</td>
+          <td>Director View + Reports + Compliance</td>
+        </tr>
+        <tr>
+          <td><span class="role-badge role-viewer">Viewer</span></td>
+          <td>Read-only access to dashboards and reports only</td>
+          <td>Director View + Reports</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+var allPages = [];
+var rolePages = {};
+var currentEditUser = null;
+
+function safeJson(response) {
+  return response.text().then(function(text) {
+    try { return JSON.parse(text); }
+    catch(e) { return { detail: text || ('HTTP ' + response.status) }; }
+  });
+}
+
+function showStatus(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg ' + type;
+  el.textContent = msg;
+}
+
+function clearStatus(id) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg';
+  el.textContent = '';
+}
+
+function roleBadge(role) {
+  return '<span class="role-badge role-' + role + '">' + role + '</span>';
+}
+
+function loadPageList() {
+  return fetch('/api/page-list')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      allPages = data.pages || [];
+      rolePages = data.role_pages || {};
+    })
+    .catch(function() {});
+}
+
+function loadUsers() {
+  var wrap = document.getElementById('usersTableWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span>Loading...</div>';
+
+  fetch('/api/users')
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) {
+        wrap.innerHTML = '<div class="empty-state">Failed to load users.</div>';
+        return;
+      }
+      var users = res.data;
+      if (!users.length) {
+        wrap.innerHTML = '<div class="empty-state">No users found.</div>';
+        return;
+      }
+      var html = '<table><thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Page Access</th><th>Status</th><th></th></tr></thead><tbody>';
+      for (var i = 0; i < users.length; i++) {
+        var u = users[i];
+        var active = u.active !== false;
+        var pageAccess = u.custom_pages ? 'Custom (' + u.custom_pages.length + ' pages)' : 'Role defaults';
+        html += '<tr>';
+        html += '<td><strong>' + (u.username || '') + '</strong></td>';
+        html += '<td>' + (u.full_name || '<span style="color:#475569;">-</span>') + '</td>';
+        html += '<td>' + roleBadge(u.role || 'viewer') + '</td>';
+        html += '<td style="color:#64748b;font-size:12px;">' + pageAccess + '</td>';
+        html += '<td><span class="active-dot ' + (active ? 'dot-on' : 'dot-off') + '"></span>' + (active ? 'Active' : 'Inactive') + '</td>';
+        html += '<td><button class="btn-secondary btn-sm" onclick="openEditPanel(' + JSON.stringify(u).replace(/"/g, '&quot;') + ')">Edit</button></td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    })
+    .catch(function() {
+      wrap.innerHTML = '<div class="empty-state">Error loading users.</div>';
+    });
+}
+
+// ── Page picker helpers ────────────────────────────────────────────────────────
+
+function buildPageList(containerId, selectedPages, role) {
+  var container = document.getElementById(containerId);
+  var defaultSet = rolePages[role];
+  var sections = {};
+
+  for (var i = 0; i < allPages.length; i++) {
+    var p = allPages[i];
+    if (!sections[p.section]) sections[p.section] = [];
+    sections[p.section].push(p);
+  }
+
+  var html = '';
+  for (var section in sections) {
+    html += '<div class="section-heading">' + section + '</div><div class="page-grid">';
+    var pages = sections[section];
+    for (var j = 0; j < pages.length; j++) {
+      var page = pages[j];
+      var isDefault = defaultSet === null || (defaultSet && defaultSet.indexOf(page.path) !== -1);
+      var isChecked = selectedPages ? (selectedPages.indexOf(page.path) !== -1) : isDefault;
+      var cls = isDefault ? ' role-default' : '';
+      html += '<div class="page-item' + cls + '">';
+      html += '<input type="checkbox" id="pg_' + containerId + '_' + j + '" value="' + page.path + '"' + (isChecked ? ' checked' : '') + '>';
+      html += '<label for="pg_' + containerId + '_' + j + '">' + page.label + '</label>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function getSelectedPages(containerId) {
+  var checks = document.querySelectorAll('#' + containerId + ' input[type="checkbox"]');
+  var selected = [];
+  for (var i = 0; i < checks.length; i++) {
+    if (checks[i].checked) selected.push(checks[i].value);
+  }
+  return selected;
+}
+
+function updatePageDefaults(prefix) {
+  var role = document.getElementById(prefix + 'Role').value;
+  var customEnabled = document.getElementById(prefix + 'CustomPages').checked;
+  if (customEnabled) {
+    var currentSelected = getSelectedPages(prefix + 'PageList');
+    buildPageList(prefix + 'PageList', currentSelected, role);
+  }
+  var defaultSet = rolePages[role];
+  var noteEl = document.getElementById(prefix + 'RoleDefaultsNote');
+  if (!customEnabled) {
+    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
+    noteEl.textContent = 'Role default: ' + count + ' accessible.';
+  }
+}
+
+function toggleCustomPages(prefix) {
+  var enabled = document.getElementById(prefix + 'CustomPages').checked;
+  var picker = document.getElementById(prefix + 'PagePicker');
+  var label = document.getElementById(prefix + 'CustomLabel');
+  var note = document.getElementById(prefix + 'RoleDefaultsNote');
+  var role = document.getElementById(prefix + 'Role').value;
+
+  label.textContent = enabled ? 'Custom page list' : 'Use role defaults';
+  picker.style.display = enabled ? 'block' : 'none';
+
+  if (enabled) {
+    note.textContent = 'Blue items are in the role default. Check/uncheck to customise.';
+    var initSelected = prefix === 'edit' && currentEditUser && currentEditUser.custom_pages
+      ? currentEditUser.custom_pages
+      : null;
+    buildPageList(prefix + 'PageList', initSelected, role);
+  } else {
+    var defaultSet = rolePages[role];
+    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
+    note.textContent = 'Role default: ' + count + ' accessible.';
+  }
+}
+
+// ── New user ──────────────────────────────────────────────────────────────────
+
+function openNewPanel() {
+  document.getElementById('editPanel').classList.remove('open');
+  document.getElementById('newUsername').value = '';
+  document.getElementById('newFullName').value = '';
+  document.getElementById('newPassword').value = '';
+  document.getElementById('newRole').value = 'viewer';
+  document.getElementById('newCustomPages').checked = false;
+  document.getElementById('newPagePicker').style.display = 'none';
+  document.getElementById('newCustomLabel').textContent = 'Use role defaults';
+  var defaultSet = rolePages['viewer'];
+  var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
+  document.getElementById('newRoleDefaultsNote').textContent = 'Role default: ' + count + ' accessible.';
+  clearStatus('newStatus');
+  document.getElementById('newPanel').classList.add('open');
+  document.getElementById('newUsername').focus();
+}
+
+function closeNewPanel() {
+  document.getElementById('newPanel').classList.remove('open');
+}
+
+function createUser() {
+  var username = document.getElementById('newUsername').value.trim();
+  var password = document.getElementById('newPassword').value;
+  var fullName = document.getElementById('newFullName').value.trim();
+  var role = document.getElementById('newRole').value;
+  var useCustom = document.getElementById('newCustomPages').checked;
+
+  if (!username) { showStatus('newStatus', 'error', 'Username is required.'); return; }
+  if (password.length < 8) { showStatus('newStatus', 'error', 'Password must be at least 8 characters.'); return; }
+
+  var payload = {
+    username: username,
+    password: password,
+    full_name: fullName,
+    role: role,
+    custom_pages: useCustom ? getSelectedPages('newPageList') : null,
+    active: true
+  };
+
+  fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('newStatus', 'error', res.data.detail || 'Create failed.'); return; }
+      showStatus('newStatus', 'success', 'User "' + username + '" created.');
+      loadUsers();
+      setTimeout(closeNewPanel, 1500);
+    })
+    .catch(function() { showStatus('newStatus', 'error', 'Request failed.'); });
+}
+
+// ── Edit user ─────────────────────────────────────────────────────────────────
+
+function openEditPanel(user) {
+  currentEditUser = user;
+  document.getElementById('newPanel').classList.remove('open');
+  document.getElementById('editUserId').value = user.user_id;
+  document.getElementById('editTitle').textContent = 'Edit User — ' + user.username;
+  document.getElementById('editUsername').value = user.username || '';
+  document.getElementById('editFullName').value = user.full_name || '';
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editRole').value = user.role || 'viewer';
+  document.getElementById('editActive').checked = user.active !== false;
+
+  var hasCustom = user.custom_pages !== null && user.custom_pages !== undefined;
+  document.getElementById('editCustomPages').checked = hasCustom;
+  document.getElementById('editCustomLabel').textContent = hasCustom ? 'Custom page list' : 'Use role defaults';
+
+  var picker = document.getElementById('editPagePicker');
+  var note = document.getElementById('editRoleDefaultsNote');
+
+  if (hasCustom) {
+    picker.style.display = 'block';
+    note.textContent = 'Blue items are in the role default. Check/uncheck to customise.';
+    buildPageList('editPageList', user.custom_pages, user.role);
+  } else {
+    picker.style.display = 'none';
+    var defaultSet = rolePages[user.role];
+    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
+    note.textContent = 'Role default: ' + count + ' accessible.';
+  }
+
+  clearStatus('editStatus');
+  document.getElementById('editPanel').classList.add('open');
+  document.getElementById('editPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeEditPanel() {
+  document.getElementById('editPanel').classList.remove('open');
+  currentEditUser = null;
+}
+
+function saveUser() {
+  var userId = document.getElementById('editUserId').value;
+  var password = document.getElementById('editPassword').value;
+  var useCustom = document.getElementById('editCustomPages').checked;
+
+  var payload = {
+    full_name:    document.getElementById('editFullName').value.trim(),
+    role:         document.getElementById('editRole').value,
+    active:       document.getElementById('editActive').checked,
+    custom_pages: useCustom ? getSelectedPages('editPageList') : null
+  };
+  if (password) {
+    if (password.length < 8) { showStatus('editStatus', 'error', 'Password must be at least 8 characters.'); return; }
+    payload.password = password;
+  }
+
+  fetch('/api/users/' + userId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('editStatus', 'error', res.data.detail || 'Save failed.'); return; }
+      showStatus('editStatus', 'success', 'User saved.');
+      loadUsers();
+    })
+    .catch(function() { showStatus('editStatus', 'error', 'Request failed.'); });
+}
+
+function deleteUser() {
+  var username = document.getElementById('editUsername').value;
+  if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
+  var userId = document.getElementById('editUserId').value;
+
+  fetch('/api/users/' + userId, { method: 'DELETE' })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('editStatus', 'error', res.data.detail || 'Delete failed.'); return; }
+      closeEditPanel();
+      loadUsers();
+    })
+    .catch(function() { showStatus('editStatus', 'error', 'Request failed.'); });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadPageList().then(function() {
+  loadUsers();
+});
+</script>
+
+</body>
+</html>

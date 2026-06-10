@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — SOC Autopilot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0}
+    .topbar{background:#111827;border-bottom:1px solid #1e293b;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+    .topbar-left .title{font-size:24px;font-weight:bold;color:#f8fafc}
+    .topbar-left .subtitle{font-size:13px;color:#94a3b8;margin-top:4px}
+    .topbar-right{display:flex;gap:10px;align-items:center}
+    .btn{padding:8px 18px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+    .btn:hover{background:#334155}
+    .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .btn-primary:hover{background:#2563eb}
+    .btn-danger{background:#ef4444;border-color:#ef4444;color:#fff}
+    .btn-danger:hover{background:#dc2626}
+    .btn-green{background:#22c55e;border-color:#22c55e;color:#fff}
+    .btn-green:hover{background:#16a34a}
+    .btn-sm{padding:5px 12px;font-size:12px}
+    .container{max-width:1800px;margin:auto;padding:24px}
+    .kpi-strip{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+    .kpi-box{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px 24px;min-width:120px;text-align:center;flex:1}
+    .kpi-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-value{font-size:28px;font-weight:bold;margin:6px 0}
+    .text-green{color:#22c55e}.text-red{color:#ef4444}.text-amber{color:#f59e0b}.text-blue{color:#3b82f6}.text-muted{color:#94a3b8}
+    .card{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:22px;margin-bottom:22px}
+    .card h2{margin:0 0 16px 0;font-size:18px;color:#f8fafc}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:10px 12px;border-bottom:1px solid #1e293b;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+    td{padding:10px 12px;border-bottom:1px solid #1e293b1a;font-size:13px}
+    tr:hover{background:#1e293b40}
+    tr.clickable{cursor:pointer}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-green{background:#22c55e22;color:#22c55e}.badge-red{background:#ef444422;color:#ef4444}
+    .badge-amber{background:#f59e0b22;color:#f59e0b}.badge-gray{background:#64748b22;color:#94a3b8}
+    .badge-blue{background:#3b82f622;color:#3b82f6}.badge-purple{background:#8b5cf622;color:#8b5cf6}
+    .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
+    .filter-tab{padding:6px 14px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+    .filter-tab:hover{background:#1e293b;color:#e2e8f0}
+    .filter-tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .loading{text-align:center;padding:40px;color:#94a3b8}
+    .error{text-align:center;padding:40px;color:#ef4444}
+    .nowrap{white-space:nowrap}
+    .detail-header{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:22px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
+    .detail-name{font-size:22px;font-weight:bold;color:#f8fafc;margin-bottom:8px}
+    .detail-meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:#94a3b8}
+    .detail-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .cols-2{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+    .col-span-2{grid-column:1/-1}
+    .timeline{max-height:300px;overflow-y:auto}
+    .empty{text-align:center;padding:20px;color:#64748b;font-size:13px}
+    @media(max-width:900px){.kpi-strip{flex-direction:column}.cols-2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="title">SOC Autopilot</div>
+      <div class="subtitle">AI-powered security case management &amp; automated response</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" onclick="loadCases()">↻ Refresh</button>
+      <a href="/wazuh-dashboard.html" class="btn">← Security Center</a>
+      <a href="/index-platform.html" class="btn">← Platform</a>
+    </div>
+  </div>
+  <div class="container" id="mainContent">
+    <div id="listView">
+      <div id="kpiStrip" class="kpi-strip"><div class="loading">Loading...</div></div>
+      <div class="card">
+        <div class="card-header">
+          <h2 style="margin:0">Active Cases</h2>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterCases('all',this)">All</button>
+            <button class="filter-tab" onclick="filterCases('awaiting_approval',this)">Pending</button>
+            <button class="filter-tab" onclick="filterCases('open',this)">Open</button>
+            <button class="filter-tab" onclick="filterCases('resolved',this)">Resolved</button>
+          </div>
+        </div>
+        <div id="casesTable"><div class="loading">Loading cases...</div></div>
+      </div>
+    </div>
+    <div id="detailView" style="display:none"></div>
+  </div>
+
+<script>
+var API = '/wazuh-api';
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function severityBadge(s) {
+  s = (s || '').toLowerCase();
+  var m = { critical: 'badge-red', high: 'badge-amber', medium: 'badge-blue', low: 'badge-gray' };
+  return '<span class="badge ' + (m[s] || 'badge-gray') + '">' + s + '</span>';
+}
+
+function statusBadge(s) {
+  var m = { open: 'badge-gray', triaged: 'badge-blue', awaiting_approval: 'badge-amber', approved: 'badge-green', resolved: 'badge-green', closed: 'badge-gray', rejected: 'badge-red', partial: 'badge-amber' };
+  return '<span class="badge ' + (m[s] || 'badge-gray') + '">' + esc(s) + '</span>';
+}
+
+function formatDate(d) { return d ? new Date(d).toLocaleString() : '-'; }
+
+function timeAgo(d) {
+  if (!d) return '-';
+  var sec = (Date.now() - new Date(d).getTime()) / 1000;
+  if (sec < 60) return 'Just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  return Math.floor(sec / 86400) + 'd ago';
+}
+
+function api(path, opts) {
+  var headers = {};
+  var fetchOpts = { headers: headers };
+  if (opts && opts.method) {
+    fetchOpts.method = opts.method;
+    if (opts.body) { headers['Content-Type'] = 'application/json'; fetchOpts.body = JSON.stringify(opts.body); }
+  }
+  return fetch(API + path, fetchOpts).then(function(r) {
+    if (!r.ok) throw new Error('API ' + r.status);
+    return r.json();
+  }).then(function(d) { return d.data || d; });
+}
+
+function loadCases() {
+  document.getElementById('listView').style.display = '';
+  document.getElementById('detailView').style.display = 'none';
+  Promise.all([api('/autopilot/cases'), api('/autopilot/stats')]).then(function(res) {
+    var cases = (res[0].affected_items || []);
+    var stats = res[1];
+    renderKPIs(cases, stats);
+    renderCases(cases);
+  }).catch(function(e) {
+    document.getElementById('kpiStrip').innerHTML = '<div class="error">Failed: ' + esc(e.message) + ' — <button class="btn" onclick="loadCases()">Retry</button></div>';
+  });
+}
+
+function renderKPIs(cases, stats) {
+  var pending = 0;
+  for (var i = 0; i < cases.length; i++) { if (cases[i].status === 'awaiting_approval') pending++; }
+  document.getElementById('kpiStrip').innerHTML =
+    '<div class="kpi-box"><div class="kpi-label">Last 24h</div><div class="kpi-value text-blue">' + (stats.last_24h || 0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Critical</div><div class="kpi-value text-red">' + (stats.critical || 0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">High</div><div class="kpi-value text-amber">' + (stats.high || 0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Awaiting</div><div class="kpi-value text-amber">' + pending + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Resolved</div><div class="kpi-value text-green">' + (stats.resolved || 0) + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Avg Triage</div><div class="kpi-value text-muted">' + (stats.avg_triage_time ? Math.round(stats.avg_triage_time) + 's' : '-') + '</div></div>';
+}
+
+function renderCases(cases) {
+  var h = '<table><thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th><th>Alerts</th><th>MITRE</th><th>Updated</th><th></th></tr></thead><tbody id="casesBody">';
+  for (var i = 0; i < cases.length; i++) {
+    var c = cases[i];
+    h += '<tr data-status="' + c.status + '" class="clickable" onclick="viewCase(\'' + c.id + '\')">' +
+      '<td>#' + esc(c.id) + '</td>' +
+      '<td>' + esc((c.title || '').substring(0, 50)) + '</td>' +
+      '<td>' + severityBadge(c.severity) + '</td>' +
+      '<td>' + statusBadge(c.status) + '</td>' +
+      '<td>' + (c.alert_count || 0) + '</td>' +
+      '<td>' + (c.mitre && c.mitre.technique_id ? '<span class="badge badge-purple">' + esc(c.mitre.technique_id) + '</span>' : '-') + '</td>' +
+      '<td class="nowrap">' + timeAgo(c.updated_at) + '</td>' +
+      '<td><button class="btn btn-sm" onclick="event.stopPropagation();viewCase(\'' + c.id + '\')">View</button></td></tr>';
+  }
+  h += '</tbody></table>';
+  if (cases.length === 0) h = '<div class="empty">No cases found</div>';
+  document.getElementById('casesTable').innerHTML = h;
+}
+
+function filterCases(status, el) {
+  var tabs = document.querySelectorAll('.filter-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  el.classList.add('active');
+  var rows = document.querySelectorAll('#casesBody tr');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].style.display = (status === 'all' || rows[i].getAttribute('data-status') === status) ? '' : 'none';
+  }
+}
+
+function viewCase(id) {
+  document.getElementById('listView').style.display = 'none';
+  var dv = document.getElementById('detailView');
+  dv.style.display = '';
+  dv.innerHTML = '<div class="loading">Loading case #' + esc(id) + '...</div>';
+  api('/autopilot/cases/' + id).then(function(c) {
+    renderCaseDetail(c);
+  }).catch(function(e) {
+    dv.innerHTML = '<div class="error">' + esc(e.message) + ' — <button class="btn" onclick="loadCases()">Back</button></div>';
+  });
+}
+
+function renderCaseDetail(c) {
+  var sv = c.severity || 'low';
+  var isPending = c.status === 'awaiting_approval';
+  var isApproved = c.status === 'approved';
+
+  var h = '<div class="detail-header"><div>' +
+    '<div class="detail-name">Case #' + esc(c.id) + '</div>' +
+    '<div class="detail-meta">' +
+      severityBadge(sv) + ' ' + statusBadge(c.status) +
+      ' <span>' + (c.alert_count || 0) + ' alerts</span>' +
+      ' <span>Created: ' + formatDate(c.created_at) + '</span>' +
+      ' <span>Confidence: ' + (c.confidence ? Math.round(c.confidence * 100) + '%' : '-') + '</span>' +
+      (c.mitre && c.mitre.technique_id ? ' <span class="badge badge-purple">' + esc(c.mitre.technique_id) + ' ' + esc(c.mitre.technique || '') + '</span>' : '') +
+    '</div></div><div class="detail-actions">';
+
+  if (isPending) {
+    h += '<button class="btn btn-green" onclick="approveCase(\'' + c.id + '\')">Approve</button>' +
+         '<button class="btn btn-danger" onclick="rejectCase(\'' + c.id + '\')">Reject</button>';
+  }
+  if (isApproved) {
+    h += '<button class="btn btn-primary" onclick="executeCase(\'' + c.id + '\')">Execute Plan</button>';
+  }
+  h += '<button class="btn" onclick="loadCases()">← Back</button></div></div>';
+
+  h += '<div class="cols-2">';
+
+  // Description
+  h += '<div class="card"><h2>Description</h2><p style="color:#94a3b8;line-height:1.6;font-size:13px">' + esc(c.description || 'No description') + '</p></div>';
+
+  // Entities
+  h += '<div class="card"><h2>Entities (' + (c.entities || []).length + ')</h2>';
+  if (c.entities && c.entities.length) {
+    h += '<table><tbody>';
+    for (var i = 0; i < c.entities.length; i++) {
+      var e = c.entities[i];
+      h += '<tr><td>' + esc(e.type) + '</td><td>' + esc(e.value) + '</td><td><span class="badge badge-gray">' + esc(e.role || '') + '</span></td></tr>';
+    }
+    h += '</tbody></table>';
+  } else { h += '<div class="empty">No entities</div>'; }
+  h += '</div>';
+
+  // Investigation
+  if (c.investigation && Object.keys(c.investigation).length) {
+    h += '<div class="card col-span-2"><h2>Investigation</h2><table><tbody>';
+    var keys = Object.keys(c.investigation);
+    for (var i = 0; i < keys.length; i++) {
+      var v = c.investigation[keys[i]];
+      var val = Array.isArray(v) ? v.join(', ').substring(0, 200) : String(v).substring(0, 200);
+      h += '<tr><td style="color:#94a3b8;width:200px">' + esc(keys[i]) + '</td><td>' + esc(val) + '</td></tr>';
+    }
+    h += '</tbody></table></div>';
+  }
+
+  // Response Plan
+  if (c.response_plan) {
+    h += '<div class="card col-span-2"><h2>Response Plan</h2>' +
+      '<p style="margin-bottom:12px"><strong>Risk Level:</strong> ' + severityBadge(c.response_plan.risk_level || c.severity) + '</p>' +
+      '<p style="margin-bottom:12px;color:#94a3b8;font-size:13px">' + esc(c.response_plan.summary || '') + '</p>' +
+      '<table><thead><tr><th>Action</th><th>Target</th><th>Rationale</th></tr></thead><tbody>';
+    var actions = c.response_plan.actions || [];
+    for (var i = 0; i < actions.length; i++) {
+      var a = actions[i];
+      h += '<tr><td><span class="badge badge-blue">' + esc(a.type) + '</span></td><td>' + esc(a.target || '-') + '</td><td style="color:#94a3b8;font-size:12px">' + esc((a.rationale || '').substring(0, 100)) + '</td></tr>';
+    }
+    h += '</tbody></table>';
+    if (c.response_plan.rollback) h += '<p style="margin-top:12px;font-size:12px;color:#64748b"><strong>Rollback:</strong> ' + esc(c.response_plan.rollback) + '</p>';
+    if (c.response_plan.notes) h += '<p style="margin-top:8px;font-size:12px;color:#64748b"><strong>Notes:</strong> ' + esc(c.response_plan.notes) + '</p>';
+    h += '</div>';
+  }
+
+  // Executed Actions
+  if (c.actions && c.actions.length) {
+    h += '<div class="card col-span-2"><h2>Executed Actions</h2><table><thead><tr><th>Action</th><th>Target</th><th>Status</th><th>Detail</th></tr></thead><tbody>';
+    for (var i = 0; i < c.actions.length; i++) {
+      var a = c.actions[i];
+      var sBadge = a.status === 'failed' ? '<span class="badge badge-red">Failed</span>' : a.status === 'requested' ? '<span class="badge badge-amber">Requested</span>' : '<span class="badge badge-green">Done</span>';
+      h += '<tr><td>' + esc(a.action) + '</td><td>' + esc(a.target || '-') + '</td><td>' + sBadge + '</td><td style="color:#94a3b8;font-size:12px">' + esc((a.detail || '').substring(0, 80)) + '</td></tr>';
+    }
+    h += '</tbody></table></div>';
+  }
+
+  // Timeline
+  h += '<div class="card col-span-2"><h2>Timeline (' + (c.events || []).length + ' events)</h2><div class="timeline"><table><tbody>';
+  var evts = (c.events || []).slice().reverse();
+  for (var i = 0; i < evts.length; i++) {
+    var ev = evts[i];
+    var tBadge = ev.type === 'approved' ? 'badge-green' : ev.type === 'rejected' ? 'badge-red' : ev.type === 'triaged' || ev.type === 'investigated' ? 'badge-blue' : ev.type === 'executed' ? 'badge-green' : 'badge-gray';
+    h += '<tr><td class="nowrap">' + formatDate(ev.timestamp) + '</td><td><span class="badge ' + tBadge + '">' + esc(ev.type) + '</span></td><td style="color:#94a3b8;font-size:12px">' + esc(ev.alert_id || '') + '</td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+
+  h += '</div>'; // close cols-2
+  document.getElementById('detailView').innerHTML = h;
+}
+
+function approveCase(id) {
+  fetch(API + '/autopilot/cases/' + id + '/approve', { method: 'POST' }).then(function(r) {
+    if (r.ok) { alert('Case #' + id + ' approved'); viewCase(id); }
+    else { alert('Approval failed'); }
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function rejectCase(id) {
+  fetch(API + '/autopilot/cases/' + id + '/reject', { method: 'POST' }).then(function(r) {
+    if (r.ok) { alert('Case #' + id + ' rejected'); viewCase(id); }
+    else { alert('Rejection failed'); }
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function executeCase(id) {
+  if (!confirm('Execute response plan for Case #' + id + '?')) return;
+  fetch(API + '/autopilot/cases/' + id + '/execute', { method: 'POST' }).then(function(r) {
+    if (r.ok) { alert('Case #' + id + ' execution triggered'); viewCase(id); }
+    else { alert('Execution failed'); }
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+loadCases();
+</script>
+</body>
+</html>

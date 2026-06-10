@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Audit Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    select {
+      min-width: 320px;
+    }
+
+    button {
+      background: #2563eb;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .status-line {
+      margin-top: 12px;
+      font-weight: bold;
+      color: #93c5fd;
+    }
+
+    .status-critical {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .status-warning {
+      color: #fcd34d;
+      font-weight: bold;
+    }
+
+    .status-ok {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .generated-yes {
+      color: #4ade80;
+      font-weight: bold;
+    }
+
+    .generated-no {
+      color: #f87171;
+      font-weight: bold;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #334155;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(15,23,42,0.5);
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+<div class="title">Mission Control Audit Reports</div>
+  <div class="subtitle">Audit Reporting & Compliance Review</div>
+</div>
+
+<div class="container">
+
+<div class="card">
+  <h2>Load Reports</h2>
+
+  <div class="actions">
+    <button onclick="goHome()">Home</button>
+
+    <select id="siteSelect"></select>
+
+    <button onclick="loadBatches()">Load Audit Batches</button>
+
+    <button onclick="openActiveDeviceRegister()">
+      Active Device Register
+    </button>
+  </div>
+
+  <p id="reportStatus" class="status-line">
+    Select a site to load audit reports.
+  </p>
+</div>
+
+<div class="card">
+  <h2>Audit Batches</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Generate / Store</th>
+          <th>Download</th>
+          <th>SharePoint</th>
+          <th>View</th>
+          <th>Stored</th>
+          <th>Status</th>
+          <th>Critical</th>
+          <th>Warnings</th>
+          <th>Batch ID</th>
+          <th>Site</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
+      <tbody id="batchTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  Mission Control Audit Platform
+</div>
+
+</div>
+
+<script>
+const API = "/audit-api";
+
+function safe(v) {
+  return v ?? "";
+}
+
+function goHome() {
+  window.location.href = "/index-platform.html";
+}
+
+function openActiveDeviceRegister() {
+  const siteId = document.getElementById("siteSelect").value;
+
+  if (!siteId) {
+    alert("Please select a site first.");
+    return;
+  }
+
+  window.location.href =
+    `/active-device-register.html?site_id=${encodeURIComponent(siteId)}`;
+}
+
+async function loadSites() {
+  const res = await fetch(`${API}/sites`);
+  const sites = await res.json();
+
+  const select = document.getElementById("siteSelect");
+  select.innerHTML = "";
+
+  sites.forEach(site => {
+    const option = document.createElement("option");
+    option.value = site.site_id;
+    option.textContent = site.site_name;
+    select.appendChild(option);
+  });
+
+  document.getElementById("reportStatus").textContent =
+    `Sites loaded: ${sites.length}`;
+}
+
+function statusClass(summary) {
+  if ((summary?.critical || 0) > 0) return "status-critical";
+  if ((summary?.warnings || 0) > 0) return "status-warning";
+  return "status-ok";
+}
+
+function statusText(summary) {
+  if ((summary?.critical || 0) > 0) return "Critical";
+  if ((summary?.warnings || 0) > 0) return "Warning";
+  return "OK";
+}
+
+async function loadBatches() {
+  const siteId = document.getElementById("siteSelect").value;
+
+  if (!siteId) {
+    alert("Please select a site.");
+    return;
+  }
+
+  document.getElementById("reportStatus").textContent =
+    "Loading audit batches...";
+
+  // Check if SharePoint is enabled for this site
+  var spEnabled = false;
+  try {
+    const siteRes = await fetch(API + "/sites/" + siteId);
+    if (siteRes.ok) {
+      const siteData = await siteRes.json();
+      spEnabled = siteData.sharepoint_enabled === true;
+    }
+  } catch(e) {}
+
+  const res = await fetch(
+    `${API}/audit-batches?site_id=${encodeURIComponent(siteId)}`
+  );
+
+  const batches = await res.json();
+
+  const tbody = document.getElementById("batchTable");
+  tbody.innerHTML = "";
+
+  for (const batch of batches) {
+
+    let report;
+
+    try {
+      const reportRes = await fetch(
+        `${API}/audit-report/${batch.audit_batch_id}`
+      );
+
+      report = await reportRes.json();
+
+    } catch (err) {
+      console.log(err);
+      continue;
+    }
+
+    const tr = document.createElement("tr");
+
+    const summary = report.summary || {};
+
+    tr.innerHTML = `
+      <td>
+        <button onclick="storeReport('${batch.audit_batch_id}')">
+          Generate
+        </button>
+      </td>
+
+      <td>
+        <button onclick="downloadReport('${batch.audit_batch_id}')">
+          Download PDF
+        </button>
+      </td>
+
+      <td>
+        ${spEnabled
+          ? '<button onclick="uploadSharePoint(\'' + batch.audit_batch_id + '\')" style="background:#1a2e1a;border:1px solid #166534;">Upload to SharePoint</button>'
+          : '<span style="color:#64748b;font-size:11px;">Not configured</span>'}
+      </td>
+
+      <td>
+        <button onclick="viewReport('${batch.audit_batch_id}')">
+          View
+        </button>
+      </td>
+
+      <td class="${batch.report_generated ? "generated-yes" : "generated-no"}">
+        ${batch.report_generated ? "YES" : "NO"}
+      </td>
+
+      <td class="${statusClass(summary)}">
+        ${statusText(summary)}
+      </td>
+
+      <td>${summary.critical || 0}</td>
+
+      <td>${summary.warnings || 0}</td>
+
+      <td>${safe(batch.audit_batch_id)}</td>
+
+      <td>${safe(batch.site_name)}</td>
+
+      <td>${safe(batch.audit_date)}</td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById("reportStatus").textContent =
+    `Loaded ${batches.length} audit batches.`;
+}
+
+async function storeReport(batchId) {
+  const res = await fetch(
+    `${API}/audit-report/store/${batchId}`,
+    {
+      method: "POST"
+    }
+  );
+
+  if (!res.ok) {
+    alert("Report generation failed.");
+    return;
+  }
+
+  alert("Report generated and stored.");
+  loadBatches();
+}
+
+function downloadReport(batchId) {
+  window.open(
+    `${API}/audit-report/executive-pdf/${batchId}`,
+    "_blank"
+  );
+}
+
+function viewReport(batchId) {
+  window.location.href =
+    `/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+}
+
+async function uploadSharePoint(batchId) {
+  if (!confirm("Upload this report PDF to SharePoint?")) return;
+
+  var btn = event.target;
+  var origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Uploading...";
+
+  try {
+    var res = await fetch(API + "/audit-report/upload-sharepoint/" + batchId, { method: "POST" });
+    var data = await res.json();
+
+    if (!res.ok) {
+      alert("Upload failed: " + (data.detail || "Unknown error"));
+      return;
+    }
+
+    var url = data.sharepoint_url;
+    if (url) {
+      alert("Uploaded successfully!\n\nSharePoint URL:\n" + url);
+    } else {
+      alert("Uploaded successfully!");
+    }
+
+    loadBatches();
+  } catch(e) {
+    alert("Upload failed: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+loadSites();
+</script>
+
+</body>
+</html>

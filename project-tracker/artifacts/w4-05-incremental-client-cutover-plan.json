@@ -1,0 +1,244 @@
+{
+  "taskId": "W4-05",
+  "title": "Incremental client cutover plan",
+  "generatedAt": "2026-06-06T07:33:09Z",
+  "objective": "Define a phased client migration from Firebase-backed integrations to platform APIs with explicit rollback switches per client surface.",
+  "inputs": {
+    "dependenciesSatisfiedBy": [
+      {
+        "taskId": "W4-01",
+        "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-01-android-integration-mapping.json"
+      },
+      {
+        "taskId": "W4-02",
+        "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-02-ios-integration-mapping.json"
+      },
+      {
+        "taskId": "W4-03",
+        "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-03-web-admin-integration-plan.json"
+      },
+      {
+        "taskId": "W4-04",
+        "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-04-portal-public-integration-impact-assessment.json"
+      }
+    ]
+  },
+  "cutoverControls": {
+    "principles": [
+      "Prefer server-side feature flags and API gateway routing over client redeploy-only toggles.",
+      "Keep Firebase read paths available in shadow mode during early phases for parity checks.",
+      "Use per-surface rollback switches with independent activation to avoid global blast radius."
+    ],
+    "globalSafeguards": [
+      "Release freeze window and on-call coverage for each cutover phase.",
+      "SLO-based guardrails: error rate, latency, and data parity thresholds must remain within agreed bounds.",
+      "Automated rollback trigger if critical user journey failures exceed threshold for >10 minutes."
+    ]
+  },
+  "clientSurfaces": [
+    {
+      "surface": "web-admin",
+      "primaryFlows": [
+        "auth/session",
+        "customers/contractors/assets CRUD",
+        "activity reporting"
+      ],
+      "cutoverSwitches": [
+        {
+          "key": "ff.web_admin.api_auth_v1",
+          "defaultState": false,
+          "purpose": "Route login/claims resolution to platform auth endpoints."
+        },
+        {
+          "key": "ff.web_admin.api_domain_v1",
+          "defaultState": false,
+          "purpose": "Route customer/contractor/asset operations to platform APIs."
+        },
+        {
+          "key": "ff.web_admin.api_activity_v1",
+          "defaultState": false,
+          "purpose": "Route activity summary/detail calls to platform analytics endpoints."
+        }
+      ],
+      "rollbackSwitches": [
+        "ff.web_admin.api_auth_v1=false",
+        "ff.web_admin.api_domain_v1=false",
+        "ff.web_admin.api_activity_v1=false"
+      ]
+    },
+    {
+      "surface": "web-public-portal",
+      "primaryFlows": [
+        "request lifecycle",
+        "notes/history",
+        "notification fan-out expectations"
+      ],
+      "cutoverSwitches": [
+        {
+          "key": "ff.portal.api_requests_v1",
+          "defaultState": false,
+          "purpose": "Move request list/detail/status transitions to platform APIs."
+        },
+        {
+          "key": "ff.portal.api_history_v1",
+          "defaultState": false,
+          "purpose": "Move request history/note reads+writes to platform APIs."
+        },
+        {
+          "key": "ff.portal.realtime_channel_v1",
+          "defaultState": false,
+          "purpose": "Enable websocket/SSE replacement for Firestore realtime behavior."
+        }
+      ],
+      "rollbackSwitches": [
+        "ff.portal.api_requests_v1=false",
+        "ff.portal.api_history_v1=false",
+        "ff.portal.realtime_channel_v1=false"
+      ]
+    },
+    {
+      "surface": "android",
+      "primaryFlows": [
+        "request create/update",
+        "notes/timeline",
+        "invoice and image flows",
+        "push token and OTP flows"
+      ],
+      "cutoverSwitches": [
+        {
+          "key": "ff.android.api_requests_v1",
+          "defaultState": false,
+          "purpose": "Route request and timeline operations to platform API."
+        },
+        {
+          "key": "ff.android.api_media_v1",
+          "defaultState": false,
+          "purpose": "Use signed upload/download URLs in place of Firebase storage."
+        },
+        {
+          "key": "ff.android.api_identity_v1",
+          "defaultState": false,
+          "purpose": "Move OTP/token registration and validation to platform endpoints."
+        }
+      ],
+      "rollbackSwitches": [
+        "ff.android.api_requests_v1=false",
+        "ff.android.api_media_v1=false",
+        "ff.android.api_identity_v1=false"
+      ]
+    },
+    {
+      "surface": "ios",
+      "primaryFlows": [
+        "registration/auth transitions",
+        "request + notes/timeline",
+        "invoice, media, push token lifecycle"
+      ],
+      "cutoverSwitches": [
+        {
+          "key": "ff.ios.api_requests_v1",
+          "defaultState": false,
+          "purpose": "Route request and workflow operations to platform API."
+        },
+        {
+          "key": "ff.ios.api_media_v1",
+          "defaultState": false,
+          "purpose": "Move to signed media upload/download flow."
+        },
+        {
+          "key": "ff.ios.api_identity_v1",
+          "defaultState": false,
+          "purpose": "Move OTP/push-token and identity verification operations."
+        }
+      ],
+      "rollbackSwitches": [
+        "ff.ios.api_requests_v1=false",
+        "ff.ios.api_media_v1=false",
+        "ff.ios.api_identity_v1=false"
+      ]
+    }
+  ],
+  "phasedSequence": [
+    {
+      "phase": 0,
+      "name": "Readiness and shadowing",
+      "actions": [
+        "Implement API clients/adapters in each client without user-visible behavior change.",
+        "Enable shadow reads/writes where feasible to compare Firebase vs platform outputs.",
+        "Baseline telemetry dashboards per surface before first traffic migration."
+      ],
+      "exitCriteria": [
+        "Parity checks pass for core payload fields and status transitions.",
+        "No P0/P1 defects open in migrated pathways."
+      ]
+    },
+    {
+      "phase": 1,
+      "name": "Internal and low-risk cutover",
+      "actions": [
+        "Cut over web-admin auth and low-risk read operations first.",
+        "Cut over portal read paths for request lists/history with fallback retained.",
+        "Keep mobile write flows on Firebase until API error budget is proven."
+      ],
+      "trafficStrategy": "10% canary -> 50% -> 100% per surface after 24h healthy soak."
+    },
+    {
+      "phase": 2,
+      "name": "Transactional write cutover",
+      "actions": [
+        "Enable request status transitions and note writes through platform APIs.",
+        "Enable mobile request write flows, then media and identity subflows.",
+        "Activate realtime replacement channel for portal if required by UX parity."
+      ],
+      "trafficStrategy": "Progressive cohort rollout with per-surface independent rollback."
+    },
+    {
+      "phase": 3,
+      "name": "Firebase retirement",
+      "actions": [
+        "Disable Firebase-dependent code paths behind flags once stability gates pass.",
+        "Archive migration parity reports and incident logs.",
+        "Remove dead code and legacy SDK dependencies in final cleanup release."
+      ],
+      "exitCriteria": [
+        "All surface switches stable at API mode for two full release cycles.",
+        "Rollback switches unused for 14 consecutive days."
+      ]
+    }
+  ],
+  "rollbackPlaybook": {
+    "triggerConditions": [
+      "Critical path failures in request submission/approval/history retrieval.",
+      "Sustained API 5xx above threshold or p95 latency breach.",
+      "Data integrity mismatch detected in parity monitor."
+    ],
+    "steps": [
+      "Disable impacted surface switch(es) only; do not globally disable all clients unless cross-surface incident.",
+      "Confirm traffic restoration to Firebase path and validate user journey smoke tests.",
+      "Create incident record with timeline, failure mode, and remediation owner.",
+      "Re-enter canary stage after fix and targeted validation."
+    ],
+    "maxRollbackTimeTargetMinutes": 15
+  },
+  "validationAndEvidence": {
+    "requiredChecks": [
+      "Client smoke tests for login/request/note/image/invoice critical paths.",
+      "Contract tests for migrated endpoints and payload compatibility.",
+      "Observability checks for latency, error rate, and notification delivery."
+    ],
+    "evidenceArtifacts": [
+      "Canary health snapshots",
+      "Parity diff reports",
+      "Rollback drill results"
+    ]
+  },
+  "ownership": {
+    "releaseCoordinator": "Oz",
+    "surfaceLeads": {
+      "web-admin": "Platform + Admin FE",
+      "web-public-portal": "Portal FE + Platform API",
+      "android": "Mobile Android + Platform API",
+      "ios": "Mobile iOS + Platform API"
+    }
+  }
+}

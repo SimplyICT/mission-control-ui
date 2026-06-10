@@ -1,0 +1,150 @@
+{
+  "task": "W2-03",
+  "title": "Backfill Verification for Status Events",
+  "generated_at": "2026-06-06T22:06:38.000Z",
+  "overall_status": "STATIC_VERIFIED_MANUAL_REQUIRED",
+  "summary": {
+    "migration_files_found": 3,
+    "request_status_events_migration": "20260605003000_request_status_events.sql",
+    "backfill_sql_checks_pass": 6,
+    "backfill_sql_checks_acceptable": 1,
+    "forward_path_checks_pass": 4,
+    "seed_checks_manual_required": 3,
+    "api_reachability": "UNREACHABLE (network constraint)"
+  },
+  "migrations": [
+    {
+      "file": "20260604000000_init_schema.sql",
+      "applied": "2026-06-04",
+      "description": "Initial schema: users, customers, profiles, requests, request_notes, request_invoices, request_images, device_tokens, OTP, service_types tables with enum types",
+      "creates_request_status_events": false
+    },
+    {
+      "file": "20260604190000_seed_service_types.sql",
+      "applied": "2026-06-04",
+      "description": "Seed: 5 service_types (Electrical, Plumbing, HVAC, General Maintenance, Security) via ON CONFLICT DO UPDATE \u2014 idempotent",
+      "creates_request_status_events": false
+    },
+    {
+      "file": "20260605003000_request_status_events.sql",
+      "applied": "2026-06-05",
+      "description": "Creates request_status_events table; backfills legacy rows; adds indexes",
+      "creates_request_status_events": true
+    }
+  ],
+  "backfill_analysis": {
+    "sql": "insert into request_status_events (request_id, status, changed_by_profile_id, changed_at)\nselect r.id, r.status, r.customer_location_profile_id, coalesce(r.created_at, now())\nfrom requests r\nwhere not exists (\n  select 1\n  from request_status_events rse\n  where rse.request_id = r.id\n);",
+    "checks": [
+      {
+        "check": "idempotency",
+        "status": "PASS",
+        "detail": "WHERE NOT EXISTS guard ensures no duplicate events if migration is re-run. Safe to replay."
+      },
+      {
+        "check": "coverage_logic",
+        "status": "PASS",
+        "detail": "Selects ALL requests without a pre-existing event. No request can be silently skipped unless the request row itself is corrupt."
+      },
+      {
+        "check": "status_accuracy",
+        "status": "ACCEPTABLE_WITH_NOTE",
+        "detail": "Backfill records r.status at migration-run time (June 5 2026), not the original creation status. For requests that transitioned before the migration (e.g., pending_approval -> completed), the backfilled event captures the final status, not the chain. Functionally acceptable \u2014 the timeline endpoint is designed to show 'state at point in time' and newly created requests are fully accurate. Historical accuracy is bounded to pre-June-5 transitions."
+      },
+      {
+        "check": "changed_at_accuracy",
+        "status": "PASS",
+        "detail": "Uses COALESCE(r.created_at, now()) \u2014 anchors the synthetic event at request creation time, not migration time. Correct."
+      },
+      {
+        "check": "changed_by_attribution",
+        "status": "PASS",
+        "detail": "Uses customer_location_profile_id as backfill author \u2014 the originating party for request creation. Semantically correct."
+      },
+      {
+        "check": "null_handling",
+        "status": "PASS",
+        "detail": "r.status is NOT NULL in schema (NOT NULL DEFAULT 'pending_approval'); r.customer_location_profile_id is NOT NULL. No null propagation risk."
+      },
+      {
+        "check": "index_coverage",
+        "status": "PASS",
+        "detail": "Migration adds idx_request_status_events_request_id and idx_request_status_events_changed_at. Both queries in the timeline endpoint are indexed."
+      }
+    ]
+  },
+  "forward_path_checks": [
+    {
+      "path": "POST /v1/requests",
+      "file": "src/routes/requests.ts",
+      "check": "new_request_event_atomicity",
+      "status": "PASS",
+      "detail": "Request INSERT and initial status event INSERT are wrapped in BEGIN/COMMIT. If the event insert fails, the request is rolled back. No orphan requests can exist without an event."
+    },
+    {
+      "path": "PATCH /v1/requests/:requestId/status",
+      "file": "src/routes/requests.ts",
+      "check": "status_change_event_guard",
+      "status": "PASS",
+      "detail": "Event is only inserted when currentStatus !== statusToSet. No duplicate events on idempotent PATCH calls. Event insert is inside BEGIN/COMMIT with the status update \u2014 atomic."
+    },
+    {
+      "path": "GET /v1/requests/:requestId/timeline",
+      "file": "src/routes/requests.ts",
+      "check": "timeline_query_correctness",
+      "status": "PASS",
+      "detail": "UNION ALL of request_status_events (event_type='status_change') and request_notes (event_type='note'). Both legs use occurred_at for ordering. Ownership check (profile ID match) prevents cross-tenant leakage. visibility filter on notes ('public' or matching profile_type) is correct."
+    },
+    {
+      "path": "POST /v1/requests",
+      "file": "src/routes/requests.ts",
+      "check": "contractor_cancel_reset_event",
+      "status": "PASS",
+      "detail": "When a contractor cancels/declines, status is reset to 'pending_approval' and contractor_profile_id is set to null. A status_change event is still recorded for the new effective status. Correct."
+    }
+  ],
+  "seed_checks": [
+    {
+      "entity": "service_types",
+      "check": "seed_migration_present",
+      "status": "PASS",
+      "detail": "20260604190000_seed_service_types.sql seeds 5 records: Electrical, Plumbing, HVAC, General Maintenance, Security. ON CONFLICT DO UPDATE \u2014 idempotent."
+    },
+    {
+      "entity": "service_types",
+      "check": "seed_row_count_live",
+      "status": "MANUAL_REQUIRED",
+      "detail": "Live DB row count not verified: platform API Supabase credentials not available in current environment. Expected: 5 rows. Run: SELECT count(*) FROM service_types;"
+    },
+    {
+      "entity": "request_status_events",
+      "check": "backfill_row_count_live",
+      "status": "MANUAL_REQUIRED",
+      "detail": "Cannot verify live row count without DB access. Required check: SELECT count(*) FROM requests r WHERE NOT EXISTS (SELECT 1 FROM request_status_events WHERE request_id=r.id); Expected result: 0 (no unmatched requests)."
+    },
+    {
+      "entity": "request_status_events",
+      "check": "timestamp_plausibility_live",
+      "status": "MANUAL_REQUIRED",
+      "detail": "Cannot verify timestamp ranges without DB access. Required check: SELECT count(*) FROM request_status_events WHERE changed_at > now(); Expected result: 0 (no future-dated events)."
+    }
+  ],
+  "api_reachability_checks": [
+    {
+      "endpoint": "GET /v1/health",
+      "status": "UNREACHABLE",
+      "detail": "api.simplyclik.com did not respond (HTTP 000 / connection refused) from both remote server and local machine. May be VPN-only or not yet DNS-live. Cannot confirm live deployment status from current environment."
+    },
+    {
+      "endpoint": "GET /v1/reference/service-types",
+      "status": "UNREACHABLE",
+      "detail": "Same network constraint. Would return 200+service_types array if accessible."
+    }
+  ],
+  "verdict": "Backfill SQL logic is correct: idempotent WHERE NOT EXISTS guard, proper timestamp anchoring (coalesce to request.created_at), correct author attribution. Forward path is fully correct: new requests and status changes both emit events atomically in transactions. Timeline endpoint queries the table correctly with proper ownership and visibility filtering. One acceptable historical limitation: backfill captures status at migration time, not full transition history for pre-existing requests \u2014 this is expected and not a correctness defect. 3 manual checks remain for live DB row-count and timestamp plausibility verification (no platform API Supabase credentials available in current environment). API endpoint unreachable from current network \u2014 VPN or internal access required for live smoke test.",
+  "required_manual_steps": [
+    "Connect to platform API Supabase and run: SELECT count(*) FROM requests r WHERE NOT EXISTS (SELECT 1 FROM request_status_events WHERE request_id=r.id); \u2014 expect 0",
+    "Run: SELECT count(*) FROM request_status_events WHERE changed_at > now(); \u2014 expect 0",
+    "Run: SELECT count(*) FROM service_types; \u2014 expect 5",
+    "Run rollout-readiness.ts with valid ROLLOUT_BASE_URL/ROLLOUT_TOKEN once api.simplyclik.com is reachable"
+  ]
+}

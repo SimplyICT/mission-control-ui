@@ -1,0 +1,721 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device Records</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: rgba(18, 24, 34, 0.96);
+      --panel2: rgba(12, 18, 26, 0.98);
+      --border: rgba(84, 214, 255, 0.18);
+      --text: #e7f6ff;
+      --muted: #8fa6b5;
+      --cyan: #00e5ff;
+      --green: #00e676;
+      --amber: #ffca28;
+      --red: #ff1744;
+      --blue: #2196f3;
+      --purple: #9c27b0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(0, 229, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 23, 68, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 8, 13, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      color: var(--cyan);
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    select, input {
+      background: #05070a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    select { min-width: 220px; }
+
+    button {
+      background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(33,150,243,0.35));
+      color: var(--text);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 8px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:hover { border-color: var(--cyan); }
+
+    .danger-button {
+      background: linear-gradient(135deg, rgba(255,23,68,0.20), rgba(156,39,176,0.28));
+      border-color: rgba(255,23,68,0.35);
+    }
+
+    .wrap {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+    }
+
+    .full { grid-column: span 12; }
+
+    .kpi {
+      grid-column: span 3;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .kpi .value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .kpi .sub {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .muted { color: var(--muted); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .amber { color: var(--amber); }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin: 8px 0 0;
+    }
+
+    .error {
+      color: var(--red);
+      background: rgba(255,23,68,0.08);
+      border: 1px solid rgba(255,23,68,0.3);
+      padding: 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .success {
+      color: var(--green);
+      background: rgba(0,230,118,0.08);
+      border: 1px solid rgba(0,230,118,0.3);
+      padding: 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .scroll {
+      max-height: 620px;
+      overflow: auto;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    th, td {
+      padding: 9px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.8px;
+      position: sticky;
+      top: 0;
+      background: rgba(12, 18, 26, 0.98);
+      z-index: 1;
+    }
+
+    tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .serial-col {
+      font-family: "Courier New", monospace;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+    }
+
+    .ACTIVE { color: var(--green); border-color: rgba(0,230,118,0.5); background: rgba(0,230,118,0.08); }
+    .INACTIVE { color: var(--red); border-color: rgba(255,23,68,0.5); background: rgba(255,23,68,0.08); }
+    .UNKNOWN { color: var(--amber); border-color: rgba(255,202,40,0.45); background: rgba(255,202,40,0.08); }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 40;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal {
+      width: min(720px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      padding: 18px;
+    }
+
+    .modal h2 {
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1150px) {
+      .kpi { grid-column: span 6; }
+    }
+
+    @media (max-width: 700px) {
+      .kpi { grid-column: span 12; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .controls { justify-content: flex-start; }
+      select { min-width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>🛡️ Device Records</h1>
+      <span id="subtitle">Audit device inventory · active records · site assignment</span>
+    </div>
+    <div class="controls">
+<button onclick="goHome()">Audit Home</button>
+      <select id="siteSelect"></select>
+      <select id="activeFilter">
+        <option value="true">Active only</option>
+        <option value="false">Inactive only</option>
+        <option value="all">All devices</option>
+      </select>
+      <button onclick="loadDevices()">Refresh</button>
+      <button onclick="openAddDevice()">+ Add Device</button>
+      <button onclick="exportDevices()" style="background:#0e7490;border-color:#0e7490;">&#11015; Export CSV</button>
+      <label style="cursor:pointer;">
+        <span style="display:inline-block;padding:6px 12px;background:#065f46;border:1px solid #065f46;border-radius:6px;font-size:13px;color:#e2e8f0;cursor:pointer;">&#11014; Import CSV</span>
+        <input type="file" id="importCsvInput" accept=".csv" style="display:none;" onchange="importDevices(this)">
+      </label>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="full error" id="errorBox"></div>
+    <div class="full success" id="successBox"></div>
+
+    <div class="card kpi">
+      <div class="label">Loaded Devices</div>
+      <div class="value" id="kpiTotal">--</div>
+      <div class="sub" id="kpiSite">Select a site</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Active Filter</div>
+      <div class="value" id="kpiFilter">--</div>
+      <div class="sub">Current table view</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Selected Site</div>
+      <div class="value" id="kpiSiteShort">--</div>
+      <div class="sub">Device register scope</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Actions</div>
+      <div class="value">＋</div>
+      <div class="sub">Add or edit devices</div>
+    </div>
+
+    <div class="card full">
+      <h2>
+        Device Inventory
+        <span class="muted" id="deviceCountLabel">No devices loaded</span>
+      </h2>
+      <p id="siteStatus" class="status-line">Loading sites...</p>
+      <p id="deviceStatus" class="status-line">Select a site to load device records.</p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Edit</th>
+              <th>Active</th>
+              <th>Serial</th>
+              <th>Type</th>
+              <th>Brand / Model</th>
+              <th>Device Name</th>
+              <th>Room/User</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="deviceTable">
+            <tr><td colspan="8" class="muted">No devices loaded.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="addModal">
+    <div class="modal">
+      <h2>Add Device</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Site</label>
+          <input id="addSiteName" readonly />
+        </div>
+        <div class="field">
+          <label>Serial Number *</label>
+          <input id="addSerial" />
+        </div>
+        <div class="field">
+          <label>Device Type *</label>
+          <input id="addDeviceType" value="Tablet" />
+        </div>
+        <div class="field">
+          <label>Brand / Model *</label>
+          <input id="addBrandModel" />
+        </div>
+        <div class="field">
+          <label>Device Name</label>
+          <input id="addDeviceName" />
+        </div>
+        <div class="field">
+          <label>Room / User</label>
+          <input id="addRoom" />
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="addStatus">
+            <option value="active">active</option>
+            <option value="inactive">inactive</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Active</label>
+          <select id="addIsActive">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="danger-button" onclick="closeAddDevice()">Cancel</button>
+        <button onclick="createDevice()">Create Device</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "/audit-api";
+    let lastDevices = [];
+
+    function safe(value) {
+      return value === null || value === undefined ? "" : String(value);
+    }
+
+    function escapeHtml(value) {
+      return safe(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function showSuccess(message) {
+      const box = document.getElementById("successBox");
+      box.style.display = "block";
+      box.textContent = message;
+      setTimeout(() => {
+        box.style.display = "none";
+        box.textContent = "";
+      }, 3500);
+    }
+
+    function isActive(value) {
+      if (value === undefined || value === null || value === "") return true;
+      if (typeof value === "boolean") return value;
+      return !["false", "0", "no", "n", "inactive"].includes(String(value).toLowerCase());
+    }
+
+    function activeBadge(value) {
+      const active = isActive(value);
+      const status = active ? "ACTIVE" : "INACTIVE";
+      return `<span class="status-pill ${status}">${status}</span>`;
+    }
+
+    function selectedSiteName() {
+      const select = document.getElementById("siteSelect");
+      return select.options[select.selectedIndex]?.textContent || "";
+    }
+
+    function selectedSiteId() {
+      return document.getElementById("siteSelect").value;
+    }
+
+    function goHome() {
+      window.location.href = "/index-platform.html";
+    }
+
+    function updateKpis(devices) {
+      const siteName = selectedSiteName() || "No site";
+      const filter = document.getElementById("activeFilter").value;
+      document.getElementById("kpiTotal").textContent = devices.length;
+      document.getElementById("kpiSite").textContent = siteName;
+      document.getElementById("kpiFilter").textContent = filter === "all" ? "ALL" : filter.toUpperCase();
+      document.getElementById("kpiSiteShort").textContent = siteName.split(" ")[0] || "--";
+      document.getElementById("deviceCountLabel").textContent = `${devices.length} devices`;
+      document.getElementById("subtitle").textContent = `${siteName} · ${new Date().toLocaleString()}`;
+    }
+
+    async function loadSites() {
+      clearError();
+
+      try {
+        const res = await fetch(`${API}/sites`);
+        const sites = await res.json();
+
+        if (!res.ok) {
+          throw new Error(sites.detail || "Could not load sites.");
+        }
+
+        const select = document.getElementById("siteSelect");
+        select.innerHTML = "";
+
+        sites.forEach(site => {
+          const option = document.createElement("option");
+          option.value = site.site_id;
+          option.textContent = site.site_name;
+          select.appendChild(option);
+        });
+
+        document.getElementById("siteStatus").textContent = `Sites loaded: ${sites.length}`;
+        updateKpis([]);
+      } catch (err) {
+        showError(`Site load failed: ${err.message}`);
+      }
+    }
+
+    async function loadDevices() {
+      clearError();
+
+      const siteId = selectedSiteId();
+      const siteName = selectedSiteName();
+
+      if (!siteId) {
+        showError("Please select a site first.");
+        return;
+      }
+
+      try {
+        const activeFilter = document.getElementById("activeFilter").value;
+        const res = await fetch(`${API}/devices?site_id=${encodeURIComponent(siteId)}&active=${encodeURIComponent(activeFilter)}`);
+        const devices = await res.json();
+
+        if (!res.ok) {
+          throw new Error(devices.detail || "Could not load devices.");
+        }
+
+        lastDevices = devices;
+
+        const tbody = document.getElementById("deviceTable");
+        tbody.innerHTML = "";
+
+        document.getElementById("deviceStatus").textContent =
+          `Devices loaded: ${siteName} · ${devices.length} records`;
+
+        updateKpis(devices);
+
+        if (!devices.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="muted">No devices found.</td></tr>`;
+          return;
+        }
+
+        devices.forEach(device => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td><button onclick="editDevice('${escapeHtml(device.device_id)}')">Edit</button></td>
+            <td>${activeBadge(device.is_active)}</td>
+            <td class="serial-col">${escapeHtml(device.serial_number)}</td>
+            <td>${escapeHtml(device.device_type)}</td>
+            <td>${escapeHtml(device.brand_model)}</td>
+            <td>${escapeHtml(device.device_name)}</td>
+            <td>${escapeHtml(device.assigned_user_room || device.assigned_room || device.assigned_user)}</td>
+            <td>${escapeHtml(device.status)}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        showError(`Device load failed: ${err.message}`);
+      }
+    }
+
+    function editDevice(deviceId) {
+      if (!deviceId) {
+        showError("Missing device ID.");
+        return;
+      }
+      window.location.href = `/device-update.html?device_id=${encodeURIComponent(deviceId)}`;
+    }
+
+    function openAddDevice() {
+      clearError();
+
+      if (!selectedSiteId()) {
+        showError("Please select a site first.");
+        return;
+      }
+
+      document.getElementById("addSiteName").value = selectedSiteName();
+      document.getElementById("addSerial").value = "";
+      document.getElementById("addDeviceType").value = "Tablet";
+      document.getElementById("addBrandModel").value = "";
+      document.getElementById("addDeviceName").value = "";
+      document.getElementById("addRoom").value = "";
+      document.getElementById("addStatus").value = "active";
+      document.getElementById("addIsActive").value = "true";
+      document.getElementById("addModal").style.display = "flex";
+    }
+
+    function closeAddDevice() {
+      document.getElementById("addModal").style.display = "none";
+    }
+
+    async function createDevice() {
+      clearError();
+
+      const siteId = selectedSiteId();
+      const serial = document.getElementById("addSerial").value.trim();
+      const deviceType = document.getElementById("addDeviceType").value.trim();
+      const brandModel = document.getElementById("addBrandModel").value.trim();
+
+      if (!siteId) {
+        showError("Please select a site first.");
+        return;
+      }
+
+      if (!serial) {
+        showError("Serial Number is required.");
+        return;
+      }
+
+      if (!deviceType) {
+        showError("Device Type is required.");
+        return;
+      }
+
+      if (!brandModel) {
+        showError("Brand / Model is required.");
+        return;
+      }
+
+      const payload = {
+        site_id: siteId,
+        serial_number: serial,
+        device_type: deviceType,
+        brand_model: brandModel,
+        device_name: document.getElementById("addDeviceName").value.trim(),
+        assigned_user_room: document.getElementById("addRoom").value.trim(),
+        status: document.getElementById("addStatus").value,
+        is_active: document.getElementById("addIsActive").value === "true"
+      };
+
+      try {
+        const res = await fetch(`${API}/devices/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || "Failed to create device.");
+        }
+
+        closeAddDevice();
+        showSuccess("Device created successfully.");
+        loadDevices();
+      } catch (err) {
+        showError(`Create device failed: ${err.message}`);
+      }
+    }
+
+    document.getElementById("siteSelect").addEventListener("change", loadDevices);
+    document.getElementById("activeFilter").addEventListener("change", loadDevices);
+
+    loadSites();
+  
+    async function exportDevices() {
+      const siteId = document.getElementById('siteSelect').value;
+      if (!siteId) { showError('Please select a site first.'); return; }
+      window.location.href = `${API}/devices/export.csv?site_id=${encodeURIComponent(siteId)}`;
+    }
+
+    async function importDevices(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      input.value = '';
+      try {
+        const res = await fetch(`${API}/devices/import`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Import failed');
+        showSuccess(`Import complete: ${data.created} created, ${data.updated} updated, ${data.errors} errors.`);
+        loadDevices();
+      } catch (err) {
+        showError(`Import failed: ${err.message}`);
+      }
+    }
+</script>
+</body>
+</html>

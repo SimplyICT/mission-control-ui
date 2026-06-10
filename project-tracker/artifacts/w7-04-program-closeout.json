@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "task_id": "W7-04",
+  "title": "Program closeout and deprecation documentation",
+  "generated_at": "2026-06-06T23:45:00.000Z",
+  "objective": "Archive the SimplyClik Modernization Program tracker, execute Firebase decommission, and publish final handoff documentation.",
+  "trigger": "Initiated after W7-03 verification report signed off (all gates G1-G5 passed).",
+  "workstream_completion_summary": {
+    "W0_program_setup": {
+      "status": "review",
+      "deliverables": [
+        "Tracker schema (W0-01)",
+        "Dashboard v1 (W0-02)",
+        "Update automation (W0-03)",
+        "Governance cadence (W0-04)"
+      ],
+      "notes": "All W0 deliverables complete; tracker operational throughout program"
+    },
+    "W1_platform_api": {
+      "status": "partial",
+      "deliverables": [
+        "PR #7 merged (W1-01)",
+        "Endpoint parity audit (W1-02)",
+        "Notes/timeline endpoints (W1-02.4)"
+      ],
+      "blocked": [
+        "W1-03 data integrity hardening (platform-api workspace inaccessible)",
+        "W1-04 authorization matrix (same block)",
+        "W1-05 OpenAPI contract alignment (depends on W1-04)"
+      ],
+      "closeout_action": "W1-03, W1-04, W1-05 deferred to post-program backlog; document in handoff"
+    },
+    "W2_database_migrations": {
+      "status": "done",
+      "deliverables": [
+        "Migration replay validation 21/21 (W2-01)",
+        "Seed drift fix commit 403f5cf (W2-02)",
+        "Backfill verification (W2-03)",
+        "Rollback strategy (W2-04)"
+      ],
+      "notes": "All W2 migration reliability tasks complete"
+    },
+    "W3_ci_cd": {
+      "status": "review",
+      "deliverables": [
+        "Required checks policy (W3-01)",
+        "Pipeline baseline 1.12min avg (W3-02)",
+        "Deployment workflow (W3-03)",
+        "Release evidence bundle (W3-04)"
+      ]
+    },
+    "W4_client_integration": {
+      "status": "review",
+      "deliverables": [
+        "Android mapping (W4-01)",
+        "iOS mapping (W4-02)",
+        "Web-admin plan (W4-03)",
+        "Portal assessment (W4-04)",
+        "Incremental cutover plan (W4-05)"
+      ]
+    },
+    "W5_firebase_decommission": {
+      "status": "review",
+      "deliverables": [
+        "Firestore inventory (W5-01)",
+        "Function replacement matrix 19 functions (W5-02)",
+        "Storage parity checks (W5-03)",
+        "Go/no-go checklist (W5-04)"
+      ]
+    },
+    "W6_observability": {
+      "status": "review",
+      "deliverables": [
+        "Structured logging audit (W6-01)",
+        "Metrics/alerts baseline (W6-02)",
+        "Incident runbook (W6-03)",
+        "Secrets rotation playbook (W6-04)"
+      ]
+    },
+    "W7_production_rollout": {
+      "status": "in_progress",
+      "deliverables": [
+        "Migration scripts + UAT (W7-01)",
+        "Canary plan (W7-02)",
+        "Rollout verification (W7-03)"
+      ],
+      "pending": [
+        "Final closeout execution (W7-04, this document)"
+      ]
+    }
+  },
+  "firebase_decommission_sequence": {
+    "prerequisite": "W7-03 all gates G1-G5 signed off; Firebase traffic at zero for >= 24h",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Disable all Firebase feature flags across all surfaces",
+        "detail": "Set all ff.*.api_* flags to permanent-on, disable Firebase fallback code paths",
+        "owner": "Platform + client surface leads",
+        "reversible": false
+      },
+      {
+        "step": 2,
+        "action": "Archive Firebase Firestore data",
+        "detail": "Export full Firestore database via gcloud firestore export to Cloud Storage; retain for 90 days minimum",
+        "owner": "Firebase project owner",
+        "reversible": true,
+        "artifact": "gs://<project>-archive/firestore-export-<date>/"
+      },
+      {
+        "step": 3,
+        "action": "Disable Firebase Cloud Functions",
+        "detail": "Set all functions to minimum replicas 0 or delete; verify invocation count = 0 after 24h",
+        "owner": "Firebase project owner",
+        "reversible": true
+      },
+      {
+        "step": 4,
+        "action": "Remove Firebase SDKs from client codebases",
+        "detail": "Create cleanup PRs for Android, iOS, web-admin, web-portal removing firebase-* dependencies behind decommission flag; merge after 14-day stability window",
+        "owner": "Per-surface leads",
+        "reversible": false,
+        "note": "Do not remove until rollback switches unused for 14 consecutive days (per W4-05 Phase 3 exit criteria)"
+      },
+      {
+        "step": 5,
+        "action": "Decommission Firebase Auth",
+        "detail": "Migrate remaining Firebase Auth users to Supabase Auth if applicable; disable Firebase Auth provider; update client auth initialization",
+        "owner": "Platform team",
+        "reversible": false,
+        "note": "Highest-risk step \u2014 coordinate with all surface leads; requires coordinated release"
+      },
+      {
+        "step": 6,
+        "action": "Disable Firebase project billing",
+        "detail": "Downgrade Firebase project to Spark plan (free tier) or close project after 90-day data retention window",
+        "owner": "Firebase project owner / billing admin",
+        "reversible": true
+      }
+    ]
+  },
+  "documentation_archive_plan": {
+    "tracker": {
+      "action": "Mark all completed tasks as done; export final tasks.json snapshot",
+      "location": "/home/aiagent/mission-control-ui/project-tracker/artifacts/final-tracker-snapshot.json"
+    },
+    "artifacts": {
+      "action": "Copy all program artifacts to long-term storage location",
+      "location": "mission-control-ui/project-tracker/artifacts/ (already versioned in git)"
+    },
+    "migration_scripts": {
+      "action": "Merge PR #8; tag release in SimplyClik repo as v1.0.0-migration",
+      "location": "SimplyICT/SimplyClik app/platform-api/scripts/"
+    },
+    "runbooks": {
+      "action": "Publish W6-03 incident runbook and W6-04 secrets rotation playbook to team wiki",
+      "status": "Artifacts complete; wiki publication pending"
+    }
+  },
+  "post_migration_handoff": {
+    "platform_api_backlog": [
+      "W1-03: Data integrity hardening (requires platform-api source workspace access)",
+      "W1-04: Authorization matrix and negative-path tests (same prerequisite)",
+      "W1-05: OpenAPI contract alignment (depends on W1-04)",
+      "Firebase Auth migration to Supabase Auth (not in scope for this program)"
+    ],
+    "ongoing_operations": [
+      "Monthly secrets rotation per W6-04 playbook",
+      "Weekly metrics review against W6-02 baselines",
+      "Quarterly migration parity audit (W2-03 queries)",
+      "Annual decommission archive review (90-day Firebase data retention)"
+    ],
+    "contacts": {
+      "platform_api": "Platform API owner (SimplyClik engineering)",
+      "firebase_project": "Firebase project owner",
+      "program_lead": "SimplyClik Modernization Program lead"
+    }
+  },
+  "final_sign_off_checklist": [
+    "W7-03 all verification gates G1-G5 signed off",
+    "Firebase Firestore and Functions at zero traffic for >= 24h",
+    "All program artifacts committed to version control",
+    "Post-migration backlog documented and handed off to engineering team",
+    "Incident runbook and secrets rotation playbook published to team wiki",
+    "Firebase project archived or downgraded",
+    "Program lead sign-off obtained"
+  ]
+}

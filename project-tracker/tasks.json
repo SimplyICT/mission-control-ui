@@ -1,0 +1,914 @@
+{
+  "meta": {
+    "project_name": "SimplyClik + Our Neurodiverse Family",
+    "description": "SimplyClik modernization program and Our Neurodiverse Family SEO engagement.",
+    "last_updated": "2026-06-10T07:00:00.000Z",
+    "status_values": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "review",
+      "done"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "W0-01",
+      "workstream": "W0 Program setup and visibility",
+      "title": "Tracker schema and conventions",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Schema and conventions implemented in tracker JSON",
+      "last_updated": "2026-06-05T02:46:05.102Z"
+    },
+    {
+      "id": "W0-02",
+      "workstream": "W0 Program setup and visibility",
+      "title": "Tracker dashboard v1",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W0-01"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Dashboard page implemented and ready for hosting",
+      "last_updated": "2026-06-05T02:46:05.154Z"
+    },
+    {
+      "id": "W0-03",
+      "workstream": "W0 Program setup and visibility",
+      "title": "Update automation script",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W0-01"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "CLI status updater implemented",
+      "last_updated": "2026-06-05T02:46:05.199Z"
+    },
+    {
+      "id": "W0-04",
+      "workstream": "W0 Program setup and visibility",
+      "title": "Governance cadence and escalation",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W0-01",
+        "W0-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "governance:cadence-escalation-v1"
+      ],
+      "notes": "Cadence: daily async status refresh by 09:30 with blockers/dependencies, twice-weekly dependency review (Tue/Fri), and weekly milestone checkpoint. Escalation: blocker >4h notify owner+lead, blocker >24h escalate to program lead with mitigation/options and decision deadline.",
+      "last_updated": "2026-06-05T12:00:11.000Z"
+    },
+    {
+      "id": "W1-01",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Merge and validate PR #7 request timeline/internal notes",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [
+        "https://github.com/SimplyICT/SimplyClik/pull/7"
+      ],
+      "notes": "PR merged with all CI checks passing",
+      "last_updated": "2026-06-05T02:47:34.595Z"
+    },
+    {
+      "id": "W1-02",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Endpoint parity audit against client usage",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-01"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Audit complete. Platform API now covers mobile registration, request list/detail/create/status, notes create/read, timeline read, invoices, images, and push-token endpoints. Remaining major parity gaps are contractor assignment/priority flows, customer/admin/contractor management surfaces, dashboard summary/detail analytics functions, OTP renewal/admin user management functions, and legacy Firebase trigger automations (OTP/email/geo/reassignment/autocomplete).",
+      "last_updated": "2026-06-05T09:14:00.000Z"
+    },
+    {
+      "id": "W1-02.1",
+      "parent_id": "W1-02",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Extract implemented platform-api endpoint surface",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-01"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Enumerated current registration, requests, invoices, images, and devices routes.",
+      "last_updated": "2026-06-05T09:14:00.000Z"
+    },
+    {
+      "id": "W1-02.2",
+      "parent_id": "W1-02",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Audit client backend usage across app surfaces",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02.1"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Mapped Android, iOS, web-admin, and web-portal Firebase usage patterns.",
+      "last_updated": "2026-06-05T09:14:00.000Z"
+    },
+    {
+      "id": "W1-02.3",
+      "parent_id": "W1-02",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Build parity mapping and identify gaps",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02.2"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Produced concrete gap list including missing notes/timeline reads and broader domain gaps.",
+      "last_updated": "2026-06-05T09:14:00.000Z"
+    },
+    {
+      "id": "W1-02.4",
+      "parent_id": "W1-02",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Implement request notes and timeline read endpoints",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02.3"
+      ],
+      "target_date": null,
+      "proof": [
+        "commit:a6feabe"
+      ],
+      "notes": "Added GET /v1/requests/:requestId/notes and GET /v1/requests/:requestId/timeline with tests.",
+      "last_updated": "2026-06-05T09:14:00.000Z"
+    },
+    {
+      "id": "W1-03",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Data integrity hardening",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "https://github.com/SimplyICT/SimplyClik/pull/new/feat/w1-03-data-integrity"
+      ],
+      "notes": "Unblocked: SimplyClik repo cloned to server. Implementation in progress.",
+      "last_updated": "2026-06-05T23:01:36.000Z"
+    },
+    {
+      "id": "W1-04",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "Authorization matrix and negative-path tests",
+      "status": "in_progress",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "command:find /home/aiagent -maxdepth 6 -type d -name platform-api",
+        "command:Get-ChildItem C:/Users/Admin -Directory -Recurse -Depth 4 | ? Name -eq platform-api"
+      ],
+      "notes": "Unblocked: SimplyClik repo cloned to server. Implementation in progress.",
+      "last_updated": "2026-06-06T00:04:49.000Z"
+    },
+    {
+      "id": "W1-05",
+      "workstream": "W1 Platform API completion and hardening",
+      "title": "OpenAPI contract alignment",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-01",
+        "W1-04"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Synchronize endpoint contracts/examples with implemented behavior.",
+      "last_updated": "2026-06-05T02:43:00Z"
+    },
+    {
+      "id": "W2-01",
+      "workstream": "W2 Database and migration reliability",
+      "title": "Migration replay validation",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-01-migration-replay-validation.json"
+      ],
+      "notes": "Migration replay validation complete. 21/21 checks passed against local PostgreSQL 16 container. Schema (6 tables, indexes, RLS policies, seed row), connection pool, users CRUD, triage CRUD (agent scores, incidents, audit log), m365 tenant CRUD all verified via psycopg2 layer. Docker Engine installed in WSL Ubuntu-24.04; validation run in single session to maintain container lifetime.",
+      "last_updated": "2026-06-06T21:45:04.000Z"
+    },
+    {
+      "id": "W2-02",
+      "workstream": "W2 Database and migration reliability",
+      "title": "Seed/version drift detection",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W2-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-02-seed-drift-report.json"
+      ],
+      "notes": "Seed/version drift detection complete. Compared SQLite baseline (git 9e9a816) against PostgreSQL 16 schema via information_schema. Results: 0 high, 0 medium schema drifts; 24 info-level type upgrades (INTEGER->BOOLEAN for flag columns, TEXT->JSONB for details, DATETIME->TIMESTAMPTZ for timestamps) \u2014 all expected and semantically correct. CRITICAL FINDING (fixed): schema.sql seeded admin user with placeholder password hash 'REPLACE_WITH_HASHED_PASSWORD'; users.init_default_admin() uses ON CONFLICT DO NOTHING so the placeholder was never overwritten, breaking admin login on fresh deploys. Fix applied: removed placeholder INSERT from schema.sql (commit 403f5cf); admin seeding now delegated entirely to init_default_admin() at app startup. No schema_versions table exists; recommend adding migration tracking (Alembic/Flyway).",
+      "last_updated": "2026-06-06T21:52:17.000Z"
+    },
+    {
+      "id": "W2-03",
+      "workstream": "W2 Database and migration reliability",
+      "title": "Backfill verification for status events",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-01",
+        "W2-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-03-backfill-verification.json"
+      ],
+      "notes": "Backfill verification complete via static analysis. Migration 20260605003000_request_status_events.sql: 6/7 backfill SQL checks pass, 1 acceptable. 4/4 forward-path code checks pass (atomic transactions, no duplicates, correct timeline UNION with visibility guards). Live DB checks (row count plausibility, timestamp check, service_types count) permanently blocked: platform API Supabase credentials exist only as GitHub Actions CI secrets \u2014 not readable from outside CI. config.toml is local-dev only (project_id='platform-api', no production ref). api.simplyclik.com unreachable (domain not live). Static verification is definitive; live checks are a post-deploy smoke test responsibility.",
+      "last_updated": "2026-06-06T23:00:00.000Z"
+    },
+    {
+      "id": "W2-04",
+      "workstream": "W2 Database and migration reliability",
+      "title": "Rollback strategy documentation",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [
+        "W2-01",
+        "W2-03"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-04-rollback-strategy.json"
+      ],
+      "notes": "Rollback strategy documentation complete. 3 irreversible migration phases documented: P1 (SOC Dashboard SQLite\u2192PostgreSQL full schema), P2 (admin seed delegation fix, commit 403f5cf), P3 (SimplyClik request_status_events migration + backfill). Each phase includes: irreversible operations list, pre-migration checklist, rollback window, rollback procedure with data-loss risk rating, containment procedure, and go/no-go criteria. Highest rollback risk: P3 (organic event writes close rollback window within minutes of API cutover). Cross-cutting controls: pg_dump/PiTR backup within 1h of apply, non-peak change window, staging rehearsal required, evidence artifacts required per phase.",
+      "last_updated": "2026-06-06T23:00:00.000Z"
+    },
+    {
+      "id": "W3-01",
+      "workstream": "W3 CI/CD and release gates",
+      "title": "Required checks policy enforcement",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [
+        ".github/workflows/ci.yml"
+      ],
+      "notes": "CI workflow enforces build, validate, test, and integration-gate jobs; repository branch protection rule should require these checks on master/main.",
+      "last_updated": "2026-06-05T11:57:12.000Z"
+    },
+    {
+      "id": "W3-02",
+      "workstream": "W3 CI/CD and release gates",
+      "title": "Pipeline performance baseline",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W3-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "https://github.com/SimplyICT/SimplyClik/actions/runs/26992298501",
+        "https://github.com/SimplyICT/SimplyClik/actions/runs/26987633177"
+      ],
+      "notes": "CI baseline captured from latest 5 CI runs: avg 1.12 min, fastest 0.93 min, slowest 1.20 min. Current pipeline is stable and fast; next optimization focus should target intermittent failure causes rather than raw duration.",
+      "last_updated": "2026-06-05T12:21:28.000Z"
+    },
+    {
+      "id": "W3-03",
+      "workstream": "W3 CI/CD and release gates",
+      "title": "Deployment workflow codification",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W3-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-repo/README.md",
+        "/home/aiagent/mission-control-repo/autopush.sh",
+        "/home/aiagent/mission-control-ui/mission-control-ui.service"
+      ],
+      "notes": "Deployment workflow codified: (1) Pre-promote gate on candidate branch: run CI (build/validate/test) and confirm tracker/health checks. (2) Staging promotion: sync code to staging workspace, restart mission-control-ui and device-audit-api services, validate /health and key routes. (3) Production promotion: fast-forward to approved commit on main, restart mission-control-ui + device-audit-api + nginx, verify /health and project-tracker endpoints. (4) Rollback: checkout prior known-good commit and restart services; use autopush log + systemd status for audit trail.",
+      "last_updated": "2026-06-05T21:53:10.000Z"
+    },
+    {
+      "id": "W3-04",
+      "workstream": "W3 CI/CD and release gates",
+      "title": "Release evidence bundle automation",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W3-02",
+        "W3-03"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-repo/scripts/release_evidence_bundle.py",
+        "/home/aiagent/mission-control-repo/release-evidence/release-evidence-latest.json",
+        "/home/aiagent/mission-control-repo/release-evidence/release-evidence-20260605T222950Z.json"
+      ],
+      "notes": "Release evidence bundle automation implemented. Script generates timestamped JSON artifacts with candidate label, git branch/head and cleanliness, mission-control service states, local health checks, latest CI signal (GitHub Actions), and tracker snapshot. Run: python3 /home/aiagent/mission-control-repo/scripts/release_evidence_bundle.py --candidate <label>.",
+      "last_updated": "2026-06-05T22:06:52.000Z"
+    },
+    {
+      "id": "W4-01",
+      "workstream": "W4 Client integration migration",
+      "title": "Android integration mapping",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-01-android-integration-mapping.json"
+      ],
+      "notes": "Android integration mapping completed with 13 Firebase-to-platform backend mappings across requests, notes, timeline, invoices, image flows, push token registration, and OTP validation. Key migration gaps identified: presigned image upload/download parity and OTP registration endpoint replacement.",
+      "last_updated": "2026-06-06T00:27:16.000Z"
+    },
+    {
+      "id": "W4-02",
+      "workstream": "W4 Client integration migration",
+      "title": "iOS integration mapping",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-02-ios-integration-mapping.json"
+      ],
+      "notes": "iOS integration mapping completed with 16 Firebase-to-platform mappings across registration, requests, notes/timeline, invoices, images, and push token lifecycle. Main migration gaps identified: OTP validation/consume endpoints and storage signed upload/download parity.",
+      "last_updated": "2026-06-06T00:40:26.000Z"
+    },
+    {
+      "id": "W4-03",
+      "workstream": "W4 Client integration migration",
+      "title": "Web admin integration plan",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-03-web-admin-integration-plan.json"
+      ],
+      "notes": "Web-admin Firebase integration plan completed with feature-by-feature inventory and API target mapping for Auth, Customers, Contractors, Assets, Dashboard, and Activity. Main migration gaps identified: callable-function parity (renewOtp/activity summaries), batch-write transaction semantics, and realtime leads stream replacement.",
+      "last_updated": "2026-06-06T04:19:23.000Z"
+    },
+    {
+      "id": "W4-04",
+      "workstream": "W4 Client integration migration",
+      "title": "Portal/public integration impact assessment",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-04-portal-public-integration-impact-assessment.json"
+      ],
+      "notes": "Portal/public integration impact assessment completed for request, note/history, and notification flows. Key migration gaps identified: realtime parity for request feeds, server-authoritative note visibility/unread-state handling, and transition-triggered notification fan-out.",
+      "last_updated": "2026-06-06T05:02:23.000Z"
+    },
+    {
+      "id": "W4-05",
+      "workstream": "W4 Client integration migration",
+      "title": "Incremental client cutover plan",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W4-01",
+        "W4-02",
+        "W4-03",
+        "W4-04"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-05-incremental-client-cutover-plan.json"
+      ],
+      "notes": "Incremental cutover plan completed with phased sequence, per-client rollback switches (web-admin, portal, android, ios), canary progression, and rollback trigger/response playbook. Defines guardrails and evidence gates for Firebase-to-platform API migration.",
+      "last_updated": "2026-06-06T07:33:09.000Z"
+    },
+    {
+      "id": "W5-01",
+      "workstream": "W5 Legacy Firebase decommission readiness",
+      "title": "Firestore dependency inventory",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [
+        "android-master/android-master/SimplyclikApp/app/src/main/java/com/simplyclik/mobile/firebase/FirebaseService.kt",
+        "ios-master/ios-master/SimplyclikApp/Source/Services/FirebaseService.swift",
+        "web-admin-master/src/components/Firebase/Firebase.tsx",
+        "web-public-portal-master/src/components/Firebase/Firebase.tsx",
+        "firebase-master/functions/src/index.ts"
+      ],
+      "notes": "Inventory captured across Android, iOS, web-admin, web-portal, and Firebase Cloud Functions. Active dependencies include auth, Firestore CRUD, callable functions, push messaging, OTP/notification triggers, and scheduled reassignment/autocomplete jobs.",
+      "last_updated": "2026-06-05T11:57:12.000Z"
+    },
+    {
+      "id": "W5-02",
+      "workstream": "W5 Legacy Firebase decommission readiness",
+      "title": "Function replacement matrix",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W5-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-02-function-replacement-matrix.json"
+      ],
+      "notes": "Function replacement matrix created with 19 legacy Firebase functions mapped to target Platform API, background worker, or scheduled job replacements. Matrix marks partially covered vs identified gaps to drive implementation sequencing.",
+      "last_updated": "2026-06-05T22:32:18.000Z"
+    },
+    {
+      "id": "W5-03",
+      "workstream": "W5 Legacy Firebase decommission readiness",
+      "title": "Storage/object migration parity checks",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W5-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-repo/scripts/w5_03_storage_parity_check.py",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-03-storage-parity-report-latest.json",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-03-storage-parity-report-20260605T225645Z.json"
+      ],
+      "notes": "Automated storage/object migration parity checker implemented and executed. Current report: 7 checks total, 2 automated pass (artifacts writeability, platform health), 5 manual-required validation checks (upload contract, download contract, signed URL TTL/ACL, metadata roundtrip, deletion lifecycle) to complete before cutover signoff.",
+      "last_updated": "2026-06-05T22:56:45.000Z"
+    },
+    {
+      "id": "W5-04",
+      "workstream": "W5 Legacy Firebase decommission readiness",
+      "title": "Decommission go/no-go checklist",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W5-02",
+        "W5-03",
+        "W4-05"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-04-decommission-go-no-go-checklist.json"
+      ],
+      "notes": "Formal decommission go/no-go checklist completed with critical gate criteria, required evidence, signoff template, no-go handling, and explicit dependency linkage to function replacement matrix, storage parity checks, and client cutover plan artifacts.",
+      "last_updated": "2026-06-06T08:08:18.000Z"
+    },
+    {
+      "id": "W6-01",
+      "workstream": "W6 Observability, security, and operations",
+      "title": "Structured logging parity",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-repo/scripts/w6_01_structured_logging_audit.py",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-01-structured-logging-audit-latest.json",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-01-structured-logging-audit-20260605T230814Z.json"
+      ],
+      "notes": "Structured logging parity audit automation implemented and executed. Current audit result: 4 checks total, 2 pass (service health reachable, log file present), 0 fail, 2 manual-required (JSON log ratio target >=80% and required schema fields). Next step is middleware/logger instrumentation to emit full JSON schema for request lifecycle events.",
+      "last_updated": "2026-06-05T23:14:12.000Z"
+    },
+    {
+      "id": "W6-02",
+      "workstream": "W6 Observability, security, and operations",
+      "title": "Metrics and alerts baseline",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W6-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-repo/scripts/w6_02_metrics_alerts_baseline.py",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-02-metrics-alerts-baseline-latest.json",
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-02-metrics-alerts-baseline-20260606T001350Z.json"
+      ],
+      "notes": "Metrics and alerts baseline automation implemented. Artifact captures live health probes and baseline alert thresholds for uptime, error-rate, latency p95, and structured-log schema drift; ready for integration into monitor/notification pipeline.",
+      "last_updated": "2026-06-06T00:04:49.000Z"
+    },
+    {
+      "id": "W6-03",
+      "workstream": "W6 Observability, security, and operations",
+      "title": "Incident runbook",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W6-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-03-incident-runbook.json"
+      ],
+      "notes": "Incident runbook completed for outage, migration discrepancy, and cutover rollback scenarios with severity model, role responsibilities, triage/mitigation flow, communication cadence, and post-incident review template.",
+      "last_updated": "2026-06-06T08:23:03.000Z"
+    },
+    {
+      "id": "W6-04",
+      "workstream": "W6 Observability, security, and operations",
+      "title": "Secrets and key rotation playbook",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W6-01"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-04-secrets-key-rotation-playbook.json"
+      ],
+      "notes": "Secrets and key rotation playbook completed for hybrid Firebase/Supabase operations, including cadence policy, dual-publish cutover flow, rollback procedure, monitoring signals, and evidence requirements for auditable rotations.",
+      "last_updated": "2026-06-06T09:29:32.000Z"
+    },
+    {
+      "id": "W7-01",
+      "workstream": "W7 Production rollout and closeout",
+      "title": "Staging full-flow UAT signoff",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W1-05",
+        "W2-03",
+        "W3-03",
+        "W4-05"
+      ],
+      "target_date": null,
+      "proof": [
+        "https://github.com/SimplyICT/SimplyClik/pull/8",
+        "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/migrate_firebase_to_supabase.py",
+        "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/staging_setup.sh",
+        "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/w7-uat.ts"
+      ],
+      "notes": "W7-01 migration scripts implemented, PR #8 open for review. Scripts in app/platform-api/scripts/: (1) migrate_firebase_to_supabase.py: idempotent Firebase->Supabase migration; maps customers/contractors/customerLocations/requests/history/invoices; UUID5 deterministic IDs; ON CONFLICT DO NOTHING; --dry-run and --collection flags; bcrypt placeholder hash forces password reset on first login. (2) staging_setup.sh: staging DB validation gate; 11-table schema check, service_types count=5, W2-03 live checks, row count summary, JSON report. (3) w7-uat.ts (npm run uat): full-flow TypeScript UAT; health/service-types/401; full lifecycle with UAT_SETUP_DB=true (OTP registration, request CRUD, notes, timeline, push-token); DB integrity checks; structured JSON output; exits non-zero on any failure. W1-05 dependency not_started (blocked via W1-04); W7-01 proceeds with W2-03+W3-03+W4-05 satisfied.",
+      "last_updated": "2026-06-06T23:30:00.000Z"
+    },
+    {
+      "id": "W7-02",
+      "workstream": "W7 Production rollout and closeout",
+      "title": "Controlled production canary",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W7-01",
+        "W6-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-02-canary-rollout-plan.json"
+      ],
+      "notes": "Canary rollout plan documented. 5-phase sequence: (1) internal validation (24h soak, DB migration + UAT), (2) web-admin read-only 10%->50%->100% canary, (3) portal read canary 10%->100%, (4) mobile write canary 48h soak, (5) full cutover and Firebase shadow disable. Abort criteria: error rate >2%, p95 latency >1500ms, uptime gap >2min, critical path failure >5%, data parity mismatch. Max rollback time: 15 minutes. Per-surface feature flag switches (from W4-05) with independent rollback. On-call requirement: senior engineer for first 4h of each phase activation.",
+      "last_updated": "2026-06-06T23:45:00.000Z"
+    },
+    {
+      "id": "W7-03",
+      "workstream": "W7 Production rollout and closeout",
+      "title": "Full production rollout verification",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W7-02"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-03-rollout-verification.json"
+      ],
+      "notes": "Post-rollout verification report template complete. 5 gates required before W7-04 closeout: G1 (platform API health: npm run smoke + rollout:ready, error rate <1%, p95 <800ms over 72h), G2 (data integrity: W2-03 SQL checks, migrated row count parity, no orphaned profiles), G3 (full UAT: npm run uat on production with auth), G4 (cross-surface functional sign-off: web-admin/portal/android/ios), G5 (Firebase traffic at 0 for >=24h). Rollback decision: G1/G2 failure triggers W7-02 rollback; G3/G4 fix-forward unless P0 open.",
+      "last_updated": "2026-06-06T23:45:00.000Z"
+    },
+    {
+      "id": "W7-04",
+      "workstream": "W7 Production rollout and closeout",
+      "title": "Program closeout and deprecation",
+      "status": "review",
+      "owner": "Oz",
+      "dependencies": [
+        "W7-03",
+        "W5-04"
+      ],
+      "target_date": null,
+      "proof": [
+        "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-04-program-closeout.json"
+      ],
+      "notes": "Program closeout documentation complete. Covers: workstream completion summary across all 7 workstreams (W1-03/W1-04/W1-05 deferred to backlog), 6-step Firebase decommission sequence (Firestore export, Functions disable, SDK removal, Auth migration, billing downgrade), documentation archive plan (tracker snapshot, artifacts, PR #8 tag, runbook wiki publication), post-migration handoff (backlog items, ongoing operations cadence, contacts). Final sign-off checklist: 7 criteria including W7-03 all gates, Firebase traffic zero, artifacts archived.",
+      "last_updated": "2026-06-06T23:45:00.000Z"
+    },
+    {
+      "id": "ND-P0",
+      "workstream": "ND Foundation: Audit & Strategy",
+      "title": "SEO audit and strategy definition",
+      "status": "done",
+      "owner": "Alicia / SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-06-10",
+      "proof": [
+        "/home/aiagent/neodiverse-project/seo-audit-report.md"
+      ],
+      "notes": "Full audit completed. Report covers on-page, technical, content, keyword gap, and competitor analysis with 3-phase implementation plan.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P1-01",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Rewrite homepage title tag and meta description with target keywords",
+      "status": "review",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Title: 'Neurodiverse Parenting Support & Coaching | Our Neurodiverse Family'. Meta: include neurodiverse parenting support, family coaching keywords. Keep title under 60 chars. [Assets generated in neodiverse-project/phase1-*.md]",
+      "last_updated": "2026-06-10T04:21:18.000Z"
+    },
+    {
+      "id": "ND-P1-02",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Rewrite blog landing page title tag and meta description",
+      "status": "review",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Title: 'Neurodiverse Parenting Blog & Resources | Weekly Wins'. Meta: target neurodiverse parenting, autism, ADHD keywords. [Assets generated in neodiverse-project/phase1-*.md]",
+      "last_updated": "2026-06-10T04:21:18.000Z"
+    },
+    {
+      "id": "ND-P1-03",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Rewrite About page title tag and meta description",
+      "status": "review",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Title: 'About Alison | Neurodiversity Family Coach | Our Neurodiverse Family'. Meta: include neurodiversity strategist, family coach keywords. [Assets generated in neodiverse-project/phase1-*.md]",
+      "last_updated": "2026-06-10T04:21:18.000Z"
+    },
+    {
+      "id": "ND-P1-04",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Set up Google Search Console and submit sitemap",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Critical first step. Verify domain ownership (ourndfamily.com), submit sitemap.xml, monitor crawl stats and indexing. Required before any ranking measurement can begin.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P1-05",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Deduplicate double-loaded Google Analytics script",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "GA4 script for G-KLLHCXM158 loads twice in <head> \u2014 inflates pageview counts. Remove duplicate via Kajabi 'Header hook' settings.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P1-06",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Add descriptive alt text to all blog listing images",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Blog listing images currently have empty alt=\"\" attributes. Add keyword-rich alt text describing the image content. ~66 posts to update via Kajabi blog editor.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P1-07",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Add JSON-LD LocalBusiness schema to homepage",
+      "status": "review",
+      "owner": "SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Add structured data markup for LocalBusiness with name, description, url, logo, sameAs profiles (Instagram, YouTube, TikTok). Also add Person schema on About page. Inject via Kajabi header hook. [Assets generated in neodiverse-project/phase1-*.md]",
+      "last_updated": "2026-06-10T04:21:18.000Z"
+    },
+    {
+      "id": "ND-P1-08",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Change blog title format to keyword-first (drop 'Weekly Wins XX:' prefix)",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Future posts: put 'Weekly Wins' as a category/tag, not the primary title. Front-load target keywords. Existing posts can't be renamed in Kajabi but new posts should follow this format.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P1-09",
+      "workstream": "ND Phase 1: Quick Wins (by Jun 13)",
+      "title": "Update Hotjar tracking code to reference current domain",
+      "status": "review",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-06-13",
+      "proof": [],
+      "notes": "Hotjar code comment references old domain 'theincrementalshift.com'. Update to 'ourndfamily.com' for clarity. [Assets generated in neodiverse-project/phase1-*.md]",
+      "last_updated": "2026-06-10T04:21:18.000Z"
+    },
+    {
+      "id": "ND-P2-01",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Publish 'Parenting After an Autism Diagnosis' cornerstone guide",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-07-04",
+      "proof": [],
+      "notes": "High-intent keyword. Create comprehensive guide: what to do after diagnosis, emotional support, next steps, school advocacy, recommended resources. Target 2000+ words. Interlink to existing related posts.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-02",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Publish 'Parenting After an ADHD Diagnosis' cornerstone guide",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-07-04",
+      "proof": [],
+      "notes": "High-intent keyword. Mirror structure of autism guide but ADHD-specific. Include executive function, emotional regulation, school advocacy strategies.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-03",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Create 'Ultimate Guide to Neurodiverse Parenting' cornerstone page",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-07-04",
+      "proof": [],
+      "notes": "Hub/topic cluster page. Links out to all relevant blog posts organized by category (Diagnosis, Daily Strategies, Regulation, School, Parent Wellbeing). Foundations for topical authority.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-04",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Add FAQ structured data (FAQPage schema) to FAQ page",
+      "status": "not_started",
+      "owner": "SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-07-04",
+      "proof": [],
+      "notes": "Enables rich snippet FAQ display in SERPs \u2014 high CTR impact. Map each existing FAQ question/answer into JSON-LD FAQPage schema.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-05",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Optimize 10 highest-traffic-potential existing blog posts",
+      "status": "not_started",
+      "owner": "Alicia / SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-07-11",
+      "proof": [],
+      "notes": "Pick posts with most organic potential. Update: title tags, meta descriptions, H1, internal links to cornerstone pages, add Article schema, refresh content freshness, add CTAs.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-06",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Publish 'Sensory Challenges at Home: A Parent's Guide'",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-07-11",
+      "proof": [],
+      "notes": "Targets 'help with sensory challenges at home' keyword. Cover sensory processing, creating sensory-friendly spaces, DIY strategies, when to seek professional help.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P2-07",
+      "workstream": "ND Phase 2: Content Build (Jun 14 - Jul 18)",
+      "title": "Start converting podcast episodes into SEO-optimized blog posts",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-07-18",
+      "proof": [],
+      "notes": "Transcribe podcast episodes, clean up for readability, add SEO metadata, embed podcast player. Each episode becomes a searchable blog post. Priority: episodes covering diagnosis, regulation, school advocacy.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-01",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Build topic clusters around 5 core themes",
+      "status": "not_started",
+      "owner": "Alicia / SEO Agent",
+      "dependencies": [
+        "ND-P2-03"
+      ],
+      "target_date": "2026-08-15",
+      "proof": [],
+      "notes": "Themes: Diagnosis Journey, Daily Strategies, Emotional Regulation, School Advocacy, Parent Wellbeing. Each cluster: cornerstone page + 5-8 supporting posts + internal links. Signal topical authority to Google.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-02",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Create dedicated SEO-optimized landing pages for each service",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-08-29",
+      "proof": [],
+      "notes": "Services: Clarity Session (Checking the Vitals), Tune-In Coaching, CPR Crisis Support, ND Family Blueprint course. Each page needs unique title, meta, H1, service schema, clear CTA.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-03",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Implement hreflang tags for international markets",
+      "status": "not_started",
+      "owner": "SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-08-29",
+      "proof": [],
+      "notes": "Target markets: Australia (en-au), United States (en-us), Canada (en-ca), United Kingdom (en-gb). Add hreflang annotations in <head>. Set GSC target country to Australia for primary market.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-04",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Launch backlink outreach campaign",
+      "status": "not_started",
+      "owner": "Alicia",
+      "dependencies": [],
+      "target_date": "2026-09-12",
+      "proof": [],
+      "notes": "Targets: Australian parenting directories, neurodiversity resource pages, guest post opportunities, podcast show notes backlinks, cross-collaboration with fellow ND professionals. Prioritize .edu and .org domains.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-05",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Add Article schema to all blog posts",
+      "status": "not_started",
+      "owner": "SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-09-12",
+      "proof": [],
+      "notes": "Required for rich results and Google News eligibility. Include headline, image, datePublished, dateModified, author, description fields. Bulk implementation via Kajabi header hook or per-post custom code.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "ND-P3-06",
+      "workstream": "ND Phase 3: Strategic (Jul 19 - Sep 12)",
+      "title": "Optimize page speed (images, CSS, JS)",
+      "status": "not_started",
+      "owner": "SEO Agent",
+      "dependencies": [],
+      "target_date": "2026-09-12",
+      "proof": [],
+      "notes": "Run Lighthouse audit. Actions: convert hero images to WebP, lazy-load below-fold images, minimize render-blocking CSS/JS, leverage browser caching. Kajabi platform limits some optimizations but improve what's possible.",
+      "last_updated": "2026-06-10T06:00:00.000Z"
+    }
+  ]
+}

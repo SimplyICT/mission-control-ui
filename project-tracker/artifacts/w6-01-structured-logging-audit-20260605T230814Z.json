@@ -1,0 +1,62 @@
+{
+  "task_id": "W6-01",
+  "candidate": "W6-01-initial",
+  "generated_at": "2026-06-05T23:08:14.405567+00:00",
+  "summary": {
+    "total_checks": 4,
+    "passed": 2,
+    "failed": 0,
+    "manual_required": 2,
+    "overall_status": "pending_manual_validation"
+  },
+  "checks": [
+    {
+      "id": "service_health_reachable",
+      "status": "pass",
+      "details": {
+        "ok": true,
+        "status_code": 200,
+        "body": "{\"status\":\"ok\"}",
+        "error": ""
+      }
+    },
+    {
+      "id": "log_file_present",
+      "status": "pass",
+      "details": {
+        "path": "/home/aiagent/mission-control-ui/ui.log",
+        "exists": true
+      }
+    },
+    {
+      "id": "json_log_ratio",
+      "status": "manual_required",
+      "details": {
+        "ratio": 0.0,
+        "counts": {
+          "json": 0,
+          "text": 6,
+          "empty": 0
+        },
+        "sample_size": 6
+      }
+    },
+    {
+      "id": "required_schema_fields",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "timestamp",
+          "level",
+          "event",
+          "requestId",
+          "method",
+          "path",
+          "statusCode",
+          "durationMs"
+        ],
+        "next_action": "Instrument request middleware/events to emit JSON records with full schema"
+      }
+    }
+  ]
+}

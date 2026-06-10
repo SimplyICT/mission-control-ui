@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mission Control — Project Tracker</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --done: #22c55e;
+        --progress: #38bdf8;
+        --review: #f59e0b;
+        --blocked: #ef4444;
+        --pending: #64748b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 { margin: 0 0 8px; }
+      .sub { color: var(--muted); margin-bottom: 20px; }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .num { font-size: 24px; font-weight: 700; }
+      .label { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+      .phase {
+        margin-bottom: 18px;
+        background: var(--panel);
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .phase-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border-bottom: 1px solid #1f2937;
+      }
+      .phase-progress {
+        width: 220px;
+        height: 10px;
+        border-radius: 999px;
+        background: #0b1220;
+        overflow: hidden;
+      }
+      .phase-progress > span {
+        display: block;
+        height: 100%;
+        background: var(--progress);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 10px 14px;
+        border-bottom: 1px solid #1f2937;
+        text-align: left;
+        vertical-align: top;
+        font-size: 13px;
+      }
+      th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+      .status-pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .done { background: rgba(34,197,94,.2); color: var(--done); }
+      .in_progress { background: rgba(56,189,248,.2); color: var(--progress); }
+      .review { background: rgba(245,158,11,.2); color: var(--review); }
+      .blocked { background: rgba(239,68,68,.2); color: var(--blocked); }
+      .not_started { background: rgba(100,116,139,.2); color: var(--pending); }
+      a { color: #7dd3fc; text-decoration: none; }
+      .footer {
+        color: var(--muted);
+        margin-top: 14px;
+        font-size: 12px;
+      }
+      .child-row td:first-child {
+        padding-left: 28px;
+      }
+      .child-id::before {
+        content: "↳ ";
+        color: var(--muted);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .error {
+        background: rgba(239,68,68,.15);
+        border: 1px solid rgba(239,68,68,.4);
+        color: #fecaca;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Mission Control Project Tracker</h1>
+      <div class="sub" id="meta">Loading tracker...</div>
+      <div class="sub" id="refresh-meta">Auto-refresh: waiting for first sync...</div>
+      <div id="error"></div>
+      <section class="stats" id="stats"></section>
+      <section id="phases"></section>
+      <div class="footer">Tracker source: <code>project-tracker/tasks.json</code></div>
+    </div>
+    <script>
+      const REFRESH_INTERVAL_MS = 15000;
+      let isRefreshing = false;
+      const taskSort = (a, b) => {
+        if (a.id < b.id) return -1;
+        if (a.id > b.id) return 1;
+        return 0;
+      };
+      const pretty = (value) => value.replaceAll("_", " ");
+      const toProofHtml = (proof) => {
+        if (proof.startsWith("http://") || proof.startsWith("https://")) {
+          return `<a href="${proof}" target="_blank" rel="noreferrer">proof</a>`;
+        }
+        return `<span class="muted">${proof}</span>`;
+      };
+
+      function renderStats(tasks) {
+        const total = tasks.length;
+        const byStatus = Object.fromEntries(["done", "in_progress", "review", "blocked", "not_started"].map((k) => [k, 0]));
+        for (const task of tasks) byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+        const completedPct = total ? Math.round((byStatus.done / total) * 100) : 0;
+        const cards = [
+          ["Total items", total],
+          ["Done", byStatus.done],
+          ["In progress", byStatus.in_progress],
+          ["In review", byStatus.review],
+          ["Blocked", byStatus.blocked],
+          ["Completion", `${completedPct}%`]
+        ];
+        document.getElementById("stats").innerHTML = cards.map(([label, value]) => `
+          <article class="card">
+            <div class="num">${value}</div>
+            <div class="label">${label}</div>
+          </article>
+        `).join("");
+      }
+
+      function buildRows(task, childMap, depth = 0) {
+        const children = (childMap.get(task.id) || []).sort(taskSort);
+        const proofs = (task.proof || []).map((p) => `<div>${toProofHtml(p)}</div>`).join("");
+        const rowClass = depth > 0 ? "child-row" : "";
+        const idClass = depth > 0 ? "child-id" : "";
+        const row = `
+          <tr class="${rowClass}">
+            <td><strong class="${idClass}">${task.id}</strong></td>
+            <td>${task.title}<div style="color:#94a3b8;margin-top:4px;">${task.notes || ""}</div></td>
+            <td><span class="status-pill ${task.status}">${pretty(task.status)}</span></td>
+            <td>${(task.dependencies || []).join(", ") || "-"}</td>
+            <td>${task.owner || "-"}</td>
+            <td>${proofs || "-"}</td>
+          </tr>
+        `;
+        return row + children.map((child) => buildRows(child, childMap, depth + 1)).join("");
+      }
+
+      function renderPhases(tasks) {
+        const grouped = tasks.reduce((acc, task) => {
+          acc[task.workstream] = acc[task.workstream] || [];
+          acc[task.workstream].push(task);
+          return acc;
+        }, {});
+
+        const phaseHtml = Object.entries(grouped).map(([phase, phaseTasks]) => {
+          const parents = phaseTasks.filter((t) => !t.parent_id).sort(taskSort);
+          const childMap = new Map();
+          for (const task of phaseTasks) {
+            if (!task.parent_id) continue;
+            if (!childMap.has(task.parent_id)) childMap.set(task.parent_id, []);
+            childMap.get(task.parent_id).push(task);
+          }
+          const done = phaseTasks.filter((t) => t.status === "done").length;
+          const pct = phaseTasks.length ? Math.round((done / phaseTasks.length) * 100) : 0;
+          const rows = parents.map((task) => buildRows(task, childMap)).join("");
+
+          return `
+            <section class="phase">
+              <header class="phase-head">
+                <div><strong>${phase}</strong> (${done}/${phaseTasks.length})</div>
+                <div class="phase-progress"><span style="width:${pct}%"></span></div>
+              </header>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Task</th><th>Status</th><th>Dependencies</th><th>Owner</th><th>Proof</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </section>
+          `;
+        }).join("");
+
+        document.getElementById("phases").innerHTML = phaseHtml;
+      }
+
+      async function loadTracker() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        try {
+          const candidateUrls = ["../tasks.json", "/project-tracker/tasks.json"];
+          let response = null;
+          for (const url of candidateUrls) {
+            const attempt = await fetch(url, { cache: "no-store" });
+            if (attempt.ok) {
+              response = attempt;
+              break;
+            }
+          }
+          if (!response) throw new Error("Failed to load tracker JSON from known paths");
+          const data = await response.json();
+          const tasks = (data.tasks || []).map((task) => ({
+            ...task,
+            parent_id: task.parent_id || null
+          }));
+          document.getElementById("meta").textContent = `${data.meta.project_name} • last updated ${data.meta.last_updated}`;
+          document.getElementById("refresh-meta").textContent = `Auto-refresh every ${Math.round(REFRESH_INTERVAL_MS / 1000)}s • last sync ${new Date().toLocaleTimeString()}`;
+          document.getElementById("error").innerHTML = "";
+          renderStats(tasks);
+          renderPhases(tasks);
+        } catch (error) {
+          document.getElementById("error").innerHTML = `<div class="error">${error.message}. Serve this folder over HTTP (not file://) so the page can fetch <code>tasks.json</code>.</div>`;
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      loadTracker();
+      setInterval(loadTracker, REFRESH_INTERVAL_MS);
+    </script>
+  </body>
+</html>

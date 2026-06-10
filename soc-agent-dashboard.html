@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — SOC Agent</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #2d2d3d;background:var(--panel);position:sticky;top:0;z-index:10}
+.topbar h1{font-size:18px;font-weight:600}.topbar span{color:var(--muted);font-size:13px}
+.topbar-actions{display:flex;gap:8px}
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+.btn{background:var(--card);color:var(--text);border:1px solid #2d2d3d;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--hover);border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-primary:hover{background:#0096b4}
+.btn-sm{padding:4px 10px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid #2d2d3d;border-radius:10px;padding:20px}
+.card h3{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.val{font-size:28px;font-weight:700;line-height:1.2}
+.sub{color:var(--muted);font-size:12px;margin-top:4px}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.accent{color:var(--accent)}
+.status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.dot-green{background:var(--green)}.dot-red{background:var(--red)}.dot-amber{background:var(--amber)}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.row:last-child{border:none}
+.row-label{color:var(--muted)}.row-value{font-weight:600}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:12px 20px;font-size:13px;z-index:100;display:none}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><h1>SOC Agent</h1><span id="subtitle">Auto-triage &middot; Telegram &middot; Escalation</span></div>
+  <div class="topbar-actions">
+    <a class="btn btn-sm" href="/index-platform.html">&#9664; Home</a>
+    <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
+  </div>
+</div>
+<div class="wrap" id="content">Loading...</div>
+<div class="toast" id="toast"></div>
+<script>
+function $(id){return document.getElementById(id)}
+function esc(v){var d=document.createElement("div");d.textContent=v;return d.innerHTML}
+
+function toast(msg,ok){
+  var t=$("toast");t.textContent=msg;t.style.display="block";t.style.borderColor=ok?"var(--green)":"var(--red)";
+  setTimeout(function(){t.style.display="none"},3000)
+}
+
+function loadDashboard(){
+  $("content").innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Loading SOC Agent status...</div>';
+  Promise.all([
+    fetch("/api/soc-agent/status").then(function(r){return r.json()}),
+    fetch("/api/soc-agent/alerts").then(function(r){return r.json()}),
+    fetch("/api/soc-agent/history").then(function(r){return r.json()}),
+    fetch("/api/soc-agent/alert-list?limit=10").then(function(r){return r.json()}),
+  ]).then(function(res){
+    var s=res[0],a=res[1],h=res[2],alertList=res[3];
+    var tgOk=s.telegram_configured;
+    var html='<div class="grid">'
+      +'<div class="card"><h3>Telegram</h3><div class="val '+(tgOk?'green':'red')+'">'+(tgOk?'Connected':'Disconnected')+'</div>'
+      +'<div class="sub">'+(s.bot_token_set?'Token set':'No token')+' &middot; '+(s.chat_id_set?'Chat configured':'No chat')+'</div></div>'
+      +'<div class="card"><h3>Open Alerts</h3><div class="val '+(a.total>0?'red':'green')+'">'+(a.total||0)+'</div>'
+      +'<div class="sub">🔴 '+a.critical+' &middot; ⚠️ '+a.high+' &middot; 🔶 '+a.medium+' &middot; 🔹 '+a.low+'</div></div>'
+      +'<div class="card"><h3>Escalations</h3><div class="val amber">'+(h.escalations||0)+'</div>'
+      +'<div class="sub">'+((h.escalation_threshold||30)+' min threshold')+'</div></div>'
+      +'<div class="card"><h3>Digest</h3><div class="val '+(h.last_digest?'green':'muted')+'">'+(h.last_digest||'Not sent today')+'</div>'
+      +'<div class="sub">Daily at '+h.digest_hour+':00 UTC</div></div>'
+      +'</div>';
+
+    html+='<div class="card" style="margin-top:16px"><h3>Recent Alerts <span style="font-weight:400;color:var(--muted);font-size:12px">(click to expand)</span></h3>';
+    var items=alertList.alerts||[];
+    if(items.length){
+      html+='<div style="max-height:400px;overflow-y:auto">';
+      items.forEach(function(a){
+        var sev=(a.severity||"low").toUpperCase();
+        var emoji={CRITICAL:"🔴",HIGH:"⚠️",MEDIUM:"🔶",LOW:"🔹"}[sev]||"🔹";
+        var dev=a.device||{};
+        html+='<div class="alert-row" onclick="toggleAlertDetail(this)" style="cursor:pointer;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center">'
+          +'<span><strong>'+emoji+' '+esc(a.title||"")+'</strong></span>'
+          +'<span class="badge badge-'+(sev==="CRITICAL"?"red":sev==="HIGH"?"amber":"gray")+'">'+sev+'</span></div>'
+          +'<div style="color:var(--muted);font-size:12px;margin-top:4px">'+esc(a.alert_type||"")+' &middot; '+esc(dev.ip_address||dev.hostname||"")+' &middot; '+(a.last_seen_at?timeAgo(a.last_seen_at):"")+'</div>'
+          +'<div class="alert-detail" style="display:none;margin-top:10px;padding:12px;background:var(--bg);border-radius:6px;font-size:13px">'
+          +'<div class="row"><span class="row-label">Message</span><span class="row-value">'+esc(a.message||"-")+'</span></div>'
+          +'<div class="row"><span class="row-label">First Seen</span><span class="row-value">'+esc(a.first_seen_at?fmtDate(a.first_seen_at):"-")+'</span></div>'
+          +'<div class="row"><span class="row-label">Count</span><span class="row-value">'+(a.count||1)+'</span></div>'
+          +(dev.ip_address?'<div class="row"><span class="row-label">Device IP</span><span class="row-value" style="font-family:monospace">'+esc(dev.ip_address)+'</span></div>':'')
+          +(dev.hostname?'<div class="row"><span class="row-label">Hostname</span><span class="row-value">'+esc(dev.hostname)+'</span></div>':'')
+          +(dev.device_type?'<div class="row"><span class="row-label">Type</span><span class="row-value">'+esc(dev.device_type)+'</span></div>':'')
+          +(dev.vendor?'<div class="row"><span class="row-label">Vendor</span><span class="row-value">'+esc(dev.vendor)+'</span></div>':'')
+          +(dev.status?'<div class="row"><span class="row-label">Device Status</span><span class="row-value"><span class="badge '+(dev.status==="ONLINE"?"badge-green":"badge-red")+'">'+esc(dev.status)+'</span></span></div>':'')
+          +'<div style="margin-top:8px;padding-top:8px;border-top:1px solid #2d2d3d"><span style="color:var(--muted);font-size:11px">Remediation: </span>'
+          +'<span style="font-size:12px">Check device connectivity, verify switch port status, review recent changes.</span></div>'
+          +'</div></div>';
+      });
+      html+='</div>';
+    }else{
+      html+='<div class="sub">No recent alerts</div>';
+    }
+    html+='</div>';
+
+    html+='<div class="card" style="margin-top:16px"><h3>Recent Activity</h3>';
+    var log=h.log||[];
+    if(log.length){html+='<div style="max-height:200px;overflow-y:auto">';log.forEach(function(l){html+='<div class="row"><span class="row-label">'+esc(l.t)+'</span><span class="row-value">'+esc(l.msg)+'</span></div>'});html+='</div>'}
+    else{html+='<div class="sub">No recent activity</div>'}
+    html+='</div>';
+
+    html+='<div class="actions">'
+      +'<button class="btn" onclick="triggerTriage()">Run Triage</button>'
+      +'<button class="btn" onclick="sendTest()">Test Telegram</button>'
+      +'<button class="btn" onclick="sendDigest()">Send Digest</button>'
+      +'</div>';
+    $("content").innerHTML=html;
+  }).catch(function(e){$("content").innerHTML='<div style="text-align:center;padding:40px;color:var(--red)">Error: '+esc(e.message)+'</div>'})
+}
+
+function toggleAlertDetail(el){var d=el.querySelector(".alert-detail");if(d){d.style.display=d.style.display==="none"?"block":"none"}}
+function fmtDate(iso){if(!iso)return"-";try{return new Date(iso).toLocaleString()}catch{return iso}}
+function timeAgo(iso){if(!iso)return"";var s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return"now";if(s<3600)return Math.round(s/60)+"m ago";return Math.round(s/3600)+"h ago"}
+
+function triggerTriage(){
+  var btn=event&&event.target;if(btn){btn.disabled=true;btn.textContent="Running..."}
+  fetch("/wazuh-api/soc-agent/triage",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+    toast("Triage complete: "+(d.actions||[]).length+" actions",true);if(btn)btn.disabled=false;loadDashboard()
+  }).catch(function(e){toast("Failed: "+e.message,false);if(btn)btn.disabled=false})
+}
+
+function sendTest(){
+  fetch("/wazuh-api/soc-agent/test",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+    toast(d.success?"Test sent to Telegram":"Telegram test failed",d.success);loadDashboard()
+  }).catch(function(e){toast("Failed: "+e.message,false)})
+}
+
+function sendDigest(){
+  fetch("/wazuh-api/soc-agent/digest",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+    toast(d.message||"Digest sent",true);loadDashboard()
+  }).catch(function(e){toast("Failed: "+e.message,false)})
+}
+
+loadDashboard();
+var sse=new EventSource("/api/events/stream");
+sse.onmessage=function(){loadDashboard()};
+sse.onerror=function(){/* fallback to polling */};
+setInterval(loadDashboard,60000);
+</script>
+</body>
+</html>

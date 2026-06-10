@@ -1798,6 +1798,7 @@ async def api_create_task(project_id: str, request: Request):
         "owner": (body.get("owner") or user.get("username", "")).strip(),
         "priority": (body.get("priority") or "medium").strip(),
         "target_date": body.get("target_date"),
+        "phase": (body.get("phase") or "").strip(),
         "dependencies": body.get("dependencies", []),
         "proof": [],
         "notes": "",
@@ -1821,7 +1822,7 @@ async def api_update_task(task_id: str, request: Request):
     for p in data.get("projects", []):
         for t in p.get("tasks", []):
             if t["id"] == task_id:
-                allowed = {"status", "title", "description", "owner", "priority", "target_date", "notes", "proof"}
+                allowed = {"status", "title", "description", "owner", "priority", "target_date", "phase", "notes", "proof"}
                 for key, value in body.items():
                     if key in allowed:
                         t[key] = value

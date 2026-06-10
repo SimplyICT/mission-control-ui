@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "task_id": "W7-03",
+  "title": "Full production rollout verification report",
+  "generated_at": "2026-06-06T23:45:00.000Z",
+  "objective": "Publish a structured post-rollout verification report confirming all client surfaces are stable on the platform API and Firebase can be safely decommissioned.",
+  "trigger": "Completed after W7-02 Phase 5 (full cutover) and 72h stable observation window.",
+  "verification_gates": [
+    {
+      "gate": "G1",
+      "name": "Platform API health and availability",
+      "checks": [
+        {
+          "check": "npm run smoke (SMOKE_AUTH_MODE=optional) passes 100%",
+          "tool": "scripts/smoke.ts"
+        },
+        {
+          "check": "npm run rollout:ready passes 100%",
+          "tool": "scripts/rollout-readiness.ts"
+        },
+        {
+          "check": "/v1/health returning 200 for >= 72h with no gaps",
+          "source": "w6-02 uptime monitor"
+        },
+        {
+          "check": "Error rate (5xx) < 1% over 72h window",
+          "source": "w6-02 metrics baseline"
+        },
+        {
+          "check": "p95 latency < 800ms over 72h window",
+          "source": "w6-02 metrics baseline"
+        }
+      ],
+      "sign_off": "Platform API operator"
+    },
+    {
+      "gate": "G2",
+      "name": "Data integrity verification",
+      "checks": [
+        {
+          "check": "SELECT count(*) FROM requests r WHERE NOT EXISTS (SELECT 1 FROM request_status_events WHERE request_id=r.id) = 0",
+          "tool": "staging_setup.sh or direct psql"
+        },
+        {
+          "check": "SELECT count(*) FROM request_status_events WHERE changed_at > now() = 0",
+          "tool": "staging_setup.sh"
+        },
+        {
+          "check": "SELECT count(*) FROM service_types WHERE is_active=true = 5",
+          "tool": "staging_setup.sh"
+        },
+        {
+          "check": "Total migrated requests match Firebase export count",
+          "tool": "migrate_firebase_to_supabase.py --dry-run post-check"
+        },
+        {
+          "check": "No orphaned profiles (user_id FK all valid)",
+          "query": "SELECT count(*) FROM profiles p WHERE user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE id=p.user_id) = 0"
+        }
+      ],
+      "sign_off": "Database/backend engineer"
+    },
+    {
+      "gate": "G3",
+      "name": "Full UAT smoke test on production",
+      "checks": [
+        {
+          "check": "npm run uat (SMOKE_AUTH_MODE=required) with production token passes all checks",
+          "tool": "scripts/w7-uat.ts"
+        },
+        {
+          "check": "Request create -> status transition -> note -> timeline full path passes on production",
+          "tool": "w7-uat.ts full mode"
+        },
+        {
+          "check": "Push token register/deregister round-trip passes on production",
+          "tool": "w7-uat.ts"
+        },
+        {
+          "check": "OTP registration flow functional on production (requires test OTP insertion)",
+          "tool": "w7-uat.ts UAT_SETUP_DB=true"
+        }
+      ],
+      "sign_off": "QA or release engineer"
+    },
+    {
+      "gate": "G4",
+      "name": "Cross-surface functional sign-off",
+      "checks": [
+        {
+          "surface": "web-admin",
+          "check": "Login, customer list, contractor assignment, activity summary all functional via platform API"
+        },
+        {
+          "surface": "web-portal",
+          "check": "Request list, history/timeline, note submission all functional via platform API"
+        },
+        {
+          "surface": "android",
+          "check": "Request create, status update, image upload, push notification delivery all functional"
+        },
+        {
+          "surface": "ios",
+          "check": "Same as Android; OTP flow, request lifecycle, media upload all functional"
+        }
+      ],
+      "sign_off": "Per-surface lead + product owner"
+    },
+    {
+      "gate": "G5",
+      "name": "Firebase traffic confirmation",
+      "checks": [
+        {
+          "check": "Firebase Firestore daily active reads at 0 for >= 24h",
+          "source": "Firebase console Usage tab"
+        },
+        {
+          "check": "Firebase Cloud Functions invocation count at 0 for >= 24h",
+          "source": "Firebase console Functions tab"
+        },
+        {
+          "check": "No active client sessions routing through Firebase (confirmed via flag audit)",
+          "tool": "Feature flag status report"
+        },
+        {
+          "check": "Firebase Auth still active (not yet decommissioned until W7-04)",
+          "note": "Auth decommissioned separately in W7-04"
+        }
+      ],
+      "sign_off": "Platform API operator + Firebase project owner"
+    }
+  ],
+  "report_template": {
+    "fields": [
+      "rollout_completed_at",
+      "verification_completed_at",
+      "gates_passed",
+      "gates_failed",
+      "outstanding_issues",
+      "sign_offs",
+      "approved_for_w7_04_closeout"
+    ],
+    "approved_for_w7_04_closeout_criteria": "All 5 gates G1-G5 must pass with sign-off before W7-04 begins"
+  },
+  "rollback_decision_window": "If G1 or G2 fail: trigger W7-02 rollback procedure. If G3/G4 fail: fix forward with targeted patch; do not roll back unless P0 incident open."
+}

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Wazuh SOC</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-primary:#0d1117;--bg-secondary:#161b22;--bg-card:#1c2333;--bg-hover:#252d3f;--text-primary:#e6edf3;--text-secondary:#8b949e;--accent:#00b4d8;--accent-hover:#0096b4;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--sidebar-width:220px;--sidebar-collapsed:56px;--topbar-height:56px;--radius:8px;--radius-sm:4px}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);font-size:14px}
+#app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sidebar-width);min-width:var(--sidebar-width);background:var(--bg-secondary);border-right:1px solid #2d2d3d;display:flex;flex-direction:column;transition:width .2s,min-width .2s;overflow:hidden;z-index:100}
+.sidebar.collapsed{width:var(--sidebar-collapsed);min-width:var(--sidebar-collapsed)}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #2d2d3d}
+.logo{display:flex;align-items:center;gap:8px}.logo-icon{font-size:20px;color:var(--accent)}.logo-text{font-weight:700;font-size:16px;white-space:nowrap}
+.sidebar-toggle{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:var(--radius-sm)}
+.sidebar-toggle:hover{background:var(--bg-hover);color:var(--text-primary)}
+.sidebar.collapsed .logo-text,.sidebar.collapsed .nav-label{display:none}
+.sidebar.collapsed .sidebar-header{justify-content:center;padding:12px 0;position:relative}
+.sidebar.collapsed .sidebar-toggle{order:-1;position:absolute;left:50%;transform:translateX(-50%);z-index:10}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;color:var(--text-secondary);text-decoration:none;white-space:nowrap;border-left:3px solid transparent;cursor:pointer}
+.nav-item:hover{background:var(--bg-hover);color:var(--text-primary)}
+.nav-item.active{background:var(--bg-hover);color:var(--accent);border-left-color:var(--accent)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0}
+.sidebar-footer{border-top:1px solid #2d2d3d;padding:8px 0}
+.sidebar.collapsed .sidebar-footer{display:none}
+.platform-link{display:flex;align-items:center;gap:6px;width:100%;margin:8px 12px;color:var(--text-secondary);font-size:13px;background:none;border:none;cursor:pointer;text-decoration:none}
+.platform-link:hover{color:var(--accent)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar-height);min-height:var(--topbar-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg-secondary);border-bottom:1px solid #2d2d3d;gap:16px}
+.topbar-left h1{font-size:18px;font-weight:600;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.search-box input{background:var(--bg-primary);border:1px solid #2d2d3d;color:var(--text-primary);padding:6px 12px;border-radius:var(--radius);width:220px;font-size:13px}
+.search-box input:focus{outline:none;border-color:var(--accent)}
+.last-updated{font-size:11px;color:var(--text-secondary);white-space:nowrap}
+.content{flex:1;overflow-y:auto;padding:24px}
+.btn{background:var(--bg-card);color:var(--text-primary);border:1px solid #2d2d3d;padding:6px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px}
+.btn:hover{background:var(--bg-hover);border-color:var(--accent)}
+.btn-sm{padding:4px 10px;font-size:16px}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-amber{background:var(--amber);color:#000;border-color:var(--amber)}
+.card{background:var(--bg-card);border:1px solid #2d2d3d;border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--bg-card);border:1px solid #2d2d3d;border-radius:var(--radius);padding:16px;text-align:center}
+.kpi-card .kpi-value{font-size:28px;font-weight:700}
+.kpi-card .kpi-label{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.kpi-card .kpi-sub{font-size:11px;margin-top:2px}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-amber{color:var(--amber)}.text-accent{color:var(--accent)}.text-secondary{color:var(--text-secondary)}
+.chart-container{position:relative;height:250px}
+.table-container{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #2d2d3d;font-size:13px}
+th{color:var(--text-secondary);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.5px;cursor:pointer}
+th:hover{color:var(--text-primary)}
+tr:hover{background:var(--bg-hover)}
+tr.clickable{cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(0,255,136,.15);color:var(--green)}.badge-red{background:rgba(255,71,87,.15);color:var(--red)}
+.badge-amber{background:rgba(255,149,0,.15);color:var(--amber)}.badge-gray{background:rgba(139,148,158,.15);color:var(--text-secondary)}
+.badge-accent{background:rgba(0,180,216,.15);color:var(--accent)}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-active{background:var(--green)}.status-offline{background:var(--red)}.status-never{background:var(--text-secondary)}
+.tabs{display:flex;gap:0;border-bottom:1px solid #2d2d3d;margin-bottom:20px}
+.tab{padding:10px 20px;cursor:pointer;color:var(--text-secondary);border-bottom:2px solid transparent;font-size:13px}
+.tab:hover{color:var(--text-primary)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.filter-tabs{display:flex;gap:4px;margin-bottom:16px}
+.filter-tab{padding:4px 12px;border-radius:12px;cursor:pointer;font-size:12px;color:var(--text-secondary);background:transparent;border:1px solid transparent}
+.filter-tab:hover{color:var(--text-primary);border-color:#2d2d3d}
+.filter-tab.active{background:var(--bg-hover);color:var(--accent);border-color:var(--accent)}
+.cols-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cols-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.col-span-2{grid-column:span 2}
+.detail-header{display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid #2d2d3d;border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.detail-info{display:flex;flex-direction:column;gap:4px}.detail-name{font-size:22px;font-weight:700}
+.detail-meta{font-size:12px;color:var(--text-secondary);display:flex;gap:16px;flex-wrap:wrap}
+.detail-actions{display:flex;gap:8px}
+.loading{text-align:center;padding:40px;color:var(--text-secondary)}
+.empty-state{text-align:center;padding:40px;color:var(--text-secondary)}
+.error-state{text-align:center;padding:20px;color:var(--red)}
+.error-state button{margin-top:8px}
+.toast-container{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg-card);border:1px solid #2d2d3d;border-radius:var(--radius);padding:12px 16px;min-width:280px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:slideIn .3s ease;font-size:13px}
+.toast-success{border-left:3px solid var(--green)}.toast-error{border-left:3px solid var(--red)}.toast-info{border-left:3px solid var(--accent)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.severity-critical{background:rgba(255,71,87,.2);color:var(--red)}.severity-high{background:rgba(255,149,0,.2);color:var(--amber)}
+.severity-medium{background:rgba(0,180,216,.2);color:var(--accent)}.severity-low{background:rgba(139,148,158,.2);color:var(--text-secondary)}
+.mitre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px}
+.mitre-cell{padding:8px;border-radius:var(--radius-sm);text-align:center;cursor:pointer;font-size:11px}
+.mitre-cell:hover{opacity:.8}
+.group-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:var(--bg-hover);font-size:11px;margin:2px}
+.input{background:var(--bg-primary);border:1px solid #2d2d3d;color:var(--text-primary);padding:6px 12px;border-radius:var(--radius);font-size:13px}
+.input:focus{outline:none;border-color:var(--accent)}
+select.input{cursor:pointer}
+.toggle{position:relative;display:inline-block;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#2d2d3d;border-radius:24px;transition:.2s}
+.toggle-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:var(--text-secondary);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg-card);border:1px solid #2d2d3d;border-radius:var(--radius);padding:24px;min-width:400px;max-width:600px;max-height:80vh;overflow-y:auto}
+.help-page{max-width:800px;margin:0 auto}
+.help-list{list-style:none;padding:0}
+.help-list li{padding:6px 0 6px 20px;color:var(--text-secondary);line-height:1.6;position:relative;font-size:13px}
+.help-list li::before{content:"\25B8";position:absolute;left:0;color:var(--accent)}
+@media(max-width:768px){.cols-2,.cols-3{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.sidebar{width:var(--sidebar-collapsed);min-width:var(--sidebar-collapsed)}.sidebar .logo-text,.sidebar .nav-label{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo"><span class="logo-icon">&#9733;</span><span class="logo-text">Wazuh SOC</span></div>
+      <button id="toggleSidebar" class="sidebar-toggle" title="Toggle sidebar">&#8592;</button>
+    </div>
+    <nav id="nav" class="sidebar-nav">
+      <a href="#/" class="nav-item active" data-page="dashboard" title="Command Center"><span class="nav-icon">&#9632;</span><span class="nav-label">Command Center</span></a>
+      <a href="#/agents" class="nav-item" data-page="agents" title="Agents"><span class="nav-icon">&#9679;</span><span class="nav-label">Agents</span></a>
+      <a href="#/sca" class="nav-item" data-page="sca" title="SCA Compliance"><span class="nav-icon">&#10004;</span><span class="nav-label">SCA Compliance</span></a>
+      <a href="#/fim" class="nav-item" data-page="fim" title="File Integrity"><span class="nav-icon">&#9999;</span><span class="nav-label">File Integrity</span></a>
+      <a href="#/vulnerabilities" class="nav-item" data-page="vulnerabilities" title="Vulnerabilities"><span class="nav-icon">&#9888;</span><span class="nav-label">Vulnerabilities</span></a>
+      <a href="#/mitre" class="nav-item" data-page="mitre" title="MITRE ATT&CK"><span class="nav-icon">&#9876;</span><span class="nav-label">MITRE ATT&CK</span></a>
+      <a href="#/rules" class="nav-item" data-page="rules" title="Rules"><span class="nav-icon">&#9881;</span><span class="nav-label">Rules &amp; Decoders</span></a>
+      <a href="#/events" class="nav-item" data-page="events" title="Events"><span class="nav-icon">&#9889;</span><span class="nav-label">Events &amp; Alerts</span></a>
+      <a href="#/topology" class="nav-item" data-page="topology" title="Topology"><span class="nav-icon">&#9775;</span><span class="nav-label">Topology</span></a>
+      <a href="#/threats" class="nav-item" data-page="threats" title="Threat Intel"><span class="nav-icon">&#9764;</span><span class="nav-label">Threat Intel</span></a>
+      <a href="#/autopilot" class="nav-item" data-page="autopilot" title="SOC Autopilot"><span class="nav-icon">&#9729;</span><span class="nav-label">SOC Autopilot</span></a>
+      <a href="#/manager" class="nav-item" data-page="manager" title="Manager Health"><span class="nav-icon">&#9733;</span><span class="nav-label">Manager Health</span></a>
+      <a href="#/groups" class="nav-item" data-page="groups" title="Groups"><span class="nav-icon">&#9730;</span><span class="nav-label">Groups</span></a>
+      <a href="#/help" class="nav-item" data-page="help" title="Help"><span class="nav-icon">&#10068;</span><span class="nav-label">Help</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/index-platform.html" class="platform-link">&#10149; Mission Control</a>
+      <div class="nl-toggle" onclick="toggleNL()">&#128269; Ask</div>
+    </div>
+  </aside>
+  <main id="main" class="main">
+    <header class="topbar">
+      <div class="topbar-left"><h1 id="pageTitle">Command Center</h1></div>
+      <div class="topbar-right">
+        <div class="search-box"><input type="text" id="globalSearch" placeholder="Search agents..." /></div>
+        <button id="refreshBtn" class="btn btn-sm" title="Refresh">&#8634;</button>
+        <span id="lastUpdated" class="last-updated"></span>
+      </div>
+    </header>
+    <div id="content" class="content"></div>
+  </main>
+  <div id="nlPanel" class="nl-panel">
+    <div class="nl-header"><span>Ask SOC</span><span class="nl-close" onclick="toggleNL()">&#10005;</span></div>
+    <div class="nl-messages" id="nlMessages"><div class="nl-msg nl-bot">Hi! Ask me about your network. Try "show offline devices" or "site health".</div></div>
+    <div class="nl-input-row"><input id="nlInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter')nlSearch()"><button class="btn btn-sm btn-primary" onclick="nlSearch()">&#10148;</button></div>
+  </div>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+<style>
+.nl-panel{position:fixed;bottom:80px;right:24px;width:380px;max-height:480px;background:var(--bg-card);border:1px solid #2d2d3d;border-radius:12px;display:none;flex-direction:column;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden}
+.nl-panel.open{display:flex}
+.nl-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #2d2d3d;font-weight:600;font-size:14px}
+.nl-close{cursor:pointer;color:var(--muted);font-size:16px;padding:0 4px}.nl-close:hover{color:var(--text)}
+.nl-messages{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:340px}
+.nl-msg{padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.5;max-width:90%;white-space:pre-wrap}
+.nl-bot{background:var(--bg);color:var(--text);align-self:flex-start;border:1px solid #2d2d3d}
+.nl-user{background:rgba(0,180,216,.12);color:var(--accent);align-self:flex-end;border:1px solid rgba(0,180,216,.25)}
+.nl-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #2d2d3d}
+.nl-input-row input{flex:1;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px 12px;font-size:13px;outline:none}
+.nl-input-row input:focus{border-color:var(--accent)}
+.nl-toggle{cursor:pointer;padding:6px 12px;font-size:12px;color:var(--muted);text-align:center;border-top:1px solid #2d2d3d;transition:color .15s}
+.nl-toggle:hover{color:var(--accent)}
+</style>
+<script>
+/* ── Wazuh SOC Dashboard — Full Integration ─────────────────── */
+var API = "/wazuh-api";
+var charts = {};
+var refreshInterval = null;
+var currentRoute = "";
+
+function $(id){return document.getElementById(id)}
+function qs(sel,ctx){return(ctx||document).querySelector(sel)}
+function qsa(sel,ctx){return(ctx||document).querySelectorAll(sel)}
+function html(strings){var r=strings[0];for(var i=1;i<arguments.length;i++)r+=arguments[i]+strings[i];return r}
+function renderContent(h){$("content").innerHTML=h}
+function esc(str){var d=document.createElement("div");d.textContent=str;return d.innerHTML}
+
+function statusBadge(status){
+  var cls=status==="active"?"badge-green":status==="offline"?"badge-red":"badge-gray";
+  return '<span class="badge '+cls+'"><span class="status-dot status-'+status+'"></span>'+status+'</span>';
+}
+function severityBadge(s){
+  s=(s||"").toLowerCase();
+  var m={critical:"severity-critical",high:"severity-high",medium:"severity-medium",low:"severity-low"};
+  return '<span class="badge '+(m[s]||"severity-low")+'">'+s+'</span>';
+}
+function toast(msg,type){
+  type=type||"info";var c=$("toastContainer");var t=document.createElement("div");
+  t.className="toast toast-"+type;t.textContent=msg;c.appendChild(t);setTimeout(function(){t.remove()},4000);
+}
+
+function api(path){
+  return fetch(API+path).then(function(r){
+    if(!r.ok)throw new Error("API "+r.status+": "+r.statusText);
+    return r.json();
+  }).then(function(d){return d.data||d});
+}
+function apiPut(path){
+  return fetch(API+path,{method:"PUT"}).then(function(r){
+    if(!r.ok)throw new Error("API "+r.status);return r.json();
+  });
+}
+
+function showLoading(c){$(c).innerHTML='<div class="loading">Loading</div>'}
+function showError(c,msg,fn){$(c).innerHTML='<div class="error-state">'+esc(msg)+'<br><button class="btn" onclick="('+fn.toString()+')()">Retry</button></div>'}
+function formatDate(d){if(!d)return"-";return new Date(d).toLocaleString()}
+function timeAgo(d){
+  if(!d||d==="9999-12-31T23:59:59+00:00")return"Just now";
+  var sec=(Date.now()-new Date(d).getTime())/1000;
+  if(sec<60)return"Just now";if(sec<3600)return Math.floor(sec/60)+"m ago";
+  if(sec<86400)return Math.floor(sec/3600)+"h ago";return Math.floor(sec/86400)+"d ago";
+}
+function updateLastUpdated(){$("lastUpdated").textContent="Updated: "+new Date().toLocaleTimeString()}
+
+/* ══════════════════ DASHBOARD ══════════════════ */
+function pageDashboard(){
+  currentRoute="/";$("pageTitle").textContent="Command Center";showLoading("content");
+  Promise.all([api("/overview"),api("/events/stats")]).then(function(res){
+    var d=res[0],ev=res[1];
+    var totalVuln=0;for(var k in d.vulnerabilities)totalVuln+=(d.vulnerabilities[k]||0);
+    var sev=ev.severity||{};var totalAlerts=(sev.Critical||0)+(sev.High||0)+(sev.Medium||0)+(sev.Low||0);
+    var ts=sev.Critical?Math.min(100,Math.round((sev.Critical/Math.max(1,totalAlerts))*100)):0;
+    renderContent('<div class="kpi-row"><div class="kpi-card"><div class="kpi-value text-accent">'+d.total_agents+'</div><div class="kpi-label">Total Agents</div></div><div class="kpi-card"><div class="kpi-value text-green">'+d.active+'</div><div class="kpi-label">Active</div></div><div class="kpi-card"><div class="kpi-value text-red">'+d.offline+'</div><div class="kpi-label">Offline</div></div><div class="kpi-card"><div class="kpi-value text-amber">'+totalVuln+'</div><div class="kpi-label">Vulnerabilities</div></div><div class="kpi-card"><div class="kpi-value '+(d.sca_score>=80?'text-green':d.sca_score>=50?'text-amber':'text-red')+'">'+d.sca_score+'%</div><div class="kpi-label">SCA Score</div></div><div class="kpi-card"><div class="kpi-value '+(ts>50?'text-red':ts>20?'text-amber':'text-green')+'">'+ts+'%</div><div class="kpi-label">Threat Index</div><div class="kpi-sub">'+totalAlerts+' alerts / 24h</div></div></div><div class="cols-3"><div class="card"><div class="card-header"><div class="card-title">Agent Status</div></div><div class="chart-container"><canvas id="chartStatus"></canvas></div></div><div class="card"><div class="card-header"><div class="card-title">OS Distribution</div></div><div class="chart-container"><canvas id="chartOS"></canvas></div></div><div class="card"><div class="card-header"><div class="card-title">Alert Severity (24h)</div></div><div class="chart-container"><canvas id="chartAlerts"></canvas></div></div></div>');
+    setTimeout(function(){
+      if($("chartStatus")){if(charts.status)charts.status.destroy();charts.status=new Chart($("chartStatus"),{type:"doughnut",data:{labels:["Active","Offline","Never Connected"],datasets:[{data:[d.active,d.offline,d.never_connected||0],backgroundColor:["#00ff88","#ff4757","#8b949e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:"#8b949e"}}}}});}
+      if($("chartOS")&&d.os_distribution){var ol=Object.keys(d.os_distribution);if(charts.os)charts.os.destroy();charts.os=new Chart($("chartOS"),{type:"bar",data:{labels:ol,datasets:[{label:"Agents",data:ol.map(function(l){return d.os_distribution[l]}),backgroundColor:"#00b4d8"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#8b949e"}},y:{ticks:{color:"#8b949e"},beginAtZero:true}}}});}
+      if($("chartAlerts")){if(charts.alerts)charts.alerts.destroy();charts.alerts=new Chart($("chartAlerts"),{type:"doughnut",data:{labels:["Critical","High","Medium","Low"],datasets:[{data:[sev.Critical||0,sev.High||0,sev.Medium||0,sev.Low||0],backgroundColor:["#ff4757","#ff9500","#00b4d8","#8b949e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:"#8b949e"}}}}});}
+    },100);
+  }).catch(function(e){showError("content",e.message,pageDashboard)});
+}
+
+/* ══════════════════ AGENTS ══════════════════ */
+function pageAgents(){
+  currentRoute="/agents";$("pageTitle").textContent="Agents";showLoading("content");
+  api("/agents?limit=500").then(function(data){
+    var items=data.affected_items||[];
+    var h='<div class="filter-tabs"><span class="filter-tab active" onclick="filterAgents(\'all\',this)">All ('+items.length+')</span><span class="filter-tab" onclick="filterAgents(\'active\',this)">Active</span><span class="filter-tab" onclick="filterAgents(\'offline\',this)">Offline</span></div><div class="card"><div class="table-container"><table><thead><tr><th>ID</th><th>Name</th><th>IP</th><th>OS</th><th>Status</th><th>Version</th><th>Last Seen</th></tr></thead><tbody id="agentsTableBody">';
+    for(var i=0;i<items.length;i++){var a=items[i];var os=a.os?(a.os.name||"")+" "+(a.os.version||""):"Unknown";
+      h+='<tr class="clickable" onclick="navigateTo(\'/agent/'+a.id+'\')"><td>'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.ip)+'</td><td>'+esc(os.substring(0,30))+'</td><td>'+statusBadge(a.status)+'</td><td>'+esc(a.version||"-")+'</td><td>'+timeAgo(a.lastKeepAlive)+'</td></tr>';}
+    h+='</tbody></table></div></div>';renderContent(h);
+  }).catch(function(e){showError("content",e.message,pageAgents)});
+}
+function filterAgents(status,el){qsa(".filter-tab").forEach(function(t){t.classList.remove("active")});el.classList.add("active");qsa("#agentsTableBody tr").forEach(function(r){var s=r.querySelector("td:nth-child(5) .badge").textContent.trim().toLowerCase();r.style.display=status==="all"||s===status?"":"none"})}
+function navigateTo(path){location.hash=path}
+
+/* ══════════════════ AGENT DETAIL ══════════════════ */
+function pageAgentDetail(agentId){
+  currentRoute="/agent/"+agentId;$("pageTitle").textContent="Agent "+agentId;showLoading("content");
+  api("/agents/"+agentId).then(function(agent){var a=agent.affected_items?agent.affected_items[0]:agent;
+    var os=a.os||{};
+    var h='<div class="detail-header"><div class="detail-info"><div class="detail-name">'+esc(a.name)+'</div><div class="detail-meta"><span>ID: '+a.id+'</span><span>IP: '+a.ip+'</span><span>OS: '+(os.name||"Unknown")+" "+(os.version||"")+'</span><span>'+statusBadge(a.status)+'</span><span>v'+(a.version||"-")+'</span></div></div><div class="detail-actions"><button class="btn btn-primary" onclick="restartAgent(\''+a.id+'\')">Restart</button><button class="btn btn-amber" onclick="scanSyscheck(\''+a.id+'\')">Syscheck</button></div></div>';
+    h+='<div class="tabs"><span class="tab active" onclick="switchAgentTab(\''+a.id+'\',\'overview\',this)">Overview</span><span class="tab" onclick="switchAgentTab(\''+a.id+'\',\'sca\',this)">SCA</span><span class="tab" onclick="switchAgentTab(\''+a.id+'\',\'fim\',this)">FIM</span><span class="tab" onclick="switchAgentTab(\''+a.id+'\',\'vulnerabilities\',this)">Vulnerabilities</span><span class="tab" onclick="switchAgentTab(\''+a.id+'\',\'inventory\',this)">Inventory</span></div><div id="agentTabContent">';
+    h+='<div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">Hardware & OS</div></div><table><tbody><tr><td>Hostname</td><td>'+esc(a.name)+'</td></tr><tr><td>OS</td><td>'+esc(os.name||"-")+'</td></tr><tr><td>Version</td><td>'+esc(os.version||"-")+'</td></tr><tr><td>Platform</td><td>'+esc(os.platform||"-")+'</td></tr><tr><td>Architecture</td><td>'+esc(os.arch||"-")+'</td></tr><tr><td>IP</td><td>'+esc(a.ip)+'</td></tr><tr><td>Manager</td><td>'+esc(a.manager||"-")+'</td></tr><tr><td>Last Seen</td><td>'+formatDate(a.lastKeepAlive)+'</td></tr><tr><td>Registered</td><td>'+formatDate(a.dateAdd)+'</td></tr><tr><td>Groups</td><td>'+((a.group||[]).map(function(g){return'<span class="group-badge">'+esc(g)+'</span>'}).join("")||"-")+'</td></tr></tbody></table></div><div class="card"><div class="card-header"><div class="card-title">Status</div></div><table><tbody><tr><td>Status</td><td>'+statusBadge(a.status)+'</td></tr><tr><td>Config Status</td><td>'+esc(a.group_config_status||"-")+'</td></tr><tr><td>Node</td><td>'+esc(a.node_name||"-")+'</td></tr></tbody></table></div></div>';
+    h+='</div>';renderContent(h);
+  }).catch(function(e){showError("content",e.message,function(){pageAgentDetail(agentId)})});
+}
+function switchAgentTab(id,tab,el){
+  qsa(".tab").forEach(function(t){t.classList.remove("active")});el.classList.add("active");
+  var c=$("agentTabContent");c.innerHTML='<div class="loading">Loading</div>';
+  if(tab==="overview"){pageAgentDetail(id);return}
+  if(tab==="sca"){api("/agents/"+id+"/sca?limit=100").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="table-container"><table><thead><tr><th>Policy</th><th>Score</th><th>Passed</th><th>Failed</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var p=items[i];h+='<tr><td>'+esc(p.name||p.policy_id)+'</td><td class="'+(p.score>=80?'text-green':p.score>=50?'text-amber':'text-red')+'">'+(p.score!=null?p.score:"-")+'%</td><td>'+(p.passed||0)+'</td><td>'+(p.failed||0)+'</td></tr>'}h+='</tbody></table></div></div>';c.innerHTML=h||'<div class="empty-state">No SCA policies</div>'}).catch(function(e){c.innerHTML='<div class="error-state">'+esc(e.message)+'</div>'})}
+  if(tab==="fim"){api("/agents/"+id+"/fim?limit=50").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="table-container"><table><thead><tr><th>File</th><th>Event</th><th>Date</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var f=items[i];h+='<tr><td>'+esc(f.file||f.path||"-")+'</td><td>'+esc(f.type||f.event||"-")+'</td><td>'+formatDate(f.date||f.mtime)+'</td></tr>'}h+='</tbody></table></div></div>';c.innerHTML=h||'<div class="empty-state">No FIM events</div>'}).catch(function(e){c.innerHTML='<div class="error-state">'+esc(e.message)+'</div>'})}
+  if(tab==="vulnerabilities"){api("/agents/"+id+"/vulnerabilities?limit=100").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="table-container"><table><thead><tr><th>CVE</th><th>Package</th><th>Severity</th><th>CVSS</th><th>Status</th><th>Title</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var v=items[i];h+='<tr><td>'+esc(v.cve||"-")+'</td><td>'+esc((v.package?v.package.name:"")||"-")+'</td><td>'+severityBadge(v.severity)+'</td><td>'+(v.cvss_score||"-")+'</td><td>'+esc(v.status||"-")+'</td><td>'+esc((v.title||"").substring(0,50))+'</td></tr>'}h+='</tbody></table></div></div>';c.innerHTML=h||'<div class="empty-state">No vulnerabilities</div>'}).catch(function(e){c.innerHTML='<div class="error-state">'+esc(e.message)+'</div>'})}
+  if(tab==="inventory"){c.innerHTML='<div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">Packages</div></div><div id="invPkg"><div class="loading">Loading</div></div></div><div class="card"><div class="card-header"><div class="card-title">Open Ports</div></div><div id="invPorts"><div class="loading">Loading</div></div></div></div>';
+    api("/agents/"+id+"/packages?limit=50").then(function(d){var items=d.affected_items||[];$("invPkg").innerHTML=items.length?'<table><tbody>'+items.slice(0,20).map(function(p){return'<tr><td>'+esc(p.name)+'</td><td>'+esc(p.version)+'</td></tr>'}).join("")+'</tbody></table>':'<div class="empty-state">No packages</div>'}).catch(function(e){$("invPkg").innerHTML='<div class="error-state">'+esc(e.message)+'</div>'});
+    api("/agents/"+id+"/ports?limit=50").then(function(d){var items=d.affected_items||[];$("invPorts").innerHTML=items.length?'<table><tbody>'+items.slice(0,20).map(function(p){return'<tr><td>'+(p.local_ip||"-")+':'+p.local_port+'</td><td>'+esc(p.protocol||"-")+'</td><td>'+esc(p.state||"-")+'</td></tr>'}).join("")+'</tbody></table>':'<div class="empty-state">No ports</div>'}).catch(function(e){$("invPorts").innerHTML='<div class="error-state">'+esc(e.message)+'</div>'});
+  }
+}
+
+/* ══════════════════ SCA ══════════════════ */
+function pageSCA(){currentRoute="/sca";$("pageTitle").textContent="SCA Compliance";showLoading("content");api("/overview/sca").then(function(d){var items=d.affected_items||[];var scores=items.filter(function(i){return i.score!=null}).map(function(i){return i.score});var avg=scores.length?Math.round(scores.reduce(function(a,b){return a+b},0)/scores.length):0;var h='<div class="kpi-row"><div class="kpi-card"><div class="kpi-value '+(avg>=80?'text-green':avg>=50?'text-amber':'text-red')+'">'+avg+'%</div><div class="kpi-label">Avg Compliance</div></div><div class="kpi-card"><div class="kpi-value text-accent">'+items.length+'</div><div class="kpi-label">Policies</div></div></div><div class="card"><div class="table-container"><table><thead><tr><th>Agent</th><th>Policy</th><th>Score</th><th>Passed</th><th>Failed</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var it=items[i];h+='<tr class="clickable" onclick="navigateTo(\'/agent/'+(it.agent_id||"-")+'\')"><td>'+esc(it.agent_id||"-")+'</td><td>'+esc(it.policy||"-")+'</td><td class="'+(it.score>=80?'text-green':it.score>=50?'text-amber':'text-red')+'">'+(it.score!=null?it.score:"-")+'%</td><td>'+(it.passed||0)+'</td><td>'+(it.failed||0)+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageSCA)})}
+
+/* ══════════════════ FIM ══════════════════ */
+function pageFIM(){currentRoute="/fim";$("pageTitle").textContent="File Integrity Monitoring";showLoading("content");api("/overview/fim").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="table-container"><table><thead><tr><th>Agent</th><th>File</th><th>Event</th><th>Date</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var f=items[i];h+='<tr><td>'+esc(f.agent_id||"-")+'</td><td>'+esc(f.file||f.path||"-")+'</td><td>'+esc(f.type||"modified")+'</td><td>'+formatDate(f.date||f.mtime)+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h||'<div class="empty-state">No FIM events</div>')}).catch(function(e){showError("content",e.message,pageFIM)})}
+
+/* ══════════════════ VULNERABILITIES ══════════════════ */
+function pageVulnerabilities(){currentRoute="/vulnerabilities";$("pageTitle").textContent="Vulnerabilities";showLoading("content");api("/overview/vulnerabilities").then(function(d){var items=d.affected_items||[];if(!items.length){renderContent('<div class="card"><div class="empty-state">Vulnerability Detector not enabled on this Wazuh server.</div></div>');return}var sum={Critical:0,High:0,Medium:0,Low:0};for(var i=0;i<items.length;i++){var s=(items[i].severity||"").toLowerCase();var key=s.charAt(0).toUpperCase()+s.slice(1);sum[key]=(sum[key]||0)+1}var h='<div class="kpi-row"><div class="kpi-card"><div class="kpi-value text-red">'+(sum.Critical||0)+'</div><div class="kpi-label">Critical</div></div><div class="kpi-card"><div class="kpi-value text-amber">'+(sum.High||0)+'</div><div class="kpi-label">High</div></div><div class="kpi-card"><div class="kpi-value text-accent">'+(sum.Medium||0)+'</div><div class="kpi-label">Medium</div></div><div class="kpi-card"><div class="kpi-value text-secondary">'+(sum.Low||0)+'</div><div class="kpi-label">Low</div></div></div><div class="card"><div class="table-container"><table><thead><tr><th>CVE</th><th>Agent</th><th>Package</th><th>Severity</th><th>CVSS</th><th>Status</th><th>Title</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var v=items[i];h+='<tr><td>'+esc(v.cve||"-")+'</td><td>'+esc(v.agent_id||"-")+'</td><td>'+esc((v.package?v.package.name:"")||"-")+'</td><td>'+severityBadge(v.severity)+'</td><td>'+(v.cvss_score||"-")+'</td><td>'+esc(v.status||"-")+'</td><td>'+esc((v.title||"").substring(0,50))+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageVulnerabilities)})}
+
+/* ══════════════════ MITRE ══════════════════ */
+function pageMitre(){currentRoute="/mitre";$("pageTitle").textContent="MITRE ATT&CK";showLoading("content");api("/mitre").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="card-header"><div class="card-title">Techniques ('+items.length+')</div></div><div class="mitre-grid">';for(var i=0;i<Math.min(items.length,100);i++){var t=items[i];h+='<div class="mitre-cell" style="background:rgba(0,180,216,'+Math.min(.3+(t.score||0)/100,1)+')" title="'+esc(t.description||"")+'">'+esc(t.id||t.technique||"-")+'</div>'}h+='</div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageMitre)})}
+
+/* ══════════════════ RULES ══════════════════ */
+function pageRules(){currentRoute="/rules";$("pageTitle").textContent="Rules & Decoders";showLoading("content");Promise.all([api("/rules?limit=50"),api("/decoders?limit=50")]).then(function(res){var rItems=res[0].affected_items||[];var dItems=res[1].affected_items||[];var h='<div class="card"><div class="card-header"><div class="card-title">Rules ('+rItems.length+'+)</div></div><div class="table-container"><table><thead><tr><th>ID</th><th>Level</th><th>Description</th><th>Group</th></tr></thead><tbody>';for(var i=0;i<rItems.length;i++){var r=rItems[i];h+='<tr><td>'+(r.id||"-")+'</td><td>'+(r.level!=null?r.level:"-")+'</td><td>'+esc((r.description||"").substring(0,80))+'</td><td>'+esc((r.groups||[]).join(", "))+'</td></tr>'}h+='</tbody></table></div></div><div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title">Decoders ('+dItems.length+'+)</div></div><div class="table-container"><table><thead><tr><th>Name</th><th>Parent</th><th>Filename</th></tr></thead><tbody>';for(var i=0;i<dItems.length;i++){var d=dItems[i];h+='<tr><td>'+esc(d.name||"-")+'</td><td>'+esc(d.parent||"-")+'</td><td>'+esc(d.filename||"-")+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageRules)})}
+
+/* ══════════════════ MANAGER ══════════════════ */
+function pageManager(){currentRoute="/manager";$("pageTitle").textContent="Manager Health";showLoading("content");Promise.all([api("/manager"),api("/manager/info")]).then(function(res){var daemons=res[0].affected_items?res[0].affected_items[0]:{};var mgr=res[1].affected_items?res[1].affected_items[0]:{};var dl=Object.keys(daemons).filter(function(k){return k!=="name"});var h='<div class="kpi-row">';for(var i=0;i<dl.length;i++){var run=daemons[dl[i]]==="running";h+='<div class="kpi-card"><div class="kpi-value '+(run?'text-green':'text-red')+'" style="font-size:14px">'+(run?'Running':'Stopped')+'</div><div class="kpi-label">'+esc(dl[i])+'</div></div>'}h+='</div><div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">Manager Info</div></div><table><tbody><tr><td>Version</td><td>'+esc(mgr.version||"-")+'</td></tr><tr><td>Hostname</td><td>'+esc(mgr.hostname||mgr.name||"-")+'</td></tr><tr><td>Type</td><td>'+esc(mgr.type||"-")+'</td></tr></tbody></table></div><div class="card"><div class="card-header"><div class="card-title">Cluster</div></div><table><tbody><tr><td>Status</td><td>'+esc(mgr.cluster_status||"N/A")+'</td></tr><tr><td>Node</td><td>'+esc(mgr.node_name||mgr.node||"-")+'</td></tr></tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageManager)})}
+
+/* ══════════════════ GROUPS ══════════════════ */
+function pageGroups(){currentRoute="/groups";$("pageTitle").textContent="Groups";showLoading("content");api("/groups").then(function(d){var items=d.affected_items||[];var h='<div class="card"><div class="table-container"><table><thead><tr><th>Group</th><th>Count</th></tr></thead><tbody>';for(var i=0;i<items.length;i++){var g=items[i];h+='<tr><td>'+esc(g.name)+'</td><td>'+(g.count||0)+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageGroups)})}
+
+/* ══════════════════ EVENTS ══════════════════ */
+function pageEvents(){currentRoute="/events";$("pageTitle").textContent="Events & Alerts";showLoading("content");Promise.all([api("/events?size=100"),api("/events/stats")]).then(function(res){var items=res[0].affected_items||[];var sev=res[1].severity||{};var h='<div class="kpi-row"><div class="kpi-card"><div class="kpi-value text-red">'+(sev.Critical||0)+'</div><div class="kpi-label">Critical (12+)</div></div><div class="kpi-card"><div class="kpi-value text-amber">'+(sev.High||0)+'</div><div class="kpi-label">High (7-11)</div></div><div class="kpi-card"><div class="kpi-value text-accent">'+(sev.Medium||0)+'</div><div class="kpi-label">Medium (4-6)</div></div><div class="kpi-card"><div class="kpi-value text-secondary">'+(sev.Low||0)+'</div><div class="kpi-label">Low (0-3)</div></div></div><div class="card"><div class="card-header"><div class="card-title">Recent Alerts ('+items.length+')</div><div class="filter-tabs"><span class="filter-tab active" onclick="filterEvents(\'all\',this)">All</span><span class="filter-tab" onclick="filterEvents(\'critical\',this)">Critical</span><span class="filter-tab" onclick="filterEvents(\'high\',this)">High</span><span class="filter-tab" onclick="filterEvents(\'medium\',this)">Medium</span></div></div><div class="table-container"><table><thead><tr><th>Time</th><th>Level</th><th>Rule</th><th>Description</th><th>Agent</th><th>Group</th></tr></thead><tbody id="eventsTableBody">';for(var i=0;i<items.length;i++){var e=items[i];var lvl=e.level||0;var sv=lvl>=12?"critical":lvl>=7?"high":lvl>=4?"medium":"low";h+='<tr data-severity="'+sv+'"><td style="white-space:nowrap">'+formatDate(e.timestamp)+'</td><td>'+severityBadge(sv)+'</td><td>'+esc(e.rule_id||"-")+'</td><td>'+esc((e.description||"").substring(0,80))+'</td><td>'+esc(e.agent?(e.agent.name||e.agent.id||"-"):"-")+'</td><td>'+esc((e.groups||[]).slice(0,2).join(", "))+'</td></tr>'}h+='</tbody></table></div></div>';renderContent(h)}).catch(function(e){showError("content",e.message,pageEvents)})}
+window.filterEvents=function(sev,el){qsa(".filter-tab").forEach(function(t){t.classList.remove("active")});el.classList.add("active");qsa("#eventsTableBody tr").forEach(function(r){r.style.display=sev==="all"||r.dataset.severity===sev?"":"none"})}
+
+/* ══════════════════ TOPOLOGY ══════════════════ */
+function pageTopology(){currentRoute="/topology";$("pageTitle").textContent="Topology";showLoading("content");Promise.all([api("/overview"),api("/topology")]).then(function(res){var ov=res[0],topo=res[1];var byOs=topo.os||{};var byVer=topo.version||{};renderContent('<div class="kpi-row"><div class="kpi-card"><div class="kpi-value text-accent">'+ov.total_agents+'</div><div class="kpi-label">Total Agents</div></div><div class="kpi-card"><div class="kpi-value text-green">'+ov.active+'</div><div class="kpi-label">Active</div></div><div class="kpi-card"><div class="kpi-value text-red">'+ov.offline+'</div><div class="kpi-label">Offline</div></div></div><div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">OS Distribution</div></div><div class="chart-container"><canvas id="chartTopoOS"></canvas></div></div><div class="card"><div class="card-header"><div class="card-title">Agent Versions</div></div><div class="chart-container"><canvas id="chartTopoVer"></canvas></div></div></div>');
+    setTimeout(function(){
+      var osL=Object.keys(byOs).length?Object.keys(byOs):Object.keys(ov.os_distribution||{});var osV=Object.keys(byOs).length?Object.values(byOs):Object.values(ov.os_distribution||{});
+      if($("chartTopoOS")&&osL.length){if(charts.topoOS)charts.topoOS.destroy();charts.topoOS=new Chart($("chartTopoOS"),{type:"doughnut",data:{labels:osL,datasets:[{data:osV,backgroundColor:["#00b4d8","#00ff88","#ff9500","#ff4757","#8b949e","#7c3aed"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:"#8b949e"}}}}})}
+      var vL=Object.keys(byVer);if($("chartTopoVer")&&vL.length){if(charts.topoVer)charts.topoVer.destroy();charts.topoVer=new Chart($("chartTopoVer"),{type:"bar",data:{labels:vL,datasets:[{label:"Agents",data:vL.map(function(l){return byVer[l]}),backgroundColor:"#00b4d8"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#8b949e"}},y:{ticks:{color:"#8b949e"},beginAtZero:true}}}})}
+    },100);
+  }).catch(function(e){showError("content",e.message,pageTopology)})}
+
+/* ══════════════════ THREATS ══════════════════ */
+var _threatData={};
+function pageThreats(){currentRoute="/threats";$("pageTitle").textContent="Threat Intelligence";showLoading("content");Promise.all([api("/otx/status"),api("/otx/iocs")]).then(function(res){_threatData={otx:res[0],items:(res[1].iocs||[]),typeFilter:"",searchQuery:""};renderThreats()}).catch(function(e){showError("content",e.message,pageThreats)})}
+function filterThreats(type){_threatData.typeFilter=type;renderThreats()}
+function searchThreats(){_threatData.searchQuery=$("threatSearch").value;renderThreats()}
+function renderThreats(){
+  var otx=_threatData.otx,items=_threatData.items,typeFilter=_threatData.typeFilter,searchQuery=_threatData.searchQuery;
+  var enabled=otx.enabled;
+  var statusClass=enabled?"text-green":"text-red";
+  var statusLabel=enabled?"Active":"Inactive";
+  var badgeClass=enabled?"badge-green":"badge-red";
+  var filtered=items;
+  if(typeFilter)filtered=filtered.filter(function(i){return i.type===typeFilter});
+  if(searchQuery){var q=searchQuery.toLowerCase();filtered=filtered.filter(function(i){return i.value.toLowerCase().indexOf(q)!==-1})}
+  var typeCounts={};items.forEach(function(i){typeCounts[i.type]=(typeCounts[i.type]||0)+1});
+  var h='<div class="kpi-row">'
+    +'<div class="kpi-card"><div class="kpi-value '+statusClass+'">'+statusLabel+'</div><div class="kpi-label">OTX Integration</div></div>'
+    +'<div class="kpi-card"><div class="kpi-value text-accent">'+(otx.total_iocs||0)+'</div><div class="kpi-label">Total IOCs</div></div>'
+    +'<div class="kpi-card"><div class="kpi-value text-amber">'+(otx.ips||0)+'</div><div class="kpi-label">Malicious IPs</div></div>'
+    +'<div class="kpi-card"><div class="kpi-value text-accent">'+(otx.domains||0)+'</div><div class="kpi-label">Malicious Domains</div></div>'
+    +'<div class="kpi-card"><div class="kpi-value text-secondary">'+(otx.hashes||0)+'</div><div class="kpi-label">File Hashes</div></div>'
+    +'</div>';
+  h+='<div class="inline-actions" style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">'
+    +'<span style="color:var(--text-secondary);font-size:13px;margin-right:4px">Filter:</span>';
+  var types=[{k:"",l:"All"}];Object.keys(typeCounts).sort().forEach(function(t){types.push({k:t,l:t+" ("+typeCounts[t]+")"})});
+  types.forEach(function(t){h+='<button class="btn '+(typeFilter===t.k?'btn-primary':'')+'" onclick="filterThreats(\''+t.k+'\')">'+esc(t.l)+'</button>'});
+  if(enabled){h+='<button class="btn" onclick="refreshOTX()">Refresh</button><a class="btn" href="'+API+'/otx/download" download>Download Rules</a><button class="btn" onclick="downloadOTXCSV('+items.length+')">Download CSV</button>'}
+  h+='</div>';
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title">Integration Details</div></div>'
+    +'<table><tbody>'
+    +'<tr><td>Status</td><td><span class="badge '+badgeClass+'">'+statusLabel+'</span></td></tr>'
+    +'<tr><td>Rules File</td><td>'+(otx.size_bytes?(otx.size_bytes/1024).toFixed(1)+' KB':'&mdash;')+'</td></tr>'
+    +'<tr><td>Last Updated</td><td>'+(otx.last_updated?formatDate(otx.last_updated):'&mdash;')+'</td></tr>'
+    +'<tr><td>IOC Count</td><td>'+(otx.total_iocs||0)+'</td></tr>'
+    +'<tr><td>Pulse Sources</td><td>'+(otx.pulse_count||'&mdash;')+'</td></tr>'
+    +'</tbody></table></div>';
+  h+='<div class="card"><div class="card-header"><div class="card-title">Indicators of Compromise <span style="font-weight:400;color:var(--text-secondary);font-size:12px">('+filtered.length+'/'+items.length+')</span></div>'
+    +'<input id="threatSearch" oninput="searchThreats()" placeholder="Search IOCs..." style="background:var(--bg-primary);border:1px solid #2d2d3d;color:var(--text-primary);padding:6px 12px;border-radius:4px;width:200px;font-size:13px"></div>';
+  if(filtered.length){h+='<div class="table-container" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>Type</th><th>Value</th><th>Category</th></tr></thead><tbody>';
+    for(var i=0;i<filtered.length;i++){var ioc=filtered[i];
+      var typeLabel={ip:"IP",domain:"Domain",md5:"MD5",sha1:"SHA1",sha256:"SHA256",url:"URL"}[ioc.type]||ioc.type;
+      h+='<tr><td><span class="badge '+(ioc.type==="ip"?"badge-red":ioc.type==="domain"?"badge-amber":ioc.type.indexOf("sha")===0||ioc.type==="md5"?"badge-accent":"badge-gray")+'">'+esc(typeLabel)+'</span></td>'
+        +'<td style="font-family:monospace;font-size:13px">'+esc(ioc.value)+'</td>'
+        +'<td style="color:var(--text-secondary);font-size:12px">'+esc(ioc.category||"")+'</td></tr>'}
+    h+='</tbody></table></div>'}else{h+='<div class="empty-state">No IOCs match your filter.</div>'}
+  h+='</div>';renderContent(h)}
+function downloadOTXCSV(total){
+  if(!total){toast("No IOCs to download","error");return}
+  fetch(API+"/otx/iocs").then(function(r){return r.json()}).then(function(d){
+    var lines=["type,value,category"];
+    (d.iocs||[]).forEach(function(i){lines.push(i.type+","+i.value+","+(i.category||""))});
+    var blob=new Blob([lines.join("\n")],{type:"text/csv"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="otx_iocs.csv";a.click();toast("Downloaded "+d.total+" IOCs","success")
+  }).catch(function(e){toast("Download failed: "+e.message,"error")})}
+function refreshOTX(){
+  var btn=event&&event.target;if(btn){btn.disabled=true;btn.textContent="Updating..."}
+  fetch(API+"/otx/refresh",{method:"POST",headers:{"Content-Type":"application/json"}}).then(function(r){return r.json()}).then(function(d){
+    if(d.status==="error"){toast("OTX update failed: "+(d.message||"unknown"),"error")}else{toast("OTX updated: "+d.total_iocs+" IOCs","success")}
+    pageThreats()
+  }).catch(function(e){toast("OTX refresh failed: "+e.message,"error");pageThreats()})}
+
+/* ══════════════════ AUTOPILOT ══════════════════ */
+function pageAutopilot(){currentRoute="/autopilot";$("pageTitle").textContent="SOC Autopilot";showLoading("content");Promise.all([api("/autopilot/cases"),api("/autopilot/stats")]).then(function(res){var cases=res[0].affected_items||[];var stats=res[1];var pending=cases.filter(function(c){return c.status==="awaiting_approval"}).length;var h='<div class="kpi-row"><div class="kpi-card"><div class="kpi-value text-accent">'+(stats.last_24h||0)+'</div><div class="kpi-label">Last 24h</div></div><div class="kpi-card"><div class="kpi-value text-red">'+(stats.critical||0)+'</div><div class="kpi-label">Critical</div></div><div class="kpi-card"><div class="kpi-value text-amber">'+(stats.high||0)+'</div><div class="kpi-label">High</div></div><div class="kpi-card"><div class="kpi-value text-amber">'+pending+'</div><div class="kpi-label">Awaiting</div></div><div class="kpi-card"><div class="kpi-value text-green">'+(stats.resolved||0)+'</div><div class="kpi-label">Resolved</div></div><div class="kpi-card"><div class="kpi-value text-secondary">'+(stats.avg_triage_time?Math.round(stats.avg_triage_time)+'s':'-')+'</div><div class="kpi-label">Avg Triage</div></div></div>';
+    h+='<div class="card"><div class="card-header"><div class="card-title">Active Cases ('+cases.length+')</div><div class="filter-tabs"><span class="filter-tab active" onclick="filterAutopilot(\'all\',this)">All</span><span class="filter-tab" onclick="filterAutopilot(\'awaiting_approval\',this)">Pending</span><span class="filter-tab" onclick="filterAutopilot(\'open\',this)">Open</span><span class="filter-tab" onclick="filterAutopilot(\'resolved\',this)">Resolved</span></div></div><div class="table-container"><table><thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th><th>Alerts</th><th>MITRE</th><th>Updated</th><th></th></tr></thead><tbody id="autopilotBody">';
+    for(var i=0;i<cases.length;i++){var c=cases[i];h+='<tr data-status="'+c.status+'"><td>#'+esc(c.id)+'</td><td>'+esc((c.title||"").substring(0,50))+'</td><td>'+severityBadge(c.severity)+'</td><td>'+caseStatusBadge(c.status)+'</td><td>'+(c.alert_count||0)+'</td><td>'+(c.mitre&&c.mitre.technique_id?'<span class="badge badge-accent">'+esc(c.mitre.technique_id)+'</span>':'-')+'</td><td style="white-space:nowrap">'+timeAgo(c.updated_at)+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px" onclick="navigateTo(\'/autopilot/case/'+c.id+'\')">View</button></td></tr>'}
+    h+='</tbody></table></div></div>';renderContent(h);
+  }).catch(function(e){showError("content",e.message,pageAutopilot)})}
+function caseStatusBadge(s){var m={open:"badge-gray",triaged:"badge-accent",awaiting_approval:"badge-amber",approved:"badge-green",resolved:"badge-green",closed:"badge-gray",rejected:"badge-red",partial:"badge-amber"};return'<span class="badge '+(m[s]||"badge-gray")+'">'+esc(s)+'</span>'}
+window.filterAutopilot=function(status,el){qsa(".filter-tab").forEach(function(t){t.classList.remove("active")});el.classList.add("active");qsa("#autopilotBody tr").forEach(function(r){r.style.display=status==="all"||r.dataset.status===status?"":"none"})}
+
+function pageAutopilotCase(caseId){currentRoute="/autopilot/case/"+caseId;$("pageTitle").textContent="Case #"+caseId;showLoading("content");api("/autopilot/cases/"+caseId).then(function(c){
+  var sv=c.severity||"low";var isPending=c.status==="awaiting_approval";var isApproved=c.status==="approved";
+  var h='<div class="detail-header"><div class="detail-info"><div class="detail-name">Case #'+esc(c.id)+'</div><div class="detail-meta">'+severityBadge(sv)+' '+caseStatusBadge(c.status)+' <span>'+(c.alert_count||0)+' alerts</span><span>Created: '+formatDate(c.created_at)+'</span><span>Confidence: '+(c.confidence?Math.round(c.confidence*100)+'%':'-')+'</span>'+(c.mitre&&c.mitre.technique_id?' <span class="badge badge-accent">'+esc(c.mitre.technique_id)+' '+esc(c.mitre.technique||"")+'</span>':'')+'</div></div><div class="detail-actions">';
+  if(isPending)h+='<button class="btn btn-primary" onclick="approveCase(\''+c.id+'\')">Approve</button><button class="btn btn-danger" onclick="rejectCase(\''+c.id+'\')">Reject</button>';
+  if(isApproved)h+='<button class="btn btn-primary" onclick="executeCase(\''+c.id+'\')">Execute Plan</button>';
+  h+='<button class="btn" onclick="navigateTo(\'/autopilot\')">Back</button></div></div>';
+  h+='<div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">Description</div></div><p style="color:var(--text-secondary);line-height:1.6;font-size:13px">'+esc(c.description||"No description")+'</p></div>';
+  h+='<div class="card"><div class="card-header"><div class="card-title">Entities ('+(c.entities||[]).length+')</div></div>';
+  if(c.entities&&c.entities.length){h+='<table><tbody>';for(var i=0;i<c.entities.length;i++){var e=c.entities[i];h+='<tr><td>'+esc(e.type)+'</td><td>'+esc(e.value)+'</td><td><span class="badge badge-gray">'+esc(e.role||"")+'</span></td></tr>'}h+='</tbody></table>'}else h+='<div class="empty-state">No entities</div>';h+='</div>';
+  if(c.response_plan){h+='<div class="card col-span-2"><div class="card-header"><div class="card-title">Response Plan</div></div><p style="margin-bottom:12px"><strong>Risk:</strong> '+severityBadge(c.response_plan.risk_level||c.severity)+'</p><p style="margin-bottom:12px;color:var(--text-secondary);font-size:13px">'+esc(c.response_plan.summary||"")+'</p><table><thead><tr><th>Action</th><th>Target</th><th>Rationale</th></tr></thead><tbody>';var acts=c.response_plan.actions||[];for(var i=0;i<acts.length;i++){var a=acts[i];h+='<tr><td><span class="badge badge-accent">'+esc(a.type)+'</span></td><td>'+esc(a.target||"-")+'</td><td style="color:var(--text-secondary);font-size:12px">'+esc((a.rationale||"").substring(0,100))+'</td></tr>'}h+='</tbody></table></div>'}
+  if(c.actions&&c.actions.length){h+='<div class="card col-span-2"><div class="card-header"><div class="card-title">Executed Actions</div></div><table><thead><tr><th>Action</th><th>Target</th><th>Status</th><th>Detail</th></tr></thead><tbody>';for(var i=0;i<c.actions.length;i++){var a=c.actions[i];h+='<tr><td>'+esc(a.action)+'</td><td>'+esc(a.target||"-")+'</td><td>'+(a.status==="failed"?'<span class="badge badge-red">Failed</span>':a.status==="requested"?'<span class="badge badge-amber">Requested</span>':'<span class="badge badge-green">Done</span>')+'</td><td style="color:var(--text-secondary);font-size:12px">'+esc((a.detail||"").substring(0,80))+'</td></tr>'}h+='</tbody></table></div>'}
+  h+='<div class="card col-span-2"><div class="card-header"><div class="card-title">Timeline ('+(c.events||[]).length+')</div></div><div style="max-height:300px;overflow-y:auto"><table><tbody>';var evts=(c.events||[]).slice().reverse();for(var i=0;i<evts.length;i++){var ev=evts[i];h+='<tr><td style="white-space:nowrap">'+formatDate(ev.timestamp)+'</td><td><span class="badge '+(ev.type==="approved"?"badge-green":ev.type==="rejected"?"badge-red":ev.type==="triaged"||ev.type==="investigated"?"badge-accent":"badge-gray")+'">'+esc(ev.type)+'</span></td><td style="color:var(--text-secondary);font-size:12px">'+esc(ev.alert_id||"")+'</td></tr>'}
+  h+='</tbody></table></div></div></div>';renderContent(h);
+}).catch(function(e){showError("content",e.message,function(){pageAutopilotCase(caseId)})})}
+
+function approveCase(id){fetch(API+"/autopilot/cases/"+id+"/approve",{method:"POST"}).then(function(){toast("Case #"+id+" approved","success");pageAutopilotCase(id)}).catch(function(e){toast("Failed: "+e.message,"error")})}
+function rejectCase(id){fetch(API+"/autopilot/cases/"+id+"/reject",{method:"POST"}).then(function(){toast("Case #"+id+" rejected","info");pageAutopilotCase(id)}).catch(function(e){toast("Failed: "+e.message,"error")})}
+function executeCase(id){if(!confirm("Execute response plan for Case #"+id+"?"))return;fetch(API+"/autopilot/cases/"+id+"/execute",{method:"POST"}).then(function(){toast("Case #"+id+" execution triggered","success");pageAutopilotCase(id)}).catch(function(e){toast("Failed: "+e.message,"error")})}
+
+/* ══════════════════ HELP ══════════════════ */
+function pageHelp(){currentRoute="/help";$("pageTitle").textContent="Help";renderContent('<div class="help-page"><div class="card"><div class="card-header"><div class="card-title">Navigation</div></div><ul class="help-list"><li>Use the sidebar to switch between pages. Click the arrow to collapse it.</li><li>Command Center shows KPIs, agent status, OS distribution, and alert severity.</li><li>Click any agent row to drill down into SCA, FIM, Vulnerabilities, and Inventory.</li><li>Events &amp; Alerts shows the real-time feed with severity filtering.</li><li>SOC Autopilot manages AI-generated security cases with approve/reject/execute workflow.</li><li>Threat Intel shows AlienVault OTX integration status and IOC counts.</li><li>Click Refresh in the topbar to reload the current page data.</li><li>Use the search box to find agents by name or IP.</li></ul></div></div>')}
+
+/* ══════════════════ ALERT DETAIL ══════════════════ */
+function pageAlertDetail(alertId){
+  currentRoute="/alert/"+alertId;$("pageTitle").textContent="Alert #"+alertId;showLoading("content");
+  var alertData=null,remediation=null;
+  fetch("http://127.0.0.1:8000/api/v1/remediation/suggest/"+alertId,{headers:{"x-api-key":"mission-test-key-123"}}).then(function(r){return r.json()}).then(function(d){remediation=d}).catch(function(){});
+  fetch(API+"/events?size=1").then(function(r){return r.json()}).then(function(d){
+    var items=d.data&&d.data.affected_items||[];
+    var a=items[0]||{};
+    var h='<div style="display:flex;gap:8px;margin-bottom:16px"><a class="btn" href="javascript:history.back()">&#9664; Back</a></div>';
+    h+='<div class="cols-2"><div class="card"><div class="card-header"><div class="card-title">Alert Details</div></div><table><tbody>'
+      +'<tr><td>ID</td><td style="font-family:monospace">'+esc(alertId)+'</td></tr>'
+      +'<tr><td>Severity</td><td>'+(a.rule&&a.rule.level?severityBadge(a.rule.level>=12?"critical":a.rule.level>=8?"high":a.rule.level>=5?"medium":"low"):'-')+'</td></tr>'
+      +'<tr><td>Rule</td><td>'+(a.rule?esc(a.rule.description||a.rule.id||""):'-')+'</td></tr>'
+      +'<tr><td>Agent</td><td>'+(a.agent?esc(a.agent.name||a.agent.id||""):'-')+'</td></tr>'
+      +'<tr><td>Timestamp</td><td>'+(a.timestamp?formatDate(a.timestamp):'-')+'</td></tr>'
+      +'<tr><td>Location</td><td>'+(a.location?esc(a.location):'-')+'</td></tr>'
+      +'</tbody></table></div>'
+      +'<div class="card"><div class="card-header"><div class="card-title">Remediation</div></div>';
+    if(remediation&&remediation.suggested_actions&&remediation.suggested_actions.length){
+      h+='<table><thead><tr><th>Action</th><th>Detail</th></tr></thead><tbody>';
+      remediation.suggested_actions.forEach(function(act){
+        h+='<tr><td><span class="badge badge-accent">'+esc(act.action)+'</span></td><td style="color:var(--text-secondary);font-size:12px">'+esc(act.detail||"")+'</td></tr>';
+      });
+      h+='</tbody></table>';
+    }else{
+      h+='<div style="color:var(--text-secondary);font-size:13px">No remediation suggestions available for this alert type.</div>';
+    }
+    if(remediation&&remediation.device){
+      h+='<div style="margin-top:12px;border-top:1px solid #2d2d3d;padding-top:12px"><div class="card-title" style="margin-bottom:8px">Device</div>'
+        +'<table><tbody><tr><td>IP</td><td style="font-family:monospace">'+esc(remediation.device.ip||"-")+'</td></tr>'
+        +'<tr><td>Hostname</td><td>'+esc(remediation.device.hostname||"-")+'</td></tr>'
+        +'<tr><td>Type</td><td>'+esc(remediation.device.device_type||"-")+'</td></tr>'
+        +'<tr><td>Status</td><td><span class="badge '+(remediation.device.status==="ONLINE"?"badge-green":"badge-red")+'">'+esc(remediation.device.status||"-")+'</span></td></tr>'
+        +'</tbody></table></div>';
+    }
+    h+='</div></div>';
+    renderContent(h);
+  }).catch(function(e){showError("content",e.message,function(){pageAlertDetail(alertId)})})}
+
+/* ══════════════════ ACTIONS ══════════════════ */
+function restartAgent(id){apiPut("/agents/"+id+"/restart").then(function(){toast("Agent "+id+" restarted","success")}).catch(function(e){toast("Failed: "+e.message,"error")})}
+function scanSyscheck(id){apiPut("/agents/"+id+"/scan/syscheck").then(function(){toast("Syscheck triggered for "+id,"success")}).catch(function(e){toast("Failed: "+e.message,"error")})}
+
+/* ══════════════════ ROUTER ══════════════════ */
+function route(){
+  var hash=location.hash.slice(1)||"/";var parts=hash.split("/").filter(Boolean);
+  var page=parts[0]||"";
+  qsa(".nav-item").forEach(function(n){n.classList.toggle("active",n.dataset.page===page||(page===""&&n.dataset.page==="dashboard"))});
+  if(page==="agent"&&parts[1])pageAgentDetail(parts[1]);
+  else if(page==="agents")pageAgents();
+  else if(page==="sca")pageSCA();
+  else if(page==="fim")pageFIM();
+  else if(page==="vulnerabilities")pageVulnerabilities();
+  else if(page==="mitre")pageMitre();
+  else if(page==="rules")pageRules();
+  else if(page==="manager")pageManager();
+  else if(page==="groups")pageGroups();
+  else if(page==="events")pageEvents();
+  else if(page==="topology")pageTopology();
+  else if(page==="threats")pageThreats();
+  else if(page==="autopilot"){if(parts[1]==="case"&&parts[2])pageAutopilotCase(parts[2]);else pageAutopilot()}
+  else if(page==="help")pageHelp();
+  else pageDashboard();
+  updateLastUpdated();
+}
+
+window.addEventListener("hashchange",route);
+$("refreshBtn").addEventListener("click",function(){route();toast("Refreshed","info")});
+$("toggleSidebar").addEventListener("click",function(){var sb=$("sidebar");sb.classList.toggle("collapsed");$("toggleSidebar").innerHTML=sb.classList.contains("collapsed")?"&#8594;":"&#8592;"});
+$("globalSearch").addEventListener("keydown",function(e){if(e.key==="Enter"){var q=e.target.value.trim();if(q){location.hash="/agents";setTimeout(function(){var input=qs(".search-box input");if(input)input.value=q},100)}}});
+
+function toggleNL(){
+  var p=$("nlPanel");p.classList.toggle("open");
+  if(p.classList.contains("open"))setTimeout(function(){$("nlInput").focus()},100);
+}
+window.toggleNL=toggleNL;
+function nlSearch(){
+  var input=$("nlInput");var q=input.value.trim();if(!q)return;
+  var msg=$("nlMessages");
+  msg.innerHTML+='<div class="nl-msg nl-user">'+esc(q)+'</div>';
+  input.value="";msg.scrollTop=msg.scrollHeight;
+  msg.innerHTML+='<div class="nl-msg nl-bot" style="color:var(--muted)">Thinking...</div>';
+  fetch(API+"/nl/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q})})
+  .then(function(r){return r.json()}).then(function(d){
+    msg.removeChild(msg.lastChild);
+    var txt=esc(d.message||"No response.");
+    if(d.results&&d.results.type==="overview"){
+      var r=d.results;
+      txt+='<br><br><span style="color:var(--accent)">&#128268; '+r.devices_total+' devices</span> &middot; <span style="color:var(--green)">'+r.devices_online+' online</span> &middot; <span style="color:var(--red)">'+r.devices_offline+' offline</span> &middot; <span style="color:var(--amber)">'+r.alerts_open+' alerts</span>';
+    }else if(d.results&&d.results.type==="offline_devices"&&d.results.items){
+      txt+=d.results.items.map(function(i){return'<br>&#128308; ['+i.severity+'] '+esc(i.title)}).join("");
+    }else if(d.results&&d.results.type==="critical_alerts"&&d.results.items){
+      txt+=d.results.items.map(function(i){return'<br>&#128308; ['+i.severity+'] '+esc(i.title)+' <span style="color:var(--muted)">'+esc(i.site)+'</span>'}).join("");
+    }else if(d.results&&d.results.type==="device_detail"){
+      var r=d.results;
+      txt='<b>'+esc(r.ip)+'</b><br>Name: '+esc(r.friendly_name||r.hostname||"-")+'<br>Type: '+esc(r.device_type)+'<br>Vendor: '+esc(r.vendor)+'<br>Status: '+esc(r.status);
+    }
+    msg.innerHTML+='<div class="nl-msg nl-bot">'+txt+'</div>';
+    msg.scrollTop=msg.scrollHeight;
+  }).catch(function(e){
+    msg.removeChild(msg.lastChild);
+    msg.innerHTML+='<div class="nl-msg nl-bot">Error: '+esc(e.message)+'</div>';
+    msg.scrollTop=msg.scrollHeight;
+  });
+}
+window.nlSearch=nlSearch;
+route();
+</script>
+</body>
+</html>

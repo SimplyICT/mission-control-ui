@@ -1,0 +1,7520 @@
+{
+  "enabled": true,
+  "total_iocs": 1501,
+  "pulse_count": 60,
+  "ips": 85,
+  "domains": 430,
+  "hashes": 855,
+  "urls": 131,
+  "size_bytes": 349994,
+  "last_updated": "2026-06-10T03:00:37.545304+00:00",
+  "rules_file": "otx_rules.xml",
+  "message": "OTX threat intel active \u2014 1501 IOCs from 60 pulses.",
+  "iocs": [
+    {
+      "type": "ip",
+      "value": "103.214.172.33",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "104.194.140.6",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "104.207.144.154",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "104.253.1.46",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "107.175.235.196",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "112.121.183.202",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "124.156.129.151",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "136.0.141.112",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "136.0.141.138",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "136.0.141.41",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "138.226.236.52",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "140.206.161.227",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "144.202.50.151",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "146.19.216.119",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "146.19.216.120",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "146.19.216.125",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "147.45.42.200",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "147.45.42.205",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "149.248.11.71",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "154.211.86.110",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "154.81.166.17",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "159.223.77.60",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "162.33.177.16",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "165.22.170.129",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "166.0.132.237",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "170.187.181.243",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "172.245.5.22",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "173.254.201.16",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "174.169.162.62",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "176.100.37.91",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "179.43.172.213",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "181.116.218.56",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "185.178.208.153",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "185.195.232.139",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "185.221.153.121",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "186.158.223.35",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.101.131.250",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.224.87",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.225.241",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.78.172",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.78.28",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.79.133",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.79.179",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "191.96.79.41",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "192.3.30.159",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "193.141.60.212",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "194.150.220.218",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "194.58.66.53",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "194.58.66.82",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "194.59.31.192",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "194.62.55.81",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "195.160.221.203",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "198.12.106.60",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "200.9.155.153",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "202.144.192.47",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "203.237.119.147",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "206.238.115.58",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "212.46.12.182",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "217.156.122.75",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "217.160.125.125",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "23.128.228.6",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "23.137.105.75",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "23.26.237.80",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "38.225.209.122",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "38.225.209.229",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "43.159.168.186",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "43.160.202.246",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "43.162.84.202",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "43.165.6.36",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "45.112.194.82",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "45.135.162.90",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "45.225.135.54",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "46.226.166.57",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "47.82.154.2",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "5.223.42.12",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "5.223.49.77",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "5.223.58.4",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "5.223.68.181",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "64.94.84.97",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "66.59.196.250",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "8.222.134.149",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "85.137.253.186",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "85.215.131.70",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "91.92.240.127",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "ip",
+      "value": "96.232.20.66",
+      "category": "malicious_ip"
+    },
+    {
+      "type": "domain",
+      "value": "0x666.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "1006326830900030409.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "49xb5hoiqsr.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.3mkorealtd.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.doublemobile.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.fetish-friends.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.haijing88.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.ilptour.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.petitechanson.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.sudsmama.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "abc.woopami.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ads-parkpro.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "adsparkpro.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "adsparkpro.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "aforvm.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "afxwd.ddns.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ai-like.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ai-scan.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "alphanonega.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "andrefelipedonascime1778799406970.2241107.meusitehostgator.com.br",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "api.securehubcloud.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "appfreshstart.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "appgetonline.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "appmakingcenter.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "appradarr.cc",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "arbsniper.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "arch2.maxdatahost1.cyou",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "arkypc.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "asdqxcdsa.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ashx.lhlsjcb.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "asper1.freeddns.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "asteara.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "astrocaf.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "atsheisdomestic.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "attachedfile.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "avafex.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "avipstudios.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "background-off.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "background-ready.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "backgroundformat.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bankafolder.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "barannclinic.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "beacontrace.bond",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "beltoxer.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "benefasts-fhgs2.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bg-go.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bg-ready.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bg-removerok.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bg-transparency.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bigbossbro777.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bintail.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "biopranica.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bititer.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "boosterjuices.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "boso6ka.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "boss.securehubcloud.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "brightson.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "brionter.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "brokeapt.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bseolized.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "bth.startthewave.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "buccstanor.pics",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "business-data-leaks.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "calixcloudinfo.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "candipoker.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "capibar.chat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "captioto.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "careerpredictto.space",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "careerpulsynk.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "careertrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "carlessclapped.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "catalogo.castrouria.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "catalyst-ltd.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cauterizespray.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cbmelipilla.cl",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cdn-1415.brightcanvas.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cdn.kleymarket.ru",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ceronet.work",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ceronetwork.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cert.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "check.dnsmaps.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "check.first-node.rocks",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "check.office365-update.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cheeshomireciple.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cleanmymacos.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cloudplatform-single-spa.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "coco-fun2.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "coco2-hram.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "connectptogether.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "contactpredicttogether.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "contactpulsynk.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "contacttrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "contatoplus.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "coslyintra.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cotrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "country1.ignorelist.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "coverlink.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cptoptious.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "crewlworkinew.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "crystaldiskmark.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "culyrax.us",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "cw.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "d.pc-weide.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dapala.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dash.awaydouble.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "datumprobe.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "deep-ai-guard.store",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "deploypasskey.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "devs.calixcloudinfo.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dialerformac.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dmtn-tv.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dns.dnserver.life",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dns.dnsmap.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dnspy.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "do2wers.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "docs.cloudplatform-single-spa.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "docs.t-in-one.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "domatisc.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "domawe.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "domenpozh.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "doqeers.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "doxxela.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "dryvecar.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "e4wxbrg5277.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ed.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "efficiency-planes-emotions-fascinating.trycloudflare.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ejecen.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "elsavora.us",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "empowerpharmacy.space",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "enslaveculprit.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "eraggifts.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "erp.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "etoftheappyrince.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "famiode.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "faoith.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "fastfilenext.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "fd.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "filefastdata.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "fiveworkscorp.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "flame-guard.cc",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "forestoaker.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "fostercareintheus.optimizationprime.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "fr24cast.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "futampako.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ghazacast.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ghidralite.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "giovettiadv.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "github.cloudplatform-single-spa.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "gluckcreek.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "golinked.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "greatness-marketing.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "grpcurl.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "grupoconstat.bitrix24.com.br",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "guard.rs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "guhxmg.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "guiformat.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "handala-hack.tw",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "handala.red",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "haploadpin.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hcgos.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "healightejustb.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hello-brothers777.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "helpdock.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hilofet.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hitkrul.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "honestly.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.contacttrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.mailpredicttogether.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.mailpulsynk.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.mailtrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.onoplanoai.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.predicttocareer.space",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.pulsynk.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.recruitvex.us",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.trixauvex.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hr.trixauvexnet.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "hyperdevpipline.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ibewfszvehhb.lkczkqweca.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "idrci.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "iiwdsxwamylbwwsoyrmj.supabase.co",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ikhwancast.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ilspy.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "indeed-jobs.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "indeedhiring.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "info-secure.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "insight-sweet-drainage-appreciated.trycloudflare.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "integritycrc.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "intem.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "io.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ipv4.rs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "isgilan.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "itdesk.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "javascriptapiusa.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jcdlforwarding.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jclforwarding.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jh038x18gy9.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jihiz.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jira.cloudplatform-single-spa.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "jira.t-in-one.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "joeyapple.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "joymobile.com.ua",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "joytion.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "justicehomeland.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "justicehomeland.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "justicehomeland.ru",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "justsstop.ru",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kayeart.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kcbps.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kevinnotanother.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "keyview.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kitfloor.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kleymarket.ru",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kofeynayagush.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "korovkamu.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kr.hugo-lapp.co",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "kvrnjr30.apexharvestor.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "laislivon.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "lakhov.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "lbarticle.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "legendarytrendsbay.shop",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linked-hr.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linked-on.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linked-people.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linkedall.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linkedplus.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "linkedwith.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "lkczkqweca.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "lockbit.black",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mailpredicttogether.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mailpulsynk.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mailtrixauvex.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "malext.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "malicious.workers.dev",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "malkim.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "maxintora.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mcagov.cc",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "media.stellarcloudhub1.cfd",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "medoviypirog.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mentaorb.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "metlafounder.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "metramon.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "metrikcs.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mfcmapi.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "miappl.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "microsi0ft.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "migadyn.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mikulatur.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "milbiorb.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mnb-ny.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mobileversioncrc.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "molokotarelka.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "moment-cat-qld-place.trycloudflare.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mpasvw.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mqttexplorer.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "msiidentity.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "mtg-life.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "naiqja.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "natsupport.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nemesis.work",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nemesistrade.work",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "news.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "newtdsone.shop",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nibelined.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nicenicc.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nitlebuf.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "notifypulsynk.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "novayastaruxa.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nowurisch.fit",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "npm.t-in-one.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ns1.group-ib.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ns1.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ns2.group-ib.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ns2.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nslookup.dnserver.life",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nwphotoblog.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "nxlog.tech",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "obelnamevalf.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "obfuscate.io",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "octopixeldate.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "octopox.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ondofinance.tech",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "onlineapp.ooraikaoo.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "onoplainai.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "onoplanoai.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "oob.moika.tech",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "optixauvex.us",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "originaldownloads.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ouilov.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pan.rongtv.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pan.ssffaa19.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "panel.securehubcloud.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "paralegalmustang.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "passkeyadd.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "passkeydeploy.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "peloetwq71.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pelorso90la.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pengajian.muliastudy.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "perewoisbb0.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "performanceviewtools.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "persaniusdimonica8.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pewqpeee888.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pewweepor092.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pilautfile.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pipipoopochek6.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pla7ina.cfd",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "play67.cc",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "poeooeowwo777.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "poronto.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "predictcareertogether.space",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "predicttocareer.space",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "predicttogerecruit.store",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "predicttogether.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "predicttogetherrecruit.store",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "processing-in-progress-x4.t3.storage.dev",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ptrei.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pulsnyk.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "pulsynk.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "qjywvkbl.degassing-mould.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "quantumdataserver5.homes",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "quitethepastry.ru",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rapidfilevault4.cyou",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rapidfilevault4.sbs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rapidfilevault5.sbs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rawmrk.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "raxelpak.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "raxvatange.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "raytherrien.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "reachnv.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rebidy.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "recruitptogether.xyz",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "recruitvex.us",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "reews09weersus.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "repqoow77wiqi.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "res2erch-sl0ut.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "res2erch-sl2ut.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "resilientlimb.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rhymbil.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "roldco.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ropea.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "round5on.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "router.dnserver.life",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "rvdownloads.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "saramoftah.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "scan-security.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "scanseq.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "seagalnssteavens.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "securehubcloud.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "sedaliarealty.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "service.systemsvcs.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "serviceprohub.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "servicing.pureplantcravings.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "sinjim.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "sinterfumesco.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "smokeenew.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "softwe.art",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "st.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "staruxaproruha.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "stclegion.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "steganography.rs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "stinarosen.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "sudsmama.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "swift-sh.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "system-clean.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "systemsvcs.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "talentnexhr.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "taxations.cn-web-okooo.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "td.hugo-lapp.lat",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "teampulsynk.team",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "teamsvoicehub.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "terafolt.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "testio.ecartdev.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "thickentributary.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "thomphon.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "time.microsofttrends.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "tmcnex.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "togetherhire.fun",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "traceglimpse.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "tracekey.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "trafficmanagerupdate.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "trehlub.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "trindastal.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "trixauvex.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "trixauvexnet.ink",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "tronscaner.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "uk176video.live",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ukentaspectsofc.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "unlockcontent.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "update.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "updt-scansecurity.top",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "us41web.live",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "uslinked.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "uuid.rs",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "vagturk.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "valorecuiting.online",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "vcopp.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "vnc.kcii2.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "we2luck.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "webcrcprove.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "webgleam.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "webinnosetup.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "webstizkgao.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "wewannaliveinpice.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "wewannaliveinpicede.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "whatsappcenter.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "winfoacacorp.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "winsetupfromusb.org",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "winst0.kozow.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "woupp.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "wriconsult.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ws.ztts88.cyou",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ws4962.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "wusetail.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ww12.dnserver.life",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "www.drivelivelime.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "www.group-ib.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "www.kaspersky.icu",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "www.natsupport.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "www.whatsappcenter.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "xeebii.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "xtadts.ddns.net",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "yablochnisok.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ycyfugihih.cfd",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "yourfastcrc.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "yygp4pdh.apexharvestor.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "zg5mkr7q.apexharvestor.digital",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "zh-welcome-1xbet.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "zhengfu666.com",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "zimbra-beta.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "zimbra.life",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "domain",
+      "value": "ztds.info",
+      "category": "malicious_domain"
+    },
+    {
+      "type": "md5",
+      "value": "008cd423ca45134d3343f66cced1d104",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "00d979bdb1b29b2859f2120580f101f40e8e13de0b3b7bc29675e2c31098a03c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "00e195d94d3b1f7092eb9ed132f89d1b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "015259747ddb8f227fe56a6d12b0fc7f0dadd20e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "0198883f685b52ff5adf0f7d2e64adbbf3c9c9da",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "01b43dad62e56164771db696827a30ae",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "02048121fd0b3a51751ce7677155aa8818eba9d8ce67ea26fd1d7f43cfcdabd2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "021666417de8b9972c179783fe60d4c4ad2d93224e3a0f16137065c960b1b845",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "023c8f8e2a71da2044e3f04ac74c8b3616f417436476cea85222f01119615979",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "02542a49b3bd6bd2795afb67840acb4557b17e017f7503dd03ebe3aeeb28720e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "02819d200d1424882af81cb504b3e8614b32397a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "02a52c4cc11748d44c9b49d508ee4e46425661981fa1406f30ec0830cb69ddc5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "033cb31c081ff4292f82e528f5cb78a5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "033cb31c081ff4292f82e528f5cb78a503816462daba8cc18a6c4531009602c2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "03816462daba8cc18a6c4531009602c2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "038cab0c60c53cf12f048272014024c0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "039e659ade3aa8ee7758c11fdb8fbfffd2491920046d638413cea2042f6d584c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "039e93b98ef5e329f8666a424237ae73",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "03a89ea5a8604e8bc09a4249211e20404a2c7047adda65a57deeb46abb1fb116",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "04194f8ddd0518fd8005f0e87ae96335",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "043e457726f1bbb6046cb0c9869dbd7d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "047687548605734348792e2a9d771b6cba42facd0d0d7d44d778290a25848574",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "04f7126031fe11475e0b24ce5298ecd6e56ec363",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "06130dc648621e93acb9efb9fabb9651",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0628ad6d1fd836b13b22e75fa169502d8ce78b7ad20f0261eb5151da98437bca",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "06bed0a0906e52c764b3b7016d6a4428",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "071e662fc5bc0e54bcfd49493467062570d0307dc46f0fb51a68239d281427c6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0743154262c5ccf24794168ee331feeefc6539386715307ee44d5d9b6b321077",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "079ae4f813939dd96b961ae288fb7f930649dfebb4884c13af95309a71f986f5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "07d0d4c580ac76ac3ffb63353c9b6b85",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "080ab9bc2893ba7bad354551604a667af40ed2ae2d042d2323c2bd9ad3122192",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0857148fb0bc4aa7adf967ede2307bdb4fc427065d5b6a6db132688a5a8e1eb8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "08a474368a2f94f347ad9e1a0a08d4258fcf49c6b9373214f7901bb770bacca4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "08c069f133ac27cbc02a0ed79e4e87ba",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0933fbd16c7a8b70199f5612e147a22c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "096372d19b4787e989f44e04c5ecc29885aa927c34ae8666628d6c0eb20bb447",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "09d0517a1f69feff8186655ae3b567e0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0a26238f6c516de5885457c93042531aa59bc206a9537cebf5267cedc6c68531",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0a542751724a432a8448324613e0ce10393e41739a1800cbb7d5a2c648fcdc35",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "0ac6b8a5f0572b82f6483f2dff2d1535e3da55f0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0b1870d57221eec6f3bbef648e71a724",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0b9b420e3edd2ade5edc44f60ca745a2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0c32bfdf83ecebe3a1399d261dc8ff57",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0c3b60ffc4ea9ccce744bfa03b1a3556",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0c62c11e910d7c0d6b6c9800b70e78bfd9220e1f78bd7bb34ae4c3646d05f6e5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0c63857269205f6505c259a56ea53b23b2bf7432aabb8647d59b321232ca7e36",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0c8c562ed7343d28c76d93a88bd0534440d0e71292ebcee66314d6d5c2f34403",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0ca424475803a1cb54908a81a00bd93f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0cffb8b8fd11f300b5477ff23ec576f66ab65c021d995fa5495827237e679d93",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0dc06ecdaa63fe24859cfd955053c23245c536e4733480239d14bebf12688e35",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "0dc9684946142d231f75ed2c9ce1f7ebc38b39f4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0e346fb46176ffce4c7dbe40a8682bc1f4a2fc70b7389be427568d97a47bd149",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "0e7dba87909836896f8072d213fa2da9afae3633",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "0e8c2c75d3dd4b670b8d035d5f645c74f5455c02",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0eb664b45200c9b4e954162128d2c13bc693f6ae57650b49a3a9fb9b2e821110",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0eb72c1f1605d999488d903021d82a9ff4b937e6c1a1da50c55440f018e83ad9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0eda83335334d3c877578326a5843d3e2a3b745834de27eac00b694262e2b1ed",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0f22e6ed962180838c03cb70af8bd66a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "0ffb16209def5500ff4380d9e8093437",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "0fff684fa209cb79ab1104da3cfbbf4c950078e14e54c2564d130abbd4e464a9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1011ac97559249522143d32338b08036",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1020497bef56f4181aefb7a0a9873fb4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "10824d14c814524155f2b529cf5fee43",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "111e8abb4b8592172d597926f47f018c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1139b39d3cc151ddd3d574617cf113608127850197e9695fef0b6d78df82d6ca",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "11705121f64fa36f1e9d7e59867b0724",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "119b0994bcf9c9494ce44f896b7ff4a489b62f31706be2cb6e4a9338b63cdfdb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "123e80a34508c4dede7cc70e76931fcc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "128f3ad395f86be6569ef2a957d42902a910de6c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "129225b3e93c17f131bcc2a982ffb09a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "12e41cc25fe8e99a0fca691fb88ed9823e989853",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "130fdc32de36a362e65c7138b560eb8d8f6ae599",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1344e6bc51cea35befb4adff7a25899b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "13669b8f2bd0af53a3fe9ac0490499e5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "13907caae48ea741942bce60fa32087328475bd14f5a81a6d04d82286bd28b4d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "1405a3c5e0aeb08012484134e16cdec4ab29b4a4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "140a7f995b0336942691a2e93e2017fd575267c017c7d0728d69169306f91963",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "149f5cfe98e06f9f7fb6d29dd271830c02250f9d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "14a0d7978872a2739ac31ef42539e8c708af6afccc5eb74f22fe2b676bfa2df7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "15e6df0c95f2147952308e640d55270e9d097639eaebb34d4b352415f1c6bceb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "165cc3a9a40e04c469e5c818943920f38dc48db2c2365f1a71bb52c9582f0ea9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "168f50bf9a87099094ef410e3ac33e676a6a8740a5437cd09e7b63d73df8431a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1742a9fa35e253614b76ac0f687ba02e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1794369214b7f62e70a0485e61335c61",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "17f8f8f34dfa737f36182fed7ff9e9814a114058",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "185b7a487316454da04e9cc0fe6eb370bb2955cf6096fe3e8c02c46f8989ba37",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "188c72b101cd8ad96ef971e8943bddb3acd9dc45fe1d8719217d171e600a29aa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1962cef10cf737300d04a23139122abcc8e8803e54dfcb63054140fbe549bed0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "197f11a7b0003aa7da58a3302cfa2a96a670de91d39ddebc7a51ac1d9404a7e6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "199bd156c81b2ef4fb259467a20eacaa9d861eeb2002f1570727c2f9ff1d5dab",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "19b2f2902825eaf62f2db1eb8aaa520a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1a5da90175ff7b55ddafcdb816adf574b92a112604019b219d82adab820fb3a2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1a60cb5f7e2fb7c09fc3dc8459108b26ac98ee73131f37a28cfdad5fc75b7a7d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1aa72cd19e37570e14d898dff3f2e380",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1bb59491f7289b94ab0130d7065d74d2459a802a7550ebf8cd0828f0a09c4d38",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "1c085c7663518f499396cbe95b5613ca8e46a011",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1c0924f5711a24821921de5ad822213b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1c170b7470d507378ddb78e9d66305f1184e965baaf2d27ededb23a318a58953",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1c56228cbd1bdebb9e5ea55c2749150fee06c865ede4a3754e8bd6843e51d2d4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "1cb0d3de945cec63dc0cd00cb4404d48079e565b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1cd9eccc8e73d60164390beddf4cdc48",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1d09357b6a096fdc35cd5c873eed15665d6b3c879d20c8cf01e6bca0005512cf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1d09499cb2d7d70df903b60602a58887",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1d1f71936db05f67765f442feb95f3fd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "1d28c9073fb89c09cd34ea3592d6654832e45a14",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1e1edf879b2dc6c9892a22bfa5985db1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1f385acf11f8ea6673d7295be6492ea9913b525da25dcc037ea49ef4f86a9d58",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "1fc515870c681bf3e1b7947e2248bbcfe9918db2978117e91134de20bd42fd6a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "1ff222457f5e0e32adfa8341f260dde7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "20042f1efb59c99e3addf822a3e9e5a496f0b701362df038a50a32a9f504a136",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "202a5bcb87c34993318cfa3fa0c7ecb0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "202f3c8cf41a627db403295874220ddd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2064ef387ac9e51ba72b32004d99e8a0b291dbab24ed8db30f437abf1b40cb49",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "211e1fc502152ea272edb5a81a5b4405a28c48f9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "21b6409a7b84446310daca5409ad6112ac60a1e4bef97736e53fff5f63bfdef4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "22b07d2af98bb180474c33d93861124bbdf9b5dd7e42a8bddc654310469a9a2c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "22d051c9cc458012b98e9bdca501759e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "22e2d84c2a9525e8c6a825fb53f2f30621c5e6c68b1051432b1c5c625ae46f8c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "22f335a65c479c26019f6187dae290624117c82a702a96acbb04fa325f730d3e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2375193669e243e830ef5794226352e7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2388ed7aee0b6b392778e8f9e98871c06499f476c9e7eae6ca0916f827fe65df",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "23c2ebc8f9bac96b2fbbb9b00b457c48d65a9f66ec24fbfba339eeefd0539ad7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "241a50befcf5c1aa6dab79664e2ba9cb373cc351cb9de9c3699fd2ecb2afab05",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "242038139842ec79ec1044c64eb0804a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2423a5bf0fa7cb9ec09211630a5488629499691b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "24398b75be2645e6c695e529e62e60deb418143a4bbea13c561d3c361419eb54",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "244d81fd9908cd17815501d4edadeb1baf1c421aa25d8bd61c7cb481c939540e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "24a11a26a2586f4fba7bfe89df2e21a0809ad85069e442da98c37c4add369a0c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "24aa4e780ccd66cef13da9ef98c32954105cf2a32ec643efab0ba1aa2d6352f4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2525d1e427a9983b0b4ca0906a4b44ffb9814b23d53fd8a2e3ab6512b027c733",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "25270cc429ada8028b5b33220ed412c47907ecceea7377d608fac5af01bed56a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "25818cdcfb39eaa22d999d214e6159417cfba72e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2587217bc685527480c803ddf34a56ae9d9bf02681828a8a2081acc775312cf3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "25e121e3b7d300c0d0075b33e5eca39a3e6a659fb9cfee52b70ef71686628f1b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "25e3c200de4868d754a3b4f4f09ec2bf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "26100db3f56880110a92a2b4742d6eaf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2616e7ec2d6c4b86a7fa1f4a762ae918",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2654c08491a0f7c4a3dfc6282de5638b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "26a2268281e8043125ef72b92f8980b42912048753d56894bc378fb54c7c188a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "26ce4d8ea691bb54864c3455ed6b7620",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "26f2abfc254a59c2386dd46dca16744f7147a0f0366cb6008e1d53219175f44c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "26f4c7f37448911310adf20e6e74aac60e92b97591f4ac9e5e21cc503be8da16",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "276789b3b946753e9be482219bc4526da2da8772701f3b9d00c74038e2604ece",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "27a3c439308f5c4956d77e23e1aad1a9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2812e0847d472cb8870c94f463331dbe53b84135132b9bf5f6d84c2382be628f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "285c764e84ca830d90e75df06ee5445693f79058142b85b5e054c5c78c0421aa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "28f871af1833935beba160b51e4a732c43a5dde5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "29ac78c51bcdfe68c64830bdeb6e41437dd55e2691149741c9b78be03b6c82ea",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "29b38a57b22f0a442e4e731525aeada927ea2f56",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "29f1d346a6e71774c7dad25b90f446b2974393df",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2a350525ba72ffc9fe45a05a423833d5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2a6ce2445c096fc5e577a0af513ba6f4fb8a8097764c7df81824a782e07e7f65",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2a8ea9f1ad8936fb302243faa64b91c5767df411923715cbdb1a869e3bfd7e6d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2af0a6135df3502a7f6de4d2de6db73b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2b258b5cd3fc997d537ab92b7ebe2d42349a6f92",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2b627f6afe1364a7d0d832ccba87ef33a8a39f30a70a5f395e2a3cb0e2161cb3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2b92e125184469a0c3740abcaa10350c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2bec18af5f0f9cbe8949cc2bf5466dc6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2c2ebe8f78f1a4143e6a125adb7a4efd2aebc275",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2c5a1dd4cb53287fe0ed14e0b7b7b1b7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2cd88d5280a61714836f5f07a16df190911c5b952af2998dbbcda910b3b1c494",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2d2a251a88632f010fd9671789746908eeccaa5bc5c0a5d25e4649efe4f5b15d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2d5533fb65ebb50a5a5fd53e62d73b9a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2d9adb7932b7842dfb0e0f453b87e5d28dd4552094105e6340bad009956d8c2b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2db94ee3ec69988588702bd77999a5d4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2dc1ad07b7529af3ba5c11a58519681909971a81",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2dd614427b80cdd38e8bbe0ace24a484671c0da2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2dd93edc8cc64747a7ca94b6827dc4e5b1e385d493ed4450272dd1dfc52a6255",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "2de67a7c23d3b96b3dbec9a81cf3e01ebefdeee9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "2e842eab0c16ddd1a2ec4a56610adb58d115b65a1e08e9b67e7e375f8eed0873",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "2f40bcee90abed0898e92521da17e52d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "30448686ec900d5213d74f08f0d2b7924c5336a29445b2a434aba8d8b19d7530",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "308351124c496d4f4effee65ab828506abf70385773c167ab1f32a7f030385ac",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3119cf37b8267db8a2dcd11d9a83d5237d7ef1e42388e7c9afa2831b91da8a2d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "314f4b59535d1b783e1c20c2be00f9e30f8ed27b2e21fad06a73b47ea43279ef",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "31a60f9e0b5b4f0371f4130a184e27f79cefacb080a6273ccb1c9a908dc6ca9d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "31b3dd9ee46805b0ed6e6dd6a5ee17facadfd2ff",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "31f27fdc14505e0cebe360579e1ba0326762cbe0948e50b5f920da51fdef1b51",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "320a0b5d4900697e125cebb5ff03dee7368f8f087db1c1570b0b62f5a986d759",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "3229ba46dd54802093c81e6e2123fd1520faf960",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "32407207e9e9a0948d167dca96c41d1a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3279307508f3e5fb3a2420dec645f583",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3296bd88e0a85ebad4f429878bf8bca16ac43e609133b4781f88a339c37bfe9f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "339907b44f161f57ff30819f422c552382ff437b3ae437463b4222cfe86bd943",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "33af554562176eff34598a839051b8e91692b0305edfdbb4d8eb9df0103ffd98",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3417b9cf7acb22fae9e24603d4de1194",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "343105919aa6df8a75ecb8b06b74f23a7d3e221fca56c67b728c50ea141314bc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "347a3f5f2ed2f503a22f68c4951c78c7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "34d792d07092d963375e336869c9f40296858345",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "34d7aa9cf1fceab7f221891f7fbc23157bd9f65b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "34e20e58b54e241596dfb2b87451b42f6bbaea95",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "3544b924c689b5d93b9452ad4e53bdfe86aef3c3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3578e1588846a805ee806fa6151b5801d0acb88879a93d378300e2ee7665736e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "35813f4401d3ad77b618275473a556eb47bfa6f4b7439dd8943b19f81aa7252e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "35af2cf5494181920b8624c7b719d39590e2a5ff5eaa1a2fa1ba86b2b5aa9b43",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "35b2a5260b21ddb145486771ec2b1e4dc1f5b7f2275309e139e4abc1da0c614b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "35cc0b684b0906aed9d672a1a8635510fe91aa67",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "36061be6ccd17e87e3d1ef15f8e7058f279439d1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "363923500ce942bf1a953e8a4e943fbf1fb1b5ed6e5d247964c345b3ad5bfc34",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3673d505d3050503be6f30eb235afcc4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "36b3be503c6e34613ff50cb28e0f3ddb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "378809699c7252dc38b31969b9cc40858397759f15d6e418246dfaba9088fdd1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "37b42a83715f7a34e00d3458d4f4b6e53b8c95372677ce020a2e38e80e60ba87",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "37b996509ce2873f96781c9f9b12d8b5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "37e065585c573ecc082aacbfd31564eb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "389a1bbdbf5c91bd1c179227f5ae0923",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "389a6a2007e4f06d16beac0ec2cb01391f80ad5e392343386cae3ceb82ec1502",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "38a03f625cd9de3086a7ea6759c0b46115a0525b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "38fe4db3b191c2ccb3cd71a36a38b9d6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "396cac9e457ec54ff6d3f6311cb5cc1da8054d019ce3ffa1de5741506c7a4ea4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "39dc2327fe1e5a56ac5ad9dc02f0386cff3d83dcfdc558cacba42ebb9dcc5ec2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3a8f6454927b8993aded75de0de2bd00",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3a9b0875fc692944c180b165a83a0d17",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3aae5a24e63f3cb1ca4759b9e4ee8e503ff139189423f5fd8cc923c6819697ca",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3b0547c444735dba54ea6fce8539cf15",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3b6cb20891bce8602ce669187754871e402a1782031ef8b032cd007e3894bc5d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3b974ff986445e5944c51179d19bd6be",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3bb92771e287aa0a8bdd8e5b5bb697427223eaefded3d9b64b5d5c32ad40f3c2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3c0330f9f934f86b6b70e108ff279a009b88a4a815acbed4adb3664e322e3e59",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3c6aec25ebb2d51e1f16c2eef181c82a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3d00e34594dbaba266f301ca37246e06",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3d371ef71e40c34a75c168d4647db096c2f386499d99a88d4e16b63cd4acda25",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3d9cbc944f9a9e127550ffb4e8394965",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3ddb67ab079509dd1e7ac77fc4cfed25a271526668c68f8a2221e96a4cc21812",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "3ddd90b99ee7ac3ec39e1d22b67c257d273a0970",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3dec6703b2cbc6157eb67e80061d27f9190c8301c9dd60eb0be1e8b096482d7e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3dffbfcb825a70e477474e88b18679557ef467de37fc26e45ddbe572f520c52a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3e7066e44132e64360a30974b6ea3671",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "3ee38b944e5c83922f99641846f7db0c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "3f6382418d0137f6ecbef23bfd981938bb86a935b27203f5b053e3710e835f97",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "3f858c007d4d49dd7fa260bcc786c34d4f78dbf5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4038a93e767eac600e344ad9707a1c4643f0cb4b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "40b41979b317406f8abc601677a3b93aaf6ef8ab8ac188b8f383735e388f13b5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "40d264cf9c73923932c3dfd52d20f46ff602be3fea8dc6ecc71aca46e6067bf5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4109f15056414f25140c7027092953264944664480dd53f086acb8e07d9fccab",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4173c218efe31a6b36df714cf4e1073696f3acbe7edd1b7fcba01e4a2d923a27",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "41e8e327abbf2ba721be677ad8a416a7295708257b39688a0af03275fb199cec",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "41f74c3fc32752b5c7b88e7a5723441cb827958bc21b647fffae469407f1ce99",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "42692bd13333623e9085d0c1326574a3391efcbf18158bb04972103c9ee4a3b8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "428bd0b0ac36dfdd223b3953dbe61c0baf227f893310b03e7afe3111462019c6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "42add9475e67a1ccc6a6af94b5475d3defc01b85",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "42dccb7afdc883755eeec27a00fef532e1533d308ba376697b6270ffdbbc2d67",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "434e9e0e6ccbf20172f31aab63586ea7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "44299a368000ae1ee9e9e584377b8757",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4442897e3b772dfa4f7af109bec8924d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "444a9d34a9f59dc7975dfabefb47d789813a4497bbac9127c4806dd816e85211",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4479c73e0c28a00debd8fae5963d5af0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "44f6101dd8171133f53317bfd752300e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "44f6f7ba668fc645129d66353e6f60402822ae929ce54648cae0bba6348a18ea",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "450ea44da0c9d96a2e8f4d6bad34f1c35cd35743295b8cd2defa9f7a9884685d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4518249127a023adb81d232452395e1506a3766eac1664b8a63c3d0e7dcc2dc2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4528d5cf07bf0e1ac769b390236cab1bf34b938c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "45313a6745803a7f57ff35f5397fdf117eaec008a76417e6e2ac8a6280f7d830",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4541e55b70ca12ae4a79e38c0b4c31f067eb5cdc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "458653300b48c90a8659b9e9cadc13717bce42b6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "45cd169bf9cd7298d972425ad0d4e98512f29de4560a155101ab7427e4f4123f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4650f7dc1a2ddbb6d73bf5bfd1b69dd6b79e0cdd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "47ebf1f0ce0f93794b5db80e2a367fcb00fc9bff",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "48047c34bbd57fe1e24bc538bc2ce9e0ac4c4eb48d3b0c195b414f0379dc0745",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "483a36fb9e4aef9704aa1e4edfb88c492dfe4140",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "48bd36c3b8d6a3bf5db4e7b0bbc1692e8cb900475dc7ae16e9f1fa7ba97c8adf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4931441cae81aaefa80d65d7cce4e1ea",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4a2bc7c04c972689c24a475046d4ef045b893af1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4a5195a38a458cdd2c1b5ab13af3b393",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4b4dcbd26f08dca7e3e5721f0f5bdc6274e1edc0556e0749a426ec22ff83ca10",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4b8ab808442bf7cb084fddf983a558c2cd4b3ff2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4c0d9b802c075be79e9edb52d88f8dd72e6904f5c58267213745818470945c78",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4c71357de3c0b12094693ca6eff94cad",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4c8a0531653b5398a35c6b1b80ff1350",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4c9061a07d667bf7dd6f597a43a8552af2f4277b7be06d6ea138abdb668d6a49",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4cb091e1adf824f406a315a087fa75fa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4cdb1f7ac502289119f7f8256f00baaa994e6ecfb4000dcf5e1c46073508fcb3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4d343515f4c87b9a2ffd2f46665d2d57",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4e21c4c97aeb391473ee1e44961676f32de2ee8b56ecb136c1d8081df97c3db4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4ec3c90846af6b79ee1a5188eefa3fd21f6d4cf6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "4f5c5b3ef45cfff7721754487a86aeff9a2e6e32",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4f77b4fcfde7abb7e6d0e36104e433abfed3a9d9938bf7fbe0e9d1a0b2ccf265",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4f7a8c3d2e1b5f9071a6b2c8d4e3f50a92b1c7d6e8f4a30b5c2d9e1f7a6b8c4d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4fc5ec1de89ce3fcdd3e70db4a9c39d1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "4fc8c78516a8c2130286429686e200ed",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "4fcfa88fffacbce30bbe2136753c9ab5a4c092940d2406fd9d44d5118e745b9d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "507b2fcdae058cebbd550965b90c44e878d7a2463058c846eeb68f0dc1b48eda",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "512ede9f2fa794907999f3c26165557fdfd383b7aad71ba022ce2c8ba6c0019d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5144bf4e32c5832c426ad3da55d45f026f66bc95",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "516e0f3e44924d0a5595b4e28728d291",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "51f0cf80a56f322892eed3b9f5ecae45f1431323600edbaea5cd1f28b437f6f2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "522fdfaff44797b9180f36c654f77baf5cdeaab861bbf372ccfc1a5bd920d62e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "524c953e23ff8b768206cf33a529c11ac5510e47cbf6246db79ee671d1231716",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "526833a16669a85f0546809bfc35122e6f0bc17b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "52886aab179f26421678ff23af1b0fabf0a17ffbb534369cdbbac8008cbed8e7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "531da3715b1e4fc9baeaa034888ac419",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "535f4337f261b6da20a3c614eb13270bed2d533a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5390e8bf7131caaaa98a5dd63e27b2bc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5398b7eaa94f0ee570b1c5642b559047",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "53b68ca8d7a54c15700cf9500ae4a4e2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "53ba13cc6066adfd67f8098c0a5b8dde",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "53d007e850871473321f3a4f68ab3615",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5455341ed1bbe75a664fca2dd0794c508e1874f75360253a7ff5bc119bc92d80",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "54a308f734095d54ae0e1c86c849a2d8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "54ce4a5145402b10b4660312ffe8385f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "54d37f09251cbe283f42f64964083ca8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "555a6722436d7cf7de396e0c57d32a27",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "55d6238b01a177e25eb7d53c943f3abea64ec073",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "55e929971a7975c7f9dfa4d677d5ec357af23a4ca208ef8f920804743e9011cd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "56366c635d7b2ae88e8c8e9511f0c12e1cf1173b8be8c8f211b38a26d3a21e1c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5652ea26835619fdd6b3609326ba9ea0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "56be07e46fd452315008ed246ebbf52b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "56d1de3159adbfda20aca593c99901f9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "56d722b0331bf0aaa86bb37483486c6dff6ad9427fc473ed7c3226c21a9bdd23",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5798d4eeb49cb3da09e2236ed3606332412e93e9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "579bc9a640ac939b1f75eda852815f063cebd332",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "579e8bbd6a5bcca89b5acd6fb5db32db",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "57e26f6e3b311a1064c946b69159ee05abedf9228b2f95c65536429e7ac7fb24",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "584a9448dda46bd590d7a2f86228100d2ae6e0d6d990c1a4459ed5ee28e07ae8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "589ac68824823649437f4ca3e03e94f0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "58ac130a8ebb09e37592ac69841483edc5695d1545b1f04f23d5b760ac17cd94",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "58d4eccc982c9e9b1b98aa62c514e53a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "598b023e56c45b19173e8f96c1c88036d732fec305cf6bf1b9cf4dbe304beb7f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5a4e86bbcf0ebc455d2995db225d9ad682e9b37b6bad472a604a462099d988bd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5a7caaed79b1302285c371960ee3f50779f26a81",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5aaaf972c8bf39a98f2748e526de3cc0370ba831997d7d9765cdaba599645c0d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5b3089eefab0e043af8894de86022bdc6df2f42f7098dbd530f42c0ec861d5d8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5b7284bcf30569ae400e416a62391720cc9081e6047f15816f9d1a04a06eb321",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5b998a5bc5ad1c550564294034d4a62c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5be9fc4ad9ae3e791d18427f4592c234dfb612aec39b219e8ec57424f61cbab3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5bf35daaf26508fc136157818ead48cc5c7fa3a3e6273cde2c757673586a78a6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5c3468e3c7a535b74fa91927fb1572d8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5c9d9649b439b86cf18987865b32dab228ace037",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5cf24613f0c98f8bf7f90a8da6e028c62a2d0a76",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5d164b6d74dae9fe3022bc3cf453cd8b846e9cdc0cd616246fe620be88e3f1e5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5d8c7fffc0992639edbca893366f19d5784af2d77e3cfcbaa445a10c503f935a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5e81f72614db42615489266be11b1d09",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5eb2122c4c645543966b07b94faccb5b4697561163382f21fb3b793b0d5cc9fe",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "5ed14c2b7f7433a1a72dd6b668413f935a217ba10b69d89b774a82990fa12fe1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "5ed84b2099e220d645934e1fd552ae3a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "5f1f3689bcf23de1b280b5f35712946da0f7978f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "606966a9ec33765baedf63331595d1168f2a596f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "606c4427da725b5dd7d399cb3177009e66432cc7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6083aac5376b7ca74cc363e0d66f70beaffee543d098c612b820b16fbfb0aa52",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "608a0b34ab3a1625cb88fcbc9a5e4be809519390",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "609c3fc64a67630a7b206a6880c893a8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "60c70cdcb1e998bffed2e6e7298e1ab6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "60c70cdcb1e998bffed2e6e7298e1ab6bb3d90df04e437486c04e77c411cae4b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "60f8b115aec8a13b0069efc84fc645f5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6101d1e1811db052f869f7eb3402dad28da7e92103d4a44ee43f95846a075012",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "611db3195d55e871dce67ce5c41e894bbaab88dd0d019af68f5a259f0108aef7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "61647db645f7cc221046999ef1dbe1d1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "61c30bd7eb4914eb9419661af821944c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "61e9d76f07334843df561fe4bac449fb6fdaed5e5eb91480bded225f3d265c5f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "61f7d9cd2d8ce7df950639b23ce90085b300b0c6dd0d8d934bba8fdecb670f15",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "62123c39477389d500e74e82782adea5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "625b6535321d58bb5c613e85332bf731",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "62761f38ed194c59abe15c49f09f0ebc431ac852c965180c9327ed84d3a454fb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6377be88ba0ef67fb6ffab49c32ccfad",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "63e45ffa6d0c22cb04646ef549d61065",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "6409d1583a15a906ff76556ae0cb8a3611145ec3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "644fc49fa1006a2a2acace694e5fb83753164e2617051ece6d9dc9ea32329e70",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6495c409b59deb72cfcb2b2da983b3bb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6506d31707a39949f89534bf9705bcf889f1ecae3dbc6f4ff88d67a8be3d01b2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "65099f306d27c8bcdd7ba3062c012d24",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "65099f306d27c8bcdd7ba3062c012d2471812ec5e06678096394b238210f0f7c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "65142c8f490839a60f4907ab8f28dd9db4258e1cfab2d48e89437ef2188a6e94",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "659575cb45a67b4d0c70e7361709fb03",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "65c053030558b4a3588e2590c5c4961a9912180b731686deb3f4c831e765a095",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "65fcd965040fabeb6f092df0a4b6856125018bb3b6a1876342da458139f77dac",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6611e902945e97a1b27f322a50566d48",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "66a3836b9a17771bce2161f6b73cbc2494a91e49d6aa30d2d53711e8d10de60d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "676cb2d0a60403afc06cea1b572cb7261f706365fac65621b5a4907893e7ac0d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "67c87dafb26de3b2b15b93a4ccd291e95682b9adf4ecb083b7c54286245ebd87",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "681075027553546c119ec447eb8df84633dcffce",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "68192ca0fde951d973eb41a07814f402",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6844ce1539014571360495c6fb50965e813c2721663bdd40d577d9e5163773c6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "6894a51278ec89118276c2dd2dc36e6f9ea2790a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "68bafc624a4c0d11ef7a949c0077c704aa5ba0a3205fe5b62d29b727b46ccfe4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "68e310de44c3165ffffa25bc495d6fc5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "69331cfdac792dc79240e6a6bb6e803eabd70beb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "69ede7e341fd26fa0577692b601d80cb44778d93",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6a48fbe91482b2f14ed977c110a3685c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6a69ea2ce3fea0ebfd7a32a1dfc4251bd4d7d8a4fbd44aaa47b82290d0414a9f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6ae94ce710016d86ed7457236deef2c4c51478587f3609b6e827a348828b3931",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6b22df0de0a40ff372973639c8a1974cfb75084b8e3b85f9ab9038e0acce43c0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6b8ec32dc76fa3138f00616156962f4f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6bba64fa9e8a7b11cb2476cd071de08986db44b0783eff211c68fa5594ef8143",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6c6cbed6aad96564ed87094785be07a1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6c700ca4e6d917c7aa9d964e98604a0349d9b8b4673df96a3f73a3d2d042635a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "6cc79ccdcf6a1fd08d69479f830f85a258152abf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6cf382d3a0eae57b8baaa263e4ed8d00",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6cf548445c39aff844be96d73c89e376",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6cf9f7b2aa456a0b438600588df869b38d8007e28f01fa96022f9d8059f120b0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6d332f814f15f19758d65026bbfd0a8c49671b319ec77b8fa1b27fc48afff7d9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6d365de5c5a13006b7cadd6bc6876e84",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6dc41555455860b8584d761303a7ae5487117944e2a24d74fa3e91ad8f840077",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6dfef58ef68fb7965a23da8be3141af9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "6ee4050ac0c5192961c9f34568ca68fd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6f1f3415c3e52dcdbb012f412aef7b9744786b2d4a1b850f1f4561048716c750",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "6f569139805e4ca507dc6fc2f1cb880beb3d7ac7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "6f9832ebb4c3054bee4a6ce5ccb69c00e2020053e1308353343097e6a4041109",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "70016ddbcb8543bdb06e0f8c509ee980",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "702261ba38b57ecc3a5407fed28b2f0611a74c2ec0c116aea4f9e6def0899aed",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "703a8383a3df68abce59b02fcd0b5678",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "70686215a49afbae21c351e912940e50dbabadd6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "70ae9ca2a285da9005a8acb32dd31ace",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "70bee643d79fd82f7835b208e15a6d722f64dd7a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "717ab7624c192f6f8dd38994116c28dc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "71812ec5e06678096394b238210f0f7c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "718465f44c0680740fb61790eda3d2f4c5218c9de0c560299c580fa1602dc9c7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7200a9f1e1ea51b66ab9c9274e9d8f805633179634e8ff4dcb8ef82bc02518df",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "72b086db438d2cf2574b3ecd62c022fea7b85c36",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "734699773e53d995f20d485eb61261033d9d00b4332b39ca26071bcd60cd352f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "738d4398e7d11427051093ba8a6f37e51470795c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "74091f5a8746a1c68d73e1fc1e4e1ff514632ee3f632a8b306f35dabae2d2b64",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7413cbb6eab4d6b10346f71be5dd76d7cf2f4817f7776367b162f83755aefa1f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "752c1cfe783ed343e470ab95a4843a23872cdc98b7d3ed5633dd6c881c071a14",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "75d0d5080afd091114818d082babc418ccb43d545d9fda1fb715af6c129b6e51",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "75dd4fb011ed598374a46fc0d9c0d1d64a298341c34afc83a56a6983cfd27764",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "75fec5afb2deebab6dd9c16d9de35032",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "76253fb55aed707440e808ea78e7101318436b1c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "76c819185e3c8b8557a2c3986ab80a7c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "77963398e2c5c2fdf9d28d9c5f9c2791cfbf422ba02225e01635dd7f5b31eff8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "78250fa890220821e2b91e31b965de59",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "783661d0f7edb338d2d50be087764d82dbbc9ee7989ddc57db1801e4ec9045b0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "78774672884f8cd7593fced3c7d1faa4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7881c012c247d29dbf43b05c8b042cc1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "791efb555eefb7215e96659a1353a97416743b66bdd72705493129c64057d40e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "795f939f8b9a2d56a3e8a609cab81032d9122a7d56ea852d95cd668f09139a3a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "79cd56fc9abf294b9ba8751e618ec642",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "79e9925c155be31a917aa595ca1a41dd46486259",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7aa15de93cf85729ddf970e8d7897f69ece3ca29608f73e784a9ba40c9cea18d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7ac974899e8e05aaacd417577c97e382d5e8c5f7f4a85632cffb47ec2f6ae4e0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "7ad568aa207f5bf58b75bbc388c2401b63169eb2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "7b2c661cfb69e9c75df90d5102647bb014c28ad5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "7b6e094d98eb3f695e5856db4d8d22e11898cec9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7c54bcf3aea8348e8902cac80eb0df31b43a71601a62e2514087fef40a416bfd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7c593ca40725765a0747cc3100b43a29b88ad1708ef77e915ab02686c0153001",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7c698dd4090564b179309c2a64266424",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7ca42f1f23dbdc9427c9f135815bb74708a7494ea78df1fbc0fc348ba2a161ae",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7d35b4961914ad83a57f8832d8e870d8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7d384886720c8e576c3ca9d68cb5f08b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7d3ba419751e5ea52b567e1162f6a366bf3d06c44c8956a9f14520e9fb6ed0b1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7d4fb94f6b4623690daea67ed52e97705cb102f443988ff605f2a9c4898244dc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7d87a86dbd2379ef2516c99258137cd9c25ca19c48aeb096c5332c02fcbf16d0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7d9c70fc36143eb33583c30430dcb40cf9d306067594cc30ffd113063acd6292",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7da855b2fd9b52f9088e64d656164637",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7db5fb56b60db0077b86e00eeff37394",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7e2ab284b1068420178f0ced7895c064",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7f27818e4244310a645984ccc41ea818",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "7f493c8b8c3a1117c90e1f679c782d42",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "7f80add94ee8107a79c87a9b4ccbd33e39eccd1596748a5b88629dd6ac11b86d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "808e7154b7af2bc7a4b28d577297c55f77221c355191cbe00f9f1810b6d4a619",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "80e5bde401d6b0ca96015ae9cfeb6535",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "814032eec3bc31643f8faa4234d0e049",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8150b2b39fa62fa2de177ed8526c621a3581c0eb481dd9740fc5894ce2b7c13b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "82056127b671583deb500d931ecb893224c34d3b8de66c0959700d55a1bfbbfd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "823d5969db3f3b72ebbdce1b78752717ea849884a0fb40d86146416c38e128de",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "824f13f758ce278f72a4aeaf1e15a703d5107dd7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "82eb4b752c60b99b451f7a53b8ac856afe9deb88",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "82fda6ea769d61aba230c3487787087cec53dd378e22f22a8fb8f0bd5ae83ded",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "835b0d87ed2d49899ab6f9479cddb8b4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "835b0d87ed2d49899ab6f9479cddb8b4e03f5aeb2365c50a51f9088dcede68d5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8367daa8ce633724157b8edd21d625de5ac56b8c2d983bbb283836162037f3c1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8398699ddfc87ddd3e26adb201242160",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "83e9f99a377566cf30df0ad71ca8522613b14d45e3e2eaead4a336509d26bef3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "83f66862c0cc40da20236fd6b47138fd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "841b7d3863b49f62d4faa9949ff5df38",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8421c902364980e3d762ec6dbbe6b0f40577c27bd79b48c57d098328b2533109",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "843f8aea7842126e906cadbad8d81fa456c184fb5372c6946978a4fe115edb1c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "8491a0c251ffd9cdbbd9d6bebbe2cb3a430f16e2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "84ad78b2bab946c3677fdc28ebd8a774",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "84b573305b732a8372a082c057242953",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "84bb66a982710c5536143a07d84e8749",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "84e54c3602d8240ed905b07217c451cd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8610d4fb0ec5b525071c2aaec4df0f8fcbb3673aba58a7e1959fc44e83c0e2ca",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "861a686461ad830b268977808ba56730616c7684",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "86596a5c5b05a8bfbd14876de7404702f7d0d61b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "86ff1313888780942c6a0ad2f683312911582498",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "87361ba2bb412dcf49f8738f3b8b9b7dccb557ad2e76ea8d98ffa5b098ae3886",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "873f1277a42de5c82f869459e7fb7c94554a642b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "87480b151e465b73151220533c965f3a77046138f079ca3ceb961a7d5fee9a33",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8759e79cf3341406564635f3f08b2f33",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8759e79cf3341406564635f3f08b2f333b0547c444735dba54ea6fce8539cf15",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "8763e26ca6e9db481f49c4f8c15340e3093cae40",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "87d4c8d022a298cefcb113040e69934d5be6a91c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "884601e54fc2e6833167d33436b68e952020cdb99507b2807feec1bc086027c2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "88896d478986d453f5da79b311de39d9b4b1bea95c21af1d8ef181b0f4e52fe9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "891de2ff486a1824f2db01c1bdf1d2e9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "8954f531421de2a8e9faa1857924a91963c2ce62",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "895aebe2d281e66f87963c01de570286561a0de2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "89d20418450b34efe698bd36214100cfa49f60adf1c39a8bc8d65991b1ce2c23",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "89f8e42c825d09a0a50e99bbf7304d7037be33ea362a57d34f87fa7981f80126",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "8a5ac2682d70eacff7eb554e242227c82e2baa94",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8ac5bee89436b29f9817e434507fef55",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8ae7c82a3e4f742777e590b25a1c563d19bd9bcba2a387d004aae72c4b2828f9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8b283c954d19a839a724961ccaf025c56988c4e745acb2d31a15a006cda072bf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8bfa2df2110c38dff2359a416ce14693",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8c0871cd0f60bc603424e948a689945a1828d0bef926a6470ae18cf17d93f7cb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "8c29a2693ddf208455db290abfc76c153da27643",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8c4f8abe69bde5e1a53ca98fe22e13aa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8c9b6542f73c5c7fe455b52f5101314407da4f65ff48e7ebf6896605e607c8d0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8db0adf8fd6dc6195d7ae55e37e49f97",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8df8282da75ebe6cf1a535739991e3f298f903974a05966503d7fd2919ecea4e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8e1624d110c090ff57d4b493a9107c66",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8f09274e808e0063d51f34cac82a5770b3df30c792e426da2f6a80657f27affc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "8fc2d35b66c692d37a85ae9d30dc5c7f06f0b3eaf01112a5a6398a1a0feb3aee",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "8fc911ca37f9f451a213b967f016f1f8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "901cfa97b1baaf908fd4a02bb52d970f576c4193",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "90257aa1e7c9118055c09d4a978d4bee",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9053e8ddaecca1f960c041c944ca8799fc71dc86a4b50d2639ee4e0d2cb82f47",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "905efac09785631ed57e57a6236b87c04f53b9e0a3bf697df71365814dee6362",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "90aecb370dfb1a99a1f7de0a9c6842ab1b664521fddea16b0ec9a91f322646fc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "90b760ed1d0dcb3ef0f2b6d6195c9d852bcb65eca293578982a8c4b64f51b035",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "911a21aa999c324dc960d3498eec528e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "91a15554ec9e49c00c5ca301f276bd79d346968651d54204743a08a3ca8a5067",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "91b9381d19b2e6a2db5cc0307167979b502731cb3fb50da684479e9ed35261aa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "91d17bf2241eb10deb245c9ce8eda6e39a18b3d1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "91e523a46f3bb860ac2e5800b7e1ec89d75a2408410b9cd25eebc17c8d7a92bc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "9244cd99a27a8741a78e0b449cea063fdcfb0090",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "92fb4ad6dee9362d0596fda7bbcfe1ba353f812ea801d1870e37bfc6376e624a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "933f1cb8ed2ced5d0dd2877c5ea374e8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9378a8075f26ab0f2a3add6d97eb0533",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9394666007fac4014a4641fdae150c1b969ed2bc4299876318a336fd386abf59",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9425e8e39fa8a7212cdd07f0917cb3dfde38a90b87297de2c82a5850aff1e4de",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "949acbe543fc244ffbc981ea169067da7c5792af3c3d19b2c31b3d7e19106880",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "949b0bea5bd7feab58e280dde49310521920b655714c5f1b7d9de8719373dcd7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "94cd8ba7c79fa2962b505fcef5e25601",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "95015643ecb3ba321b8cff8eca2907e5356e8659",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "954722b0c9c678b1313d1f8b204e102842dc5889",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "95dc2289427ed29b8b996d0e3d1b78cb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "96dbdc2651d829bf9ba35674dd4bfcae",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "96ea4a649f67272e305b75401a4045efae91c926",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "96f3b957f46d4ccea82b9d2ee0f5bbdc3d97d01b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "97a0497de585d3be6ec75064ab3bd0979cd85561193c1f0669ccf4db31330687",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "97ea803792929f802388e9d0e75a3c79c28260d589bc2d87902c73c729ed6f9e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "9803604ec45f31f9ef75bcca1e1310d8ac1fc3a6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9810ea6752112b3569ddc096e1a72e1d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "98182f78f2ee76f3dffa58c268dd9e653c711ce5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "98ee964edeb5a988c3bba8ea1e57fe0e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "99231deb373997364381d1eb513d2d42231d418c3a2db9007c5af9bd56ab9371",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "996fb4f7d1b3150490380c4ce9c7c3d60fac33bd6a7c1e3a46487021964cf3bb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "99813f3d0625e880158c68039c0e2fbf488db0be3db77cd1ce6d382644193f0e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9989b5cf30f42f3ac013b5fb4c898b07",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "998a7ed1572ad9dc11375bc25294e1954e606b7cff9fabc5c120713e597cd274",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "99911fce9e0d697c99421b81e8fe2a04",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "99d0bce258388ccce6ead0e4a36d7986c9c431db",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "9a6c59eaa1d467029c8e1fee651b6d09ddde91e4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "9a83466f6c34e588ba3e99d6cbfac0102e173cdd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9bf9f635019494c4b70fb0a7c0fb53e4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9c44bc9373377831c45dd0ac2661a28e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9d066964414cff647beeecb75affb5b5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9d0a55c545c4147956db2c2667c4ed931a2875309147548b1dfdd216228f5f73",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9d2da07aa6e7db3fbc36b36f0cfd74f78d5815f5ba55d0f0405cdd668bd13767",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "9d740bcb290c0c70596180f05a117f594411bbdd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9dda789b85fce6294f91a79b7271a93de36dfcef21fc680dc2bf4235141e47df",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9e5b1e10ad6904d3f5b48d38470cd57263974640a27d13cf793ef026d3d6b886",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9eefc66d1fca7f18a91f49affb569b41bcde043f91567e7f5cc9f2016aeddf8c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "9f115e9b32111e4dc29343a2671ab10a2b38448657b24107766dc14ce528fceb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "9f37fff7e5d22f83fc1c0872ad5332f9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a00e86ee1c4a1318ae394d3927d01f5aec74f861",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a03705fc225dbcec7e3c2f06a258afe81b5d88aaff1368d10dd6ba4f0932be7c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a083c546dc66b0f2a5e0e2e68032f62c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a0d1223ca4327aa5f7674bda8779323f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a154ccae7aec83a3e85edc67c91ff9607fb27d8a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a1c3520282c81afabdefa4834b96563edf95c3c7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a1e457c52eab430c20d48f2ac476e080386313f16efb135a0471902cf68ce475",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a234850dfdfd7ee128f648f9750dd2c4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a2421f7fd4be6b12382150033507af7aa8bf6241",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a2b9a769df84d9d3a4694bb0252a2c6a5e5f5d1a85a04565362737092bbb3a86",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a2c6e01001c62f6198e31a9d603977c6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a36082c998391a3ebaf05ba4f834172c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a39299719bb4151c373a0e9b92b2bd05",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a3d2ea3aa5850ecac5e75b0cc1467bda57dbb776",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a3dba01c76571adc0797801ff30f2b90",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a49155df50963d2412534090bbd967749268bd013881ddb81d78b87f91cdc15b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a4bd7b38313d8cd94e76a48b83683f57",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a4e9f9919d62589b57cfa08c9ccb89e386b09f683271373413cd8e8c8c7d1c5a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a4f0014474278238b5fe78fc2c4182b498012a33",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a543b96b0938de798dd4f683dd92a94a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a5477ff2b3d6d475558abf03878dff0cca98c20c17aae35a8ad8e99e03293f89",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a553833771f3e75ec3132f1295284e0e885e048b288f37ff8546677e5cb42f2f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a648db354820ea4d02940cb1702b35974513b7aae83f6dffaacaac4ba31f9295",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a65483b86847995a67de0fcb2a5487cdbc96361cb2e9dea8ab74005c8fef65ce",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a717dd74c01fcfce35a28f374e1c6f9ded06d6f7b0cc04618ce9454ad64febb8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a727362416834fa63672b87820ff7f27",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a75713f0310e74ffd24d91e5731c4d31",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a75eab31d7ff06b6864960ad7e633be3f9730ff3d3873e4539c8f425fc632dad",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a764d73795abe47ae640ba09999a18c47b5340e5ecc7b897afebf34f3f37638f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a7a5c56f3549a65fe18ed356c56c595a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a7bd8869293212e1671df90d2d41b96d4933eb9408b1111bd830e111a91bb202",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "a7f68bd1566f67bbddb1a2a10ab093aa1d9366b5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a84375d4bd67c46d50fef7f7af31c7fb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a84b032b49773c2318b11b1164d1aada69e940229aedbf8185c33fc7dd1d2cdf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a85459a1ec90a52b5c1f2f5a12bb2d10",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "a892f1ef2e530d67bf948a48c734da3f27718eb8b883ca0b686ddb0a81071731",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "a9198c1497481b2fea007ea5f13eafbf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "aa56f350882ce63429c6626567487b041f06168bb60f4fc371a262eabadfa660",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "aa688682d44f0c6b0ed7f30b981a609100107f2d414a3a6e5808671b112d1878",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "abd2f1b89b2c676d3441a793f65ffaee",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ac2a2208e1726e008be6c73dc0872d9bba163319259dff1b62055ac933ca46b6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ac7ffce58c70fb9f837e11a44d655d6c28e276f5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "acbdc1781a5a62789fdd233cde9c6521500f66f2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "acf5ed6e5bb90c44683938f35efeca551428064cdedbbaab8be69e3474fb806f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "ad39a5790b79178d02ac739099b8e1f4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ad94d5ee63f405eb6a1a157713aa6999e579c6e6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ae4601a19d28332a3ec6ac31b385cdf53be53450",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ae8cded2822c56dd85f52bba09d9285cb2db3e6317227530b848ea143afb067c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "aeb63fc27339747fa922f52ae58d32f8c978ee71",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "af98e97cd49229845123a1063b8c386cc9b2f441",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "afd1818d136a5cad592fbd81122e2c0a1aaae4b2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "afd5f1ed45a9867daf3bc64152cef460a06b164c8183e490db39146d4749a82c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b01f31c9541579ad34f4e50acafec252eb419f5b1ca98155e0ec84c19d12c9e4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b032d4ec4e24714f59e853da9b6e63794aacdbcb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b04bc0780b2cd11fde488372387f557a87fd473ba546295f5fca7771d5b8a394",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b0e06925db5416dfc90babf46402cd6f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b14e1f931f602b1e1985d1362db0e17dd2d2131f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b19bfca2fc3fdabf0d0551c2e66be895e49f92aedac56654b1b0f51ec66e7404",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b1b7aaa5bd4408a4d3003a9fabcdd041",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b1c4a94df23638d70dae45f3193a64a6b036056d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b23d302b7f23453c98c11ca7b2e4616e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b36968b98046d1b033d84f292e7ca1cb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b371fbdce6935039218d4b4272db3521881c9cec48ef82dec1e9e0188a32d3ad",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b42159d68ba58d7857c091b5acc59e30e50a854b15f7ce04b61ff6c11cdf0156",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b439749a581ac5a29b5c9d91fc092bf4ceaa76a4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b498256cb086a6962077cdd6d2f65327",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b500e0a8c87dffe6f20c6e067b51afbf",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b53e3cc11947e5645dfbb19934b69833",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b5ca812843570dcf8e7f35cacab36d4a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b60074d1ea2008a581f432f2dee5f84f78668d9dd8e66f75d03c42dabd89bdea",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b61a5508847a2167b737d31193dc393e92c5be2aa5141bbe4b7ea6f440fd4799",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "b6df7c59756ab655ca752b8a1b20cffa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b6f835ced11059d341222eba11fff3a4672f4de47a3a4d791fad86059a2b06d4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b8a2a9ca58fb2b383a52f8be75cae44f08f2c3f8907bd8661ee8a4a78fd7dda3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b8d586d376b342b08b3dd8a77c788480e025ad12",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "b8eed63ab9cbdca494f26a6f66bfd4a0a693b3f0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "b9da295c34accf3632c2c4b6d9e3c74791b4514d27814f79e9bcb77ce168a347",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ba1740688cf1236ef29516be83593ba548944df6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bb02daf9c37f7cd0df5a2ca0c0c1790f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bb10adac5b0124efedfe71102c1d5638135ec9e1cde8c8cb3353c5ed91bb9f81",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bb3d90df04e437486c04e77c411cae4b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "bb88f63ba7762b7307251ab0e8bb544ccbaf9b52",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bc090d75f51c293d916c40d4b21094faaec191a42d97448c92d264875bf1f17b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bc0ebf67986eea803b4c9633ed3a4bb5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bc83817c6d2bf8df1d58eac946a12b5e2566b2ffe15cf96f37c711c4b755512b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bd710ee53ef3ad872f3f0678117050608a8e073c87045a06a86fb4a7f0e4eff0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bde21d8be65d31e1c380f2daae2f73c79f3e1f4bca70fb990db6fdf6c3768c92",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "be31a63cad112723178289968ad6f93a576c5a7984099c42eec3521cdf6e5fc0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "bf338d88f60c0d352cd0d1b5e4bc6a1d9f1ac8fe1df48516ec0042cafda821e9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bf94f4056627907d86ce1cae8b44c67a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bfd7d041bdfb28b62921b64af068ccab",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "bfea4ee8ef934be7a2b4c64a0bad1e92",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c024a3d852b73fef5bfca7ec5c80df3d59ff9ec858e0adad80c588fe22c39dfc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c09e71fca97d609f48b0de1ffd669454",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c0b73ff43312d442260328a8cefdf3b6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c12ebe625737ed0908b045e811f14ecd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c2527a907b209bc4ce911e36b79781ec260f0851eeb466dbeb386d67fec11467",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "c2870caa5f016822fdaf16e3c470f96eefd4b93f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "c2d9d48b3b10bd58cdf5df9463e3ffcd60533ff3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c3405d9c9d593d75d773c0615254e69d0362954384058ee970a3ec0944519c37",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c356aff1a01c2b0da472e584c8e3c8f875b9a24280435d42836a77b19f5a8c18",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c392262fa86c390a20b998970639a51c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c4379da51e8b9e86ec3de934f9373f4a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "c46bac27b5ca151afabd22c5546f78ae2ae3a20d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "c4ed9c1043b924f1739f57a66731336beb8378c4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "c50c980d3f4b7ed970f083b0d37a6a6a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c539766062555d47716f8432e73adbe3a0c0c954a0b6c4005017a668975e275c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c6199e175fb988cbbeacdf0f5acdf9ed83f5bdaae5c95b7a6c27ee72cd11b0b1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c61b1941cf756eb7551f7c661743802362728b785adc22e860d269713dfb01a6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "c6c9b69fbfb77f1d07b44991dccc58719c37faf7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c7c5072df9f83f4c440a5c3bb4be1d5f6c67bbf78f196406ca20d27b43b975b8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c85eedd51dced48b3764c2d5bdb8febefe4210a2d9611e0fb14ffc937b80e302",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c925048d6da2a2cd30ad521c1153f56366ee4bacbe84c8b929c1be7f9f2aa445",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c935808147f0236c81483d7bbeda4b9d602f3595d5d4057f8115d39e222d1c4b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c935ded2729f0513672e261170d73d4e0e13a9b837f104d840c44a39b84c0d71",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c958de72460256c9c1cceef527d880862e8bc29e3ae4e2d478af97dcafd41180",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c984787ccd787629542da68302ed4ceb48fc7e458eab1c15bf45c3070883d26a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c99139b0053c4c698ea0246d26d747f2a984c7aba4613da818ecd9f97899ef3a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c9afa1e8ce84b3af50304b504519a587488658142137cf4bbf85f5780c06f682",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "c9f58d96ec809a75679ec3c7a61eaaf3adbbeb6613d667257517bdc41ecca9ae",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ca5c6fc9d9adc8e8edd474f601429764cc52d4b0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ca9d7aaff7c636120149168e2bbb509c10544993",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "cb3d86e3ec2736ee1c883706fca172f8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "cbad672d9bd06ce91ce465d049e50696fbaec9d209ca0ab1fd814d993d04bc9b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "cd0c5b9e4e47df4231d02ed87ff49f26",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "cd4a51037bf58733c0cb24b273951dd3fcea45a2aaeb8b30a3c625e183c4c0c7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "cd882f00cb63cfb382a4fa6013705ca6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ce0888df5e28716432013a8ae002437bd3e993fbe8362c5ff9efbddabfe0ab77",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ce78748acd8e9be741b143ad716d735dc682bd5a010427a199744b81456f8e35",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "ce9abf0dab1facd7afeb70dc34925a78",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ced6b0f4441085bb9c54a32da9ab4ba14c6e21daf6e34fd61d54923f87baacd0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "cf54f6cbdb4dbf1ce6fc2e5be4ca3b20",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "cf682a6fee80a78be578b1edd82627fa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "cf731b82c471211938b210ae8a6dcc7ece4f44371e716f056fa05151a9910727",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d04ae4d214531d70c634d29763a9c0b84d601cf94aaca4720363f7512995393c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d07ec47042a05fe3d684f72d2155d180",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d083b6d82765faffe738ebd0678c8eb01c1f1fac8d3c51ffdfe40e34da3ce902",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d1389a1ff652f8ca5576f10e9fa2bf8e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d1389a1ff652f8ca5576f10e9fa2bf8e8398699ddfc87ddd3e26adb201242160",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d13997b1716e4c82ab454285202eafdc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d15a9b899b55b379933871ffb303613a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d17caf6f5d6ba3393a3a865d1c43c3d2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d1d26b0f68e26ac591848796aeef7b9c766442bbff47af8823f9b23d1b588836",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d1d78cd1436991adb9c005cc7c6b5b98",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d24216d0b82747e9406a696da76960183926145f9621947e34a772137f5e22a6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d2a6009587b3cb73355c2d1e53d5cdfa",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d2c637235d62ad766f961f9b8563f6a0e6db2ec0a343470385991b4df826afbc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "d2cb0d7a9ad2b5d4ea7c2da8aec62beb37cf36d6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d3e936fa36289fd1210047d8f25257bab0608825ed92908dc98c00e33bdb3db2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d3ebce2f05fe91a8260e87fd11a6ea17c156703d081b3f91d9bbe5fd6aeedc10",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d452f22dacab9785539484245c13e9cce58df23fc82eeef205684fcd196da20b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d46ba296b0a3894b04597a7c4cd731c7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d55057cd9110d12a192281356f06b94f342b9febb305cf0a5898a7e6af40758f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d56b810dfacaa1630bf562ccdefd46835349710d9516334e1a182619335ddea7",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d5a97614d5319ce9c8e01fa0b4eb06fb5b9e54fa13b23d718174a1546444123b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d5b7247c497788cf0031ceb06e3df77a45fef59f1e49633dc7159816d64759b5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d5e42104292513232d26ad7d9d317b5c779577da43e28fe27f8c2fb9318b0e8e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d5e9288693aa745dc89368deac677e7ea1ec81e663283af30838cdae189b7a7e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "d6b6eb84b0718cbd02eea586637679b4d77bb34f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "d78adab5e16c26d4cd14fe38f77e29e6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d78f64551d1b31a31e5998e442f0debd458e011e05019b3951d9ddde997f8384",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "d79246b49a00169993de60779cbcec17cae9da21",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d8824f643127c1d8f73028be01363fd77b2ecb050ebe8c17793633b9879d20eb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d8d170af3de17bb9b217c52aaaffdf9395f35ef015a57ef676e406c121e5e223",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "d8f9f8bc811f428dd9605000470c5f496f46145e2d3d8b7e750bca901e55fcdd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "da365650e77eaf9d79801d475de7bf2b2a031251",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "dad26f61da7b8bccc78364411812be74c025b475",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "dafbe5c235051bd6689f4b36a725360c38abdf25",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "db59813e3f27fb8608a4876e758f60b69d9700dc22d15237ac095bb3166fb622",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "dbcf1c93634010c7e6131bcdfffa72e30da2376a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "dbd8934e2e80890a7067097079a40182",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "dbe26539ed4701596371aa585520dd276d437398",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "dbfa683cd8c600ed0e90f58eb965ca38b1561fa99d12cb7f252e8608da217df2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "dc48b09b2a5954f7ff79ab8a2fd80202bd3b59c08c7cdbc6025aa923cb4c0efe",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "dc5082b07eb994ddee343a4080dce0a9ec2e891e5690654e24ae74ba9eabe422",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "dd0114ffacc6610b5a4a1cb0e79624cc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "dd8fea244afc8223b961f1d9d6ac8c5d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ddce0219923d152b8facd303f058a6286cf1f6924992b9fb9f5bf4d96436cc39",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "de82998ad5fcd63deae030803388e0fb4290d6223fda82368fd25b99b823f0d2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "de8f0008b15f2404f721f76fac34456a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "deb10789274bf903060d700b3472fdf094a14763",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "dfb37247d12351ef9708cb6631ce2d7017897503657c6b882a711c0da8a9a591",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "dfc64dd9d8f776ca5440c35fef5d406e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "dff0edae6e8854ddd3e617054ee0bd74c696c91411f704dff60aabaec839bec9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e03f5aeb2365c50a51f9088dcede68d5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e05f1767c2a337910ed75e90288838d6d0541164",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e08dcb80346ded2bb2393a180e3f2612ed4c2ff0d3842390a5b527d003060212",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e0a6a71c605d9a4076147e9537f82f79f1e1eccadc874595160aa4637ff4088c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e11f69b49b6f2e829454371c31ebf86893f82a042dae3f2faf63dcd84f97a584",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e12c2682a7949661fa99bf46723a1405c658d109411de3bf6cb04c57337cc020",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e1342a80d4b5e83d2c7c22e1e0aaa95f2d88e3dbf0d853a4994b180c93a4b17d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e14cc9a959bbe16c48b8dff063b311f3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e1bcf36ed2f7a60dd0dde52abf11c942e2657e31",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e1bf1b29e6fa3525d7f32f429290a88d6ea2890e61c06574b8ff6372aa5d0667",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e1e5af28ab858893c9baec1e0d7f2f199f97f56b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e28a96f983b8605decd2ac1db16ebad5fa741a6aa4e585a38ade0e5ad7d6cec0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e35893fabebb69483640687d6c43fab7919d46ed",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e3ef02456a4df8236da5ee2082a5df36e746b463",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e47d2c9f62adbffff5353e21e212d98de869c81d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e5a9fdff900dd502e8f3dce52d2d1b69aa9afafb5094a28f9037e8770db0e63b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e5e0e0c0fadacee1105bd340fa1b2e6d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e5e43b0830369c39fab45363486da4d21a98c5097ea262c9816997f11c73c1c4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e5e8ef65b4d265bd5fb77fe165131c2f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e6362a81991323e198a463a8ce255533",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e66bae6e8621db2a835fa6721c3e5bbe",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e6a1a428a7c09c9946f7c0179d89b263f442dc3208b5144a9146c200e4185bd6",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e6bd725a2af981cd2b5c2217c1d7d906369d8daf48f02023fb73635f9e2b9659",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e6c69f14d7b0dabff5c67e54cf87aba2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e74098b17d5d95e0014cf9c7f41f2a4e4be8baefc2b0eb42d39ae05a95b08ea5",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e815a9b418d09c2d4bcd074c2c0bc21406eeb22f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e83ff54e58f0b295a392c7fc39a7d0de",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e91fb249aa97be5c7931e430781167edfe7ba804720b5f643e6ab70b7e6e74dd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "e952c18272efa1c3d73d0a5381bcf443c02743fe",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e96091fd784eca3c56ce4a703b22f5e5941464aec32a6f356ad0f99ea4422f04",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e981fc4eaaa6417e6034e21438e55c0360773674a6fc0b63c1b95026449e5254",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "e99efd77392e2b4fe4d9bf5728a12b98",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "e9d6938c9980cab735e8fb2eaa082ddc6f5dd7f2ff84d8ece01e8caaefdbb930",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ea44138b9701fce1b2fe13de8f9e00681c007c9adc625edc9f507f177704c2e8",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "eaff006ac0eb7f7fe4db5fc6a4b5b1dc272d83ced66d510dcea185b1278bb453",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "eb141a43958802727a6c813452450c10b92704bea4474ee5fd87c0a1be326e2e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ebfade04b81e5ac679ef7e6beff7b850e3ff6ded",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ebfd92291714e6d7e57cf4830aa8f87950b796bb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ec38a56f9368eac67106a4ad61538e12053f03d1",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "eca5c297008e7c07a5c6fc9070c03121d702ef093b4a8e508b712040d87fed36",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "ecb57d8793514aa02314417265b1853f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ed391a16389234f9ebb6727711baaf3e068d7f77c465708fa3e8b7d0565d7fb9",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ed5de036edbbda52ab0049d2163607038d38a49404a46b6bcfc4bac26b743832",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "ed98c116d49c959383451097ec65c203",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "edce72f59e4c1d136cd1946af70d334c19df858d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ee262510cb246d2b904991aee7fc61162bdae34463439ec6383bd5356479d362",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ee2d34ac98eaf1451d19fdc99f0bb52db1db60f71933a91f5655af0703ff2464",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ee41e06ed96182ce80cd4544a6abd5d7719c4a5c0e5ddb266a83842d39b99b0a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ee56c49f42522637f401d15ac2a2b6f3423bfb2d5d37d071f0172ce9dc688d4b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ee6330870087f66a237a7f7c115b65beb042299f12eae1e9004e016686d0c387",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "eead44c0af7ddb12cece1a6125cf213bab3c22511cd59aff9d63dcfddb7d4386",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "eefc28e9f2c0c0592af186be8e3570d2",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "ef2f51aa47fdc2372df6d561a3b881da8e518d6c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "efc71bd23572eec985a6d1bbf61308fd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "eff699456ed4c5938d53afdb8df0836d7cb953ed933ed1a2899ec43f6f9e540b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f02b1d8010dac35b007796def0cbd5d0c9414df790e2b55b105c95df2f2ffa91",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f0641e053e81f0d01fa46db35a83e0a34494886503086866d956d14e81fd3e1c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f06457d2be0840faac9f0a91e63e33f932bf82922b25ac8c046fab38bb1e0b36",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f0e4d25b9b707be029e915ecb9fe61132cce89e138de36fef5e1edef551d7c25",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f0ea4c47bc8fec96770d023f1025bcb3",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f1551d3e5d144eef4e70a29dd3dc52fb22459d1f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f15a67899cfe4decff76d4cd1677c254",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f19a67b9c8805b335676f0fc17495839327f8135f791aa11d5d9adba2c83cc1c",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f1c3ebe78bd8c38559bf3cfcc9a9fa37d221e31780774a3787e26160a61f5348",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f1ecb89facb7e31ee9c03278f4106113c0339ff9fc10b1aefe33aaab776e8540",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f1f64ed1ee74d3b84f338a612e59c81997d6f70e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f20ba894c80e68c9324e211565319523",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f2357e70f359803d42298d016c7e1631e9fba6c7e01e5df1eb8fb9ff7eb3df4e",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f2af797ac45b9f578c53cc49e5797397",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f2b46e610889224bd54583d8a332a464",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f2dc794bf93887e281ad89209493065a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f34f550147c2792c1ff2a003d15be89e5573f0896c5aa6126068baa4621ef416",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f3926add1a4531ff324a6acb57d40769",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f43748a809680a23272ec684a8cce9af071ad165c3b01acdcd7fe501a0949745",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f48bf08687948ead049686cdee0e92dd",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f4d105f9565a8ee98e94d92e5a516e2f7b86e343",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f4d77958a12a0778283d3e679b24b18f82e332c4",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f4e9a3ddb83c53f5b7717af737ab0885",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f4e9a3ddb83c53f5b7717af737ab0885abd2f1b89b2c676d3441a793f65ffaee",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f5dbaa09e60343f252a80d4a313a36ac11442d96b0896022d1a83744e3c11feb",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f668bd551859007cf2cc2a62bf0bf5414870a04e9782590c9bf85c849ddb308b",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f694401d8e80bb0f672b1b30fd7b153a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f7037cc9a5659d5a1f68e88582242375",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f704a49c0cdaaae4515105bf937e26b5e39b1101c8a0cefaca3959fce7418e9d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f70abe93112637d3ec2f6c5e058ccac0307ebf63e496f38588cbfc17a8f8a264",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f72a8b71f12eaab6518873f72ea4be4572d9f3fb8e8706ade3b9a7314f236f22",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f76b13040c634f82a8332ff9443d84c89a5bced51ae9adad7fd15c05fadb4324",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f799ea5df9ec08690385d0972aefb59d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f8371097121549feb21e3bcc2eeea522",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f859a67ceebc52f0770a222b85a5002195089ee442eac4bea761c29be994e2ea",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f8817d46652594d745f28cb985b0000cf2669352",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f88258e21592084a2f93a572ade8f9b91c0cd0e242f5cf6121ed7bad0f7bdd1f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "f88d2b5c3b885ad5a9c1c44551bccc60",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f8cbe44fde6914bc8d06426c03c92ed536c891470292e567a586b54af29c2442",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "f8d93c1769e877aae7e7d5c289a467b5ae371c7a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f962cb443975065b91d4512a42a529a091726e1815be28ced0ebb9dff997931d",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "f9d2907d6b1de3078a0f111cc98764a92baf5ebd06cc8ab02637a65eff3b7f3a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fa04aeedc0d2f5bb6ed357fdae1c1435",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fa08b243f12e31940b8b4b82d3498804",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fa3c222f6b53d6a2e35a54600f6aa011",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "fa965ed784f7ec99e21475205cc177bb71ac7550b4015b4a4b3e232f032dcb91",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fa9d1f3e719d9284af8af075b1cef9cc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "fab69acd743f4111b749e3268690825c38822e62",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fac068afc5a0361f323f8b2fdbcbfd41",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "fb3630822b70bacb56aa4cec29b5a0e3e9acb3920809e70310a4003385a6d34a",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "fb6cebadd49d202c8c7b5cdd641bd16aac8258429e8face365a94bd32e253b00",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fc546acf1735127db05fb5bc354093e0",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "fd4dba4c4493e6fe3045f9e47f63b6f8b256ac32",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "fd8e880cc32377af08327c9d187f6220c6ac449f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha1",
+      "value": "fda4e742ead8a0492c2d7cb61f256f1f400af06f",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "fdef9e489f773319f55f92f712d1b7b5447d59a632b8f4173d1b161d3759ad92",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "fe04d230db612ea24af3826fda667131",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "md5",
+      "value": "febb622cd9eeb5c8860dcef4cbfd4b74",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "fedf8678350dd29713be43f6115a2a8361f011b4b2eaf51e57eb2ffd758caa83",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "sha256",
+      "value": "ffaea868dc1d68211664133e3b69f7025f1406bd4647d77f3aee945d745ad4bc",
+      "category": "malicious_hash"
+    },
+    {
+      "type": "url",
+      "value": "http://140.206.161.227:443",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://154.82.81.205/YD20251001143052.zip",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://154.82.81.205/YD20251001143052.zip'",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://154.82.81.205/YN20250923193706.zip.",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://154.91.90.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://162.33.177.16/CFBatFIX/7sjVtn0zPVjMZzkxZ.MOa",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://162.33.177.16/CFBatFIX/install.pyc",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://194.150.220.218/4SLEYpfAk57hGubo/fo0suc2ki2.rtf",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://31.172.71.5:44445/TCP",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://31.172.71.5:50443",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://31.172.71.5:50443/TCP",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://31.172.71.5:8008",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://31.172.71.5:8008/TCP",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://38.162.114.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.133.0.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.134.0.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.153.0.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.160.192.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.160.202.246:8053",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://43.162.0.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://45.203.220.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://47.80.0.0",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://91.215.85.103/pay_or_leak/instructure_affected_schools_list.txt",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://ai-like.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://baxe.pics:48261",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://bseolized.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://buccstanor.pics:28313",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://buccstanor.pics:48261",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://candipoker.net/ebd417db-979c-51f8-aedf-88a2bf8aa6c3",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://catalyst-ltd.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://cbmelipilla.cl/te/hhhh2.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://cbmelipilla.cl/te/test1.html",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://cbmelipilla.cl/te/test1.html!x-usc:http://cbmelipilla.cl/te/test1.html",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://dapala.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://dash.awaydouble.org/0v2auth",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://dmtn-tv.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://domawe.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://forestoaker.com:6290",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://fullgasesspa.cl/tet/download.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://giovettiadv.com:688",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://gluckcreek.online:48261",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://h.com:8000/test1.html",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://hostalaskapatagonia.com/tt/become.txt",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://hostalaskapatagonia.com/tt/tedfd.te",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://idrci.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://indeed-jobs.net/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://indeedhiring.com/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://intem.lat:9592",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://kleymarket.ru",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://lakhov.com/contact",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linked-hr.com/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linked-on.com/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linked-people.com/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linkedall.org/infos.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linkedplus.org/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://linkedwith.org/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://msiidentity.com/pw",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://mtg-life.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://newtdsone.shop/jsrepo?rnd=",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://oundhertobeconsist.org/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://panel.securehubcloud.com/login",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://paralegalmustang.icu/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://pengajian.muliastudy.com/images/edu/u.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://poronto.com:688",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://ropea.top:28313",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://sedaliarealty.net/ebd417db-979c-51f8-aedf-88a2bf8aa6c3",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://sinjim.net/95126aeb-4120-56b1-8c9e-63fdf0c0b6f9",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://teamsvoicehub.com/leyts.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://trafficmanagerupdate.com/index.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://tronscaner.net/infos.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://uslinked.org/infos.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://webstizkgao.com/v02c4fd90de22ee0677.js",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://webstizkgao.com/v2c4fd90de22ee0677.js",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://www.drivelivelime.com/pw",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "http://www.drivelivelime.com/x",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://136.0.141.138:8406/rcv/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://136.0.141.41:9580/rcv/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://166.0.132.237:7044/rcv/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://38.225.209.229:9623/rcv/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://abc.fetish-friends.com/setup/install",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://abc.fetish-friends.com/setup/install?channel=dianhua-0903",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://abc.fetish-friends.com/setup/install?channel=whatsapp_0826",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://abc.fetish-friends.com/setup?channel=jiqi_0819",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://abc.fetish-friends.com/uploads/appclient.zip",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://andrefelipedonascime1778799406970.2241107.meusitehostgator.com.br/GpazlLUWIJ_14_05_Meus_ArquivosDeTexto/02.txt",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://app.kuse.ai/sharednote/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://avipstudios.com/contact",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://brionter.com/4ba0af68-0037-5f6e-afd1-64f89fc0f554/net40.bin",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://cauterizespray.icu/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://cbmelipilla.cl/te/Books_A0UJKO.pdf%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80%E2%A0%80.hta",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://cdn-1415.brightcanvas.digital/fo0suc2ki2.rtf",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://docs.cloudplatform-single-spa.io/platform/svp-baas",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://efficiency-planes-emotions-fascinating.trycloudflare.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://enslaveculprit.digital/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://fr24cast.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://ghazacast.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://github.cloudplatform-single-spa.io/platform/svp-baas.git",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://ikhwancast.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://insight-sweet-drainage-appreciated.trycloudflare.com/log",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://javascriptapiusa.com/lic",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://joytion.com/contact",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://justsstop.ru/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://kvrnjr30.apexharvestor.digital",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://laislivon.com/contact",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://mcagov.cc/download.php?type=exe.",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://moment-cat-qld-place.trycloudflare.com/sylvilagus",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://mpasvw.com/contact",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://nwphotoblog.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://obelnamevalf.org/OaTS7yE9zd/default",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://onlineapp.ooraikaoo.info/?auth2=8rf22euu-2nxkebabDjjILlzldhQq2Pz",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://oob.moika.tech/payload",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://oob.moika.tech/payload/",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://oob.moika.tech/payload/linux`",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://oob.moika.tech/payload/mac`",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://oob.moika.tech/payload/win`",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://pengajian.muliastudy.com/images/edu/u.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://qjywvkbl.degassing-mould.digital",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://quitethepastry.ru",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://resilientlimb.icu/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://roldco.com/api/download/c51bbd17-ef08-4d6c-ab4c-d7bf49483dd6",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://round5on.digital/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://sudsmama.com/api/download/50e24b3a-8662-4d2f-9837-8cc62aa8f697",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://sudsmama.com/api/download/c8ea0a2c-42c2-4159-9337-ee774ed5e7cb",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://thickentributary.digital/script.sh",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://trindastal.com/8250d149-9bf8-566d-9d7d-ea925eae0a4",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://vnc.kcii2.com",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://ws.ztts88.cyou/file/cg.exe",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://ws.ztts88.cyou/upload.php",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://www.iru.com/blog/atomic-stealer-amos-returns",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://yygp4pdh.apexharvestor.digital",
+      "category": "malicious_url"
+    },
+    {
+      "type": "url",
+      "value": "https://zg5mkr7q.apexharvestor.digital",
+      "category": "malicious_url"
+    }
+  ]
+}

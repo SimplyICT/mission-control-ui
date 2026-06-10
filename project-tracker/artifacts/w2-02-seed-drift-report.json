@@ -1,0 +1,500 @@
+{
+  "task": "W2-02",
+  "title": "Seed / Version Drift Detection",
+  "generated_at": "2026-06-06T21:49:00.000Z",
+  "git_baseline_commit": "9e9a816",
+  "overall_status": "DRIFT_DETECTED",
+  "summary": {
+    "tables_checked": 6,
+    "high_severity_schema_drifts": 0,
+    "medium_severity_schema_drifts": 0,
+    "info_schema_drifts": 24,
+    "critical_seed_issues": 1,
+    "info_seed_notes": 1
+  },
+  "schema_drift": {
+    "users": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "users"
+        },
+        {
+          "column": "active",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "boolean",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+          "table": "users"
+        },
+        {
+          "column": "last_login",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "users"
+        },
+        {
+          "column": "created_at",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "users"
+        }
+      ]
+    },
+    "agent_scores": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "score",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "integer",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "offline",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "boolean",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "sca_fail",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "integer",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "vuln_critical",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "integer",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "vuln_high",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "integer",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "fim_events",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "integer",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "details",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "TEXT",
+          "pg_type": "jsonb",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite TEXT to PostgreSQL jsonb \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        },
+        {
+          "column": "timestamp",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "agent_scores"
+        }
+      ]
+    },
+    "incidents": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "incidents"
+        },
+        {
+          "column": "created_at",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "incidents"
+        },
+        {
+          "column": "updated_at",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "incidents"
+        }
+      ]
+    },
+    "audit_log": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "audit_log"
+        },
+        {
+          "column": "timestamp",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "audit_log"
+        }
+      ]
+    },
+    "notifications": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "notifications"
+        },
+        {
+          "column": "sent",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "boolean",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+          "table": "notifications"
+        },
+        {
+          "column": "timestamp",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "notifications"
+        }
+      ]
+    },
+    "m365_tenants": {
+      "status": "OK",
+      "drifts": [
+        {
+          "column": "id",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "INTEGER",
+          "pg_type": "bigint",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+          "table": "m365_tenants"
+        },
+        {
+          "column": "last_sync",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "m365_tenants"
+        },
+        {
+          "column": "created_at",
+          "kind": "TYPE_UPGRADE",
+          "sqlite_type": "DATETIME",
+          "pg_type": "timestamp with time zone",
+          "severity": "info",
+          "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+          "table": "m365_tenants"
+        }
+      ]
+    }
+  },
+  "high_drifts": [],
+  "medium_drifts": [],
+  "info_drifts": [
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "users"
+    },
+    {
+      "column": "active",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "boolean",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+      "table": "users"
+    },
+    {
+      "column": "last_login",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "users"
+    },
+    {
+      "column": "created_at",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "users"
+    },
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "score",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "integer",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "offline",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "boolean",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "sca_fail",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "integer",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "vuln_critical",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "integer",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "vuln_high",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "integer",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "fim_events",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "integer",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL integer \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "details",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "TEXT",
+      "pg_type": "jsonb",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite TEXT to PostgreSQL jsonb \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "timestamp",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "agent_scores"
+    },
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "incidents"
+    },
+    {
+      "column": "created_at",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "incidents"
+    },
+    {
+      "column": "updated_at",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "incidents"
+    },
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "audit_log"
+    },
+    {
+      "column": "timestamp",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "audit_log"
+    },
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "notifications"
+    },
+    {
+      "column": "sent",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "boolean",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL boolean \u2014 semantically equivalent or improved",
+      "table": "notifications"
+    },
+    {
+      "column": "timestamp",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "notifications"
+    },
+    {
+      "column": "id",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "INTEGER",
+      "pg_type": "bigint",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite INTEGER to PostgreSQL bigint \u2014 semantically equivalent or improved",
+      "table": "m365_tenants"
+    },
+    {
+      "column": "last_sync",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "m365_tenants"
+    },
+    {
+      "column": "created_at",
+      "kind": "TYPE_UPGRADE",
+      "sqlite_type": "DATETIME",
+      "pg_type": "timestamp with time zone",
+      "severity": "info",
+      "detail": "Type upgraded from SQLite DATETIME to PostgreSQL timestamp with time zone \u2014 semantically equivalent or improved",
+      "table": "m365_tenants"
+    }
+  ],
+  "seed_checks": [
+    {
+      "entity": "admin_user",
+      "severity": "critical",
+      "status": "INVALID_SEED",
+      "detail": "Admin user 'password_hash' is still the schema.sql placeholder 'REPLACE_WITH_HASHED_PASSWORD'. users.init_default_admin() uses ON CONFLICT DO NOTHING so it does not overwrite the placeholder. Admin login will fail on any fresh PostgreSQL deploy using schema.sql as written.",
+      "recommendation": "Fix: either (a) remove the admin INSERT from schema.sql and let init_default_admin() create it, or (b) change init_default_admin() to use ON CONFLICT DO UPDATE SET password_hash=EXCLUDED.password_hash when the existing hash equals the placeholder sentinel."
+    },
+    {
+      "entity": "schema_version_table",
+      "severity": "info",
+      "status": "ABSENT",
+      "detail": "Neither SQLite nor PostgreSQL schema includes a schema_versions / migrations table. There is no automated version drift guard. Any future schema changes must be manually tracked and applied across environments.",
+      "recommendation": "Add a schema_migrations table (or adopt Alembic/Flyway) to track applied migrations and prevent environment drift as the schema evolves."
+    }
+  ],
+  "verdict": "Schema column set is fully preserved across all 6 tables. All type changes are expected upgrades (INTEGER->BOOLEAN for flag columns, TEXT->JSONB for details, DATETIME->TIMESTAMPTZ for timestamps). PostgreSQL adds NOT NULL constraints and CHECK constraints not present in SQLite \u2014 these are hardening improvements, not regressions. CRITICAL: Admin user seed in schema.sql uses a placeholder password hash that cannot authenticate, and init_default_admin() will not overwrite it. This must be fixed before production deploy. No schema_migrations tracking exists; recommend adding one."
+}

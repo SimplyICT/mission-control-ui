@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mission Control — 2FA Setup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --bg:#0f172a;--card:#111827;--border:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--cyan:#22d3ee;--blue:#3b82f6;--green:#22c55e;--red:#f87171; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; }
+    .topbar { background: #0d1117; border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+    .topbar a { color: var(--muted); text-decoration: none; font-size: 13px; }
+    .topbar a:hover { color: var(--cyan); }
+    .topbar .title { color: var(--text); font-weight: bold; font-size: 16px; margin-left: auto; }
+    .container { max-width: 600px; margin: 40px auto; padding: 0 24px 60px; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 24px; }
+    .card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge-on { background: #14532d; color: var(--green); }
+    .badge-off { background: #2d1515; color: var(--red); }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .qr-wrap { text-align: center; margin: 20px 0; }
+    .qr-wrap img { border: 4px solid white; border-radius: 8px; }
+    .secret-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 16px;
+      letter-spacing: 3px;
+      text-align: center;
+      color: var(--cyan);
+      word-break: break-all;
+      margin-bottom: 16px;
+    }
+    .hint { color: var(--muted); font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: bold; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%;
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 24px;
+      font-family: monospace;
+      letter-spacing: 8px;
+      text-align: center;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--blue); }
+    .btn { padding: 11px 22px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-danger { background: #7f1d1d; color: var(--red); }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .btn-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+    .btn-full { width: 100%; }
+    .msg { border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-top: 14px; display: none; }
+    .msg.visible { display: block; }
+    .msg-success { background: #052e16; border: 1px solid #14532d; color: var(--green); }
+    .msg-error { background: #2d0a0a; border: 1px solid #7f1d1d; color: var(--red); }
+    .step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .step-num { background: var(--border); color: var(--muted); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+    .step-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    #setupSection { display: none; }
+    #disableSection { display: none; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/">&#8592; Platform Home</a>
+  <span class="title">🔐 Two-Factor Authentication</span>
+</div>
+
+<div class="container">
+  <h1>Two-Factor Authentication</h1>
+  <p class="subtitle">Protect your account with a time-based one-time password (TOTP).</p>
+
+  <!-- Status card -->
+  <div class="card" id="statusCard">
+    <h2>
+      Current Status
+      <span class="status-badge badge-off" id="statusBadge">Loading...</span>
+    </h2>
+    <p id="statusDesc" style="font-size:13px;color:var(--muted);margin-bottom:16px;">Checking your 2FA status...</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="enableBtn" style="display:none" onclick="startSetup()">Enable 2FA</button>
+      <button class="btn btn-danger" id="disableBtn" style="display:none" onclick="showDisable()">Disable 2FA</button>
+    </div>
+  </div>
+
+  <!-- Setup section -->
+  <div class="card" id="setupSection">
+    <h2>📱 Set Up Authenticator App</h2>
+
+    <div class="step"><div class="step-num">1</div><div class="step-text">Install <strong>Google Authenticator</strong> or <strong>Authy</strong> on your phone.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Scan the QR code below, or enter the secret key manually.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Enter the 6-digit code from your app to confirm and activate.</div></div>
+
+    <hr class="divider">
+
+    <div id="qrArea">
+      <div style="text-align:center;color:var(--muted);padding:20px;">Generating QR code...</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label for="activateCode">Enter code to confirm activation</label>
+      <input type="text" id="activateCode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="activateTotp()">Activate 2FA</button>
+    <button class="btn btn-outline btn-full" onclick="cancelSetup()" style="margin-top:10px;">Cancel</button>
+    <div class="msg" id="activateMsg"></div>
+  </div>
+
+  <!-- Disable section -->
+  <div class="card" id="disableSection">
+    <h2>⚠️ Disable Two-Factor Authentication</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Enter your current authenticator code to confirm you want to disable 2FA.</p>
+    <div class="form-group">
+      <label for="disableCode">Authenticator Code</label>
+      <input type="text" id="disableCode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+    </div>
+    <button class="btn btn-danger btn-full" onclick="disableTotp()">Disable 2FA</button>
+    <button class="btn btn-outline btn-full" onclick="cancelDisable()" style="margin-top:10px;">Cancel</button>
+    <div class="msg" id="disableMsg"></div>
+  </div>
+</div>
+
+<script>
+let currentStatus = null;
+
+async function loadStatus() {
+  try {
+    const r = await fetch('/api/2fa/status');
+    const d = await r.json();
+    currentStatus = d;
+    const badge = document.getElementById('statusBadge');
+    const desc = document.getElementById('statusDesc');
+    const enableBtn = document.getElementById('enableBtn');
+    const disableBtn = document.getElementById('disableBtn');
+
+    if (d.enabled) {
+      badge.textContent = 'Enabled';
+      badge.className = 'status-badge badge-on';
+      desc.textContent = '2FA is active on your account. You will be asked for a code every time you sign in.';
+      disableBtn.style.display = 'inline-block';
+      enableBtn.style.display = 'none';
+    } else {
+      badge.textContent = 'Disabled';
+      badge.className = 'status-badge badge-off';
+      desc.textContent = 'Your account is not protected by 2FA. We recommend enabling it for admin accounts.';
+      enableBtn.style.display = 'inline-block';
+      disableBtn.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('statusDesc').textContent = 'Failed to load status.';
+  }
+}
+
+async function startSetup() {
+  document.getElementById('setupSection').style.display = 'block';
+  document.getElementById('statusCard').style.display = 'none';
+  document.getElementById('qrArea').innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">Generating QR code...</div>';
+
+  try {
+    const r = await fetch('/api/2fa/generate', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Failed to generate');
+
+    document.getElementById('qrArea').innerHTML = `
+      <div class="qr-wrap"><img src="${d.qr_code}" alt="QR Code" width="200" height="200"></div>
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;">Can't scan? Enter this key manually:</p>
+      <div class="secret-box">${d.secret}</div>
+      <p class="hint">Select "Time-based" in your authenticator app and enter the key above if you can't scan the QR code.</p>
+    `;
+  } catch(e) {
+    document.getElementById('qrArea').innerHTML = `<div style="color:var(--red);font-size:13px;">Error: ${e.message}</div>`;
+  }
+}
+
+async function activateTotp() {
+  const code = document.getElementById('activateCode').value.trim();
+  const msg = document.getElementById('activateMsg');
+  if (code.length !== 6) { showMsg(msg, 'Enter a 6-digit code.', 'error'); return; }
+
+  try {
+    const r = await fetch('/api/2fa/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const d = await r.json();
+    if (!r.ok) { showMsg(msg, d.detail || 'Activation failed.', 'error'); return; }
+    showMsg(msg, '2FA enabled successfully! You will need your authenticator app on next login.', 'success');
+    setTimeout(() => { location.reload(); }, 2000);
+  } catch(e) {
+    showMsg(msg, 'Error: ' + e.message, 'error');
+  }
+}
+
+function showDisable() {
+  document.getElementById('disableSection').style.display = 'block';
+  document.getElementById('disableCode').focus();
+}
+
+function cancelDisable() {
+  document.getElementById('disableSection').style.display = 'none';
+  document.getElementById('disableCode').value = '';
+}
+
+function cancelSetup() {
+  document.getElementById('setupSection').style.display = 'none';
+  document.getElementById('statusCard').style.display = 'block';
+}
+
+async function disableTotp() {
+  const code = document.getElementById('disableCode').value.trim();
+  const msg = document.getElementById('disableMsg');
+  if (code.length !== 6) { showMsg(msg, 'Enter a 6-digit code.', 'error'); return; }
+
+  try {
+    const r = await fetch('/api/2fa/disable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const d = await r.json();
+    if (!r.ok) { showMsg(msg, d.detail || 'Failed to disable.', 'error'); return; }
+    showMsg(msg, '2FA has been disabled.', 'success');
+    setTimeout(() => { location.reload(); }, 1500);
+  } catch(e) {
+    showMsg(msg, 'Error: ' + e.message, 'error');
+  }
+}
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = 'msg visible msg-' + type;
+}
+
+// Auto-submit activate code
+document.getElementById('activateCode').addEventListener('input', function() {
+  if (this.value.replace(/\D/g,'').length === 6) {
+    this.value = this.value.replace(/\D/g,'');
+    activateTotp();
+  }
+});
+
+loadStatus();
+</script>
+</body>
+</html>

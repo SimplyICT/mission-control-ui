@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Director Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .status-line {
+      margin-top: 12px;
+      font-weight: bold;
+      color: #93c5fd;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .tile {
+      padding: 18px;
+      border-radius: 14px;
+      text-align: center;
+      font-weight: bold;
+      border: 1px solid #334155;
+      background: #0f172a;
+    }
+
+    .tile span {
+      display: block;
+      font-size: 30px;
+      margin-top: 8px;
+      color: #f8fafc;
+    }
+
+    .green {
+      background: rgba(22,163,74,0.15);
+      color: #86efac;
+    }
+
+    .amber {
+      background: rgba(245,158,11,0.15);
+      color: #fcd34d;
+    }
+
+    .red {
+      background: rgba(220,38,38,0.15);
+      color: #fca5a5;
+    }
+
+    .neutral {
+      background: #0f172a;
+      color: #cbd5e1;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #334155;
+      font-size: 12px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(15,23,42,0.45);
+    }
+
+    .status-ok {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .status-not {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .risk-high {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .risk-attention {
+      color: #fcd34d;
+      font-weight: bold;
+    }
+
+    .risk-ok {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .score-high {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .score-mid {
+      color: #fcd34d;
+      font-weight: bold;
+    }
+
+    .score-low {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+<div class="title">Mission Control Director Dashboard</div>
+  <div class="subtitle">Network Compliance & Executive Audit Oversight</div>
+</div>
+
+<div class="container">
+
+<div class="card">
+  <div class="actions">
+    <button onclick="goHome()">Audit Home</button>
+    <button onclick="loadDirectorView();loadGovernance();">Refresh All</button>
+  </div>
+
+  <p id="status" class="status-line">
+    Loading director dashboard...
+  </p>
+</div>
+
+<div class="card">
+  <h2>Network Compliance Summary - Last 30 Days</h2>
+  <div id="dashboard" class="dashboard"></div>
+</div>
+
+<div class="card">
+  <h2>Latest Audit by Site - Last 30 Days</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Risk</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Audit Date</th>
+          <th>Age</th>
+          <th>Total Devices</th>
+          <th>Critical</th>
+          <th>Warnings</th>
+          <th>Missing</th>
+          <th>Photo Breaches</th>
+          <th>Security Issues</th>
+          <th>Stored Report</th>
+          <th>View</th>
+          <th>DOCX</th>
+        </tr>
+      </thead>
+
+      <tbody id="siteTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recent Audits - Last 30 Days</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Risk</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Audit Date</th>
+          <th>Age</th>
+          <th>Critical</th>
+          <th>Warnings</th>
+          <th>Missing</th>
+          <th>Photo Breaches</th>
+          <th>Security Issues</th>
+          <th>Batch ID</th>
+          <th>View</th>
+        </tr>
+      </thead>
+
+      <tbody id="recentTable"></tbody>
+    </table>
+  </div>
+</div>
+
+
+<div class="card" id="complianceCard">
+  <h2>Governance Overview &mdash; Remediation, Incidents &amp; Policy</h2>
+  <p id="govStatus" style="color:#94a3b8;font-size:12px;margin:-4px 0 14px 0;">Loading governance data...</p>
+  <div id="complianceDashboard" class="dashboard">
+    <div class="tile neutral">Loading...<span></span></div>
+  </div>
+</div>
+
+<div class="card" id="nqsCard">
+  <h2>NQS Quality Area Mapping</h2>
+  <p style="color:#94a3b8;font-size:13px;margin:-8px 0 14px 0;">
+    Audit findings, remediation actions and incidents mapped to ACECQA National Quality Standard areas.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>NQS Area</th>
+          <th>Description</th>
+          <th>Open Remediations</th>
+          <th>Open Incidents</th>
+          <th>Mandatory Reports</th>
+          <th>Policy Gaps</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="nqsTable">
+        <tr><td colspan="7" style="text-align:center;color:#64748b;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="policySiteCard">
+  <h2>Per-Site Policy Compliance</h2>
+  <p style="color:#94a3b8;font-size:13px;margin:-8px 0 14px 0;">Policy documentation status per site. Sites with gaps require follow-up in Site Onboarding.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th style="text-align:center;">Confirmed</th>
+          <th style="text-align:center;">Gaps (No)</th>
+          <th style="text-align:center;">Not Set</th>
+          <th>Missing Policies</th>
+          <th style="text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="policySiteTable">
+        <tr><td colspan="6" style="text-align:center;color:#64748b;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="auditRecencyCard">
+  <h2>Audit Recency</h2>
+  <p style="color:#94a3b8;font-size:13px;margin:-8px 0 14px 0;">Sites ordered by days since last audit. Sites exceeding 90 days require scheduling.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Last Audit Date</th>
+          <th style="text-align:center;">Days Since Audit</th>
+          <th style="text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="auditRecencyTable">
+        <tr><td colspan="4" style="text-align:center;color:#64748b;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  Mission Control Audit Platform
+</div>
+
+</div>
+
+<script>
+const API = "/audit-api";
+
+function safe(v) {
+  return v === null || v === undefined ? "" : v;
+}
+
+function num(v) {
+  return Number(v || 0);
+}
+
+function goHome() {
+  window.location.href = "/index-platform.html";
+}
+
+function statusClass(status) {
+  return status === "Compliant"
+    ? "status-ok"
+    : "status-not";
+}
+
+function scoreClass(score) {
+  const n = num(score);
+
+  if (n >= 85) return "score-high";
+  if (n >= 60) return "score-mid";
+  return "score-low";
+}
+
+function riskClass(label) {
+  if (label === "High Risk") return "risk-high";
+  if (label === "Needs Attention") return "risk-attention";
+  if (label === "On Track") return "risk-ok";
+  return "status-not";
+}
+
+function ageText(age) {
+  if (age === null || age === undefined || age === "") {
+    return "Unknown";
+  }
+
+  return `${age} days`;
+}
+
+function tile(label, value, className) {
+  return `
+    <div class="tile ${className || "neutral"}">
+      ${label}
+      <span>${safe(value)}</span>
+    </div>
+  `;
+}
+
+function yesNo(value) {
+  return value === true || value === "true" || value === 1
+    ? "Yes"
+    : "No";
+}
+
+function viewReport(batchId) {
+  window.open(
+    `/audit-report-view.html?id=${encodeURIComponent(batchId)}`,
+    "_blank"
+  );
+}
+
+async function downloadReport(batchId) {
+  window.open(`${API}/audit-report/executive-pdf/${encodeURIComponent(batchId)}`, "_blank");
+  return;
+
+  // Legacy DOCX fetch kept as dead code for rollback reference
+  const res = await fetch(
+    `${API}/audit-report/export/${encodeURIComponent(batchId)}`
+  );
+
+  if (!res.ok) {
+    alert("Download failed.");
+    return;
+  }
+
+  const blob = await res.blob();
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = `audit_${batchId}.docx`;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function calculateTotals(recentAudits, sites) {
+
+  const totals = {
+    sites: sites.length,
+    audits: recentAudits.length,
+    average_compliance_score: 0,
+    high_risk: 0,
+    needs_attention: 0,
+    on_track: 0,
+    sites_with_issues: 0,
+    total_devices: 0,
+    critical: 0,
+    warnings: 0,
+    missing: 0,
+    photo_retention_breaches: 0,
+    security_issues: 0
+  };
+
+  const issueSites = new Set();
+
+  let scoreTotal = 0;
+  let scoreCount = 0;
+
+  recentAudits.forEach(audit => {
+
+    const s = audit.summary || {};
+    const risk = String(audit.risk_label || "").trim();
+
+    if (risk === "High Risk") totals.high_risk += 1;
+    else if (risk === "Needs Attention") totals.needs_attention += 1;
+    else if (risk === "On Track") totals.on_track += 1;
+
+    totals.total_devices += num(s.total_devices);
+    totals.critical += num(s.critical);
+    totals.warnings += num(s.warnings);
+    totals.missing += num(s.missing);
+    totals.photo_retention_breaches += num(s.photo_retention_breaches);
+    totals.security_issues += num(s.security_issues);
+
+    scoreTotal += num(audit.compliance_score);
+    scoreCount += 1;
+
+    if (risk !== "On Track") {
+      issueSites.add(
+        String(audit.site_name || audit.site_id || "unknown")
+          .trim()
+          .toLowerCase()
+      );
+    }
+  });
+
+  totals.sites_with_issues = issueSites.size;
+
+  totals.average_compliance_score =
+    scoreCount
+      ? Math.round((scoreTotal / scoreCount) * 10) / 10
+      : 0;
+
+  return totals;
+}
+
+async function loadDirectorView() {
+
+  document.getElementById("status").textContent =
+    "Loading director dashboard...";
+
+  const res = await fetch(`${API}/director-dashboard`);
+
+  if (!res.ok) {
+
+    const text = await res.text();
+
+    console.log(text);
+
+    document.getElementById("status").textContent =
+      "Failed to load director dashboard.";
+
+    alert("Failed to load director dashboard.");
+
+    return;
+  }
+
+  const data = await res.json();
+
+  const sites = data.sites || [];
+  const recentAudits = data.recent_audits || [];
+
+  const totals = calculateTotals(recentAudits, sites);
+
+  document.getElementById("dashboard").innerHTML =
+    tile("Sites", totals.sites, "neutral") +
+    tile("Audits", totals.audits, "neutral") +
+    tile(
+      "Average Score",
+      `${totals.average_compliance_score}%`,
+      totals.average_compliance_score >= 85
+        ? "green"
+        : (totals.average_compliance_score >= 60 ? "amber" : "red")
+    ) +
+    tile("High Risk", totals.high_risk, totals.high_risk > 0 ? "red" : "green") +
+    tile("Needs Attention", totals.needs_attention, totals.needs_attention > 0 ? "amber" : "green") +
+    tile("On Track", totals.on_track, "green") +
+    tile("Issues Last 30d", totals.sites_with_issues, totals.sites_with_issues > 0 ? "amber" : "green") +
+    tile("Devices", totals.total_devices, "neutral") +
+    tile("Critical", totals.critical, totals.critical > 0 ? "red" : "green") +
+    tile("Warnings", totals.warnings, totals.warnings > 0 ? "amber" : "green") +
+    tile("Missing", totals.missing, totals.missing > 0 ? "red" : "green") +
+    tile("Photo Breaches", totals.photo_retention_breaches, totals.photo_retention_breaches > 0 ? "red" : "green") +
+    tile("Security Issues", totals.security_issues, totals.security_issues > 0 ? "red" : "green");
+
+  const siteTable = document.getElementById("siteTable");
+
+  siteTable.innerHTML = "";
+
+  sites.forEach(site => {
+
+    const s = site.summary || {};
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${safe(site.site_name)}</td>
+      <td class="${riskClass(site.risk_label)}">${safe(site.risk_label)}</td>
+      <td class="${scoreClass(site.compliance_score)}">${safe(site.compliance_score)}%</td>
+      <td class="${statusClass(site.overall_status)}">${safe(site.overall_status)}</td>
+      <td>${safe(site.audit_date)}</td>
+      <td>${ageText(site.audit_age_days)}</td>
+      <td>${safe(s.total_devices)}</td>
+      <td>${safe(s.critical)}</td>
+      <td>${safe(s.warnings)}</td>
+      <td>${safe(s.missing)}</td>
+      <td>${safe(s.photo_retention_breaches)}</td>
+      <td>${safe(s.security_issues)}</td>
+      <td>${yesNo(site.report_generated)}</td>
+      <td><button onclick="viewReport('${safe(site.latest_batch_id)}')">View</button></td>
+      <td><button onclick="downloadReport('${safe(site.latest_batch_id)}')">PDF</button></td>
+    `;
+
+    siteTable.appendChild(row);
+  });
+
+  const recentTable = document.getElementById("recentTable");
+
+  recentTable.innerHTML = "";
+
+  recentAudits.forEach(audit => {
+
+    const s = audit.summary || {};
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${safe(audit.site_name)}</td>
+      <td class="${riskClass(audit.risk_label)}">${safe(audit.risk_label)}</td>
+      <td class="${scoreClass(audit.compliance_score)}">${safe(audit.compliance_score)}%</td>
+      <td class="${statusClass(audit.overall_status)}">${safe(audit.overall_status)}</td>
+      <td>${safe(audit.audit_date)}</td>
+      <td>${ageText(audit.audit_age_days)}</td>
+      <td>${safe(s.critical)}</td>
+      <td>${safe(s.warnings)}</td>
+      <td>${safe(s.missing)}</td>
+      <td>${safe(s.photo_retention_breaches)}</td>
+      <td>${safe(s.security_issues)}</td>
+      <td>${safe(audit.audit_batch_id)}</td>
+      <td><button onclick="viewReport('${safe(audit.audit_batch_id)}')">View</button></td>
+    `;
+
+    recentTable.appendChild(row);
+  });
+
+  document.getElementById("status").textContent =
+    `Director dashboard loaded. Generated: ${safe(data.generated_at)}`;
+}
+
+async function loadGovernance() {
+  try {
+    var res = await fetch(API + '/governance-summary');
+    if (!res.ok) {
+      document.getElementById('complianceDashboard').innerHTML =
+        '<div class="tile neutral">Compliance data unavailable<span>-</span></div>';
+      return;
+    }
+    var data = await res.json();
+    var rem = data.remediation || {};
+    var inc = data.incidents || {};
+    var pol = data.policy || {};
+    var nqs = data.nqs_mapping || [];
+
+    var bp = rem.by_priority || {};
+    var bs = inc.by_severity  || {};
+    document.getElementById('complianceDashboard').innerHTML =
+      tile('Remediations Open', num(rem.open), num(rem.open) > 0 ? 'amber' : 'green') +
+      tile('Remediations Overdue', num(rem.overdue), num(rem.overdue) > 0 ? 'red' : 'green') +
+      tile('Remediations Resolved', num(rem.resolved), 'green') +
+      tile('Critical Priority', num(bp.critical), num(bp.critical) > 0 ? 'red' : 'green') +
+      tile('High Priority', num(bp.high), num(bp.high) > 0 ? 'amber' : 'green') +
+      tile('Incidents Open', num(inc.open), num(inc.open) > 0 ? 'amber' : 'green') +
+      tile('Mandatory Reports', num(inc.mandatory_reportable), num(inc.mandatory_reportable) > 0 ? 'red' : 'green') +
+      tile('Critical Incidents', num(bs.critical), num(bs.critical) > 0 ? 'red' : 'green') +
+      tile('High Severity', num(bs.high), num(bs.high) > 0 ? 'amber' : 'green') +
+      tile('Policy Gaps', num(pol.policy_gaps), num(pol.policy_gaps) > 0 ? 'amber' : 'green') +
+      tile('Sites Policy Complete', num(pol.policy_complete_sites) + '/' + num(pol.sites_total),
+           num(pol.policy_complete_sites) === num(pol.sites_total) ? 'green' : 'amber');
+
+    var gs = document.getElementById('govStatus');
+    if (gs) { var now = new Date(); gs.textContent = 'Governance data loaded: ' + now.toLocaleTimeString() + ' — Generated: ' + safe(data.generated_at).replace('T',' ').slice(0,19); }
+
+    // Per-site policy table
+    var sitePolicies = (pol.by_site || []);
+    var pTbody = document.getElementById('policySiteTable');
+    if (pTbody) {
+      pTbody.innerHTML = sitePolicies.length === 0
+        ? '<tr><td colspan="6" style="text-align:center;color:#64748b;">No site policy data available.</td></tr>'
+        : sitePolicies.map(function(s) {
+            var cls = s.gaps > 0 ? 'risk-attention' : 'risk-ok';
+            var txt = s.gaps > 0 ? s.gaps + ' gap(s)' : 'All confirmed';
+            var missing = (s.missing || []).join(', ') || '—';
+            return '<tr>' +
+              '<td>' + safe(s.site_name) + '</td>' +
+              '<td style="text-align:center;">' + num(s.confirmed) + '/9</td>' +
+              '<td style="text-align:center;">' + (s.gaps > 0 ? '<span class="risk-attention">' + s.gaps + '</span>' : '<span class="risk-ok">0</span>') + '</td>' +
+              '<td style="text-align:center;color:#94a3b8;">' + num(s.not_set) + '</td>' +
+              '<td style="font-size:11px;color:#94a3b8;white-space:normal;max-width:300px;">' + (s.gaps > 0 ? missing : '—') + '</td>' +
+              '<td class="' + cls + '">' + txt + '</td>' +
+              '</tr>';
+          }).join('');
+    }
+
+    // Audit recency table
+    var recency = (data.audit_recency || []);
+    var rTbody = document.getElementById('auditRecencyTable');
+    if (rTbody) {
+      rTbody.innerHTML = recency.length === 0
+        ? '<tr><td colspan="4" style="text-align:center;color:#64748b;">No audit history available.</td></tr>'
+        : recency.map(function(r) {
+            var ageCls = r.overdue ? 'risk-high' : (num(r.age_days) > 60 ? 'risk-attention' : 'risk-ok');
+            var ageTxt = r.age_days !== null && r.age_days !== undefined ? r.age_days + ' days' : 'Unknown';
+            var statusTxt = r.overdue ? 'Overdue' : (num(r.age_days) > 60 ? 'Due Soon' : 'On Track');
+            return '<tr>' +
+              '<td>' + safe(r.site_name) + '</td>' +
+              '<td>' + safe(r.audit_date) + '</td>' +
+              '<td style="text-align:center;">' + ageTxt + '</td>' +
+              '<td class="' + ageCls + '">' + statusTxt + '</td>' +
+              '</tr>';
+          }).join('');
+    }
+
+    var tbody = document.getElementById('nqsTable');
+    tbody.innerHTML = '';
+    nqs.forEach(function(area) {
+      var issues = num(area.open_remediations) + num(area.open_incidents) + num(area.policy_gaps);
+      var statusCls = issues === 0 ? 'risk-ok' : (num(area.mandatory_incidents) > 0 ? 'risk-high' : 'risk-attention');
+      var statusTxt = issues === 0 ? 'On Track' : (num(area.mandatory_incidents) > 0 ? 'Action Required' : 'Needs Attention');
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><strong>' + safe(area.area_code) + '</strong><br><span style="color:#94a3b8;font-size:11px;">' + safe(area.area_name) + '</span></td>' +
+        '<td style="color:#94a3b8;white-space:normal;max-width:280px;">' + safe(area.description) + '</td>' +
+        '<td style="text-align:center;">' + (num(area.open_remediations) > 0 ? '<span class="risk-attention">' + num(area.open_remediations) + '</span>' : '<span class="risk-ok">0</span>') + '</td>' +
+        '<td style="text-align:center;">' + (num(area.open_incidents) > 0 ? '<span class="risk-attention">' + num(area.open_incidents) + '</span>' : '<span class="risk-ok">0</span>') + '</td>' +
+        '<td style="text-align:center;">' + (num(area.mandatory_incidents) > 0 ? '<span class="risk-high">' + num(area.mandatory_incidents) + '</span>' : '<span class="risk-ok">0</span>') + '</td>' +
+        '<td style="text-align:center;">' + (num(area.policy_gaps) > 0 ? '<span class="risk-attention">' + num(area.policy_gaps) + '</span>' : '<span class="risk-ok">0</span>') + '</td>' +
+        '<td class="' + statusCls + '">' + statusTxt + '</td>';
+      tbody.appendChild(tr);
+    });
+  } catch(e) {
+    document.getElementById('complianceDashboard').innerHTML =
+      '<div class="tile neutral">Error loading compliance data<span>!</span></div>';
+  }
+}
+
+
+loadDirectorView();
+loadGovernance();
+</script>
+
+</body>
+</html>

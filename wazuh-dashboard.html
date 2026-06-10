@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — Security Command Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0}
+    .topbar{background:#111827;border-bottom:1px solid #1e293b;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+    .topbar-left .title{font-size:24px;font-weight:bold;color:#f8fafc}
+    .topbar-left .subtitle{font-size:13px;color:#94a3b8;margin-top:4px}
+    .topbar-right{display:flex;gap:10px;align-items:center}
+    .btn{padding:8px 18px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+    .btn:hover{background:#334155}
+    .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .btn-primary:hover{background:#2563eb}
+    .container{max-width:1800px;margin:auto;padding:24px}
+    .kpi-strip{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+    .kpi-box{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px 24px;min-width:140px;text-align:center;flex:1}
+    .kpi-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-value{font-size:28px;font-weight:bold;margin:6px 0}
+    .kpi-sub{font-size:11px;color:#64748b}
+    .text-green{color:#22c55e}.text-red{color:#ef4444}.text-amber{color:#f59e0b}.text-blue{color:#3b82f6}.text-muted{color:#94a3b8}
+    .card{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:22px;margin-bottom:22px}
+    .card h2{margin:0 0 16px 0;font-size:18px;color:#f8fafc}
+    .charts-row{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:22px}
+    .chart-wrap{height:260px;position:relative}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:10px 12px;border-bottom:1px solid #1e293b;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer}
+    td{padding:10px 12px;border-bottom:1px solid #1e293b1a;font-size:13px}
+    tr:hover{background:#1e293b40}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-green{background:#22c55e22;color:#22c55e}.badge-red{background:#ef444422;color:#ef4444}
+    .badge-amber{background:#f59e0b22;color:#f59e0b}.badge-gray{background:#64748b22;color:#94a3b8}
+    .badge-blue{background:#3b82f622;color:#3b82f6}
+    .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+    .status-active{background:#22c55e}.status-offline{background:#ef4444}.status-never_connected{background:#94a3b8}
+    .loading{text-align:center;padding:40px;color:#94a3b8}
+    .error{text-align:center;padding:40px;color:#ef4444}
+    .nav-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:22px}
+    .nav-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;cursor:pointer;text-decoration:none;color:#e2e8f0;transition:all .2s}
+    .nav-card:hover{border-color:#3b82f6;transform:translateY(-2px)}
+    .nav-card .nc-title{font-weight:bold;font-size:14px;margin-bottom:4px}
+    .nav-card .nc-desc{font-size:12px;color:#94a3b8}
+    @media(max-width:900px){.charts-row{grid-template-columns:1fr}.kpi-strip{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="title">Security Command Center</div>
+      <div class="subtitle">Wazuh SIEM — Real-time security monitoring</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" onclick="loadDashboard()">↻ Refresh</button>
+      <a href="/index-platform.html" class="btn">← Platform</a>
+    </div>
+  </div>
+  <div class="container">
+    <div class="nav-cards">
+      <a href="/wazuh-alerts.html" class="nav-card">
+        <div class="nc-title">📡 Events &amp; Alerts</div>
+        <div class="nc-desc">Real-time alert feed with severity filtering</div>
+      </a>
+      <a href="/wazuh-autopilot.html" class="nav-card">
+        <div class="nc-title">🤖 SOC Autopilot</div>
+        <div class="nc-desc">AI-powered case management &amp; response</div>
+      </a>
+      <a href="/wazuh-soc.html" class="nav-card">
+        <div class="nc-title">🔗 Full SOC Dashboard</div>
+        <div class="nc-desc">Open SecureSOCentral in new tab</div>
+      </a>
+    </div>
+
+    <div id="kpiStrip" class="kpi-strip"><div class="loading">Loading metrics...</div></div>
+
+    <div class="charts-row">
+      <div class="card"><h2>Agent Status</h2><div class="chart-wrap"><canvas id="chartStatus"></canvas></div></div>
+      <div class="card"><h2>OS Distribution</h2><div class="chart-wrap"><canvas id="chartOS"></canvas></div></div>
+      <div class="card"><h2>Alert Severity (24h)</h2><div class="chart-wrap"><canvas id="chartAlerts"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <h2>Agents</h2>
+      <div style="margin-bottom:12px;display:flex;gap:8px">
+        <button class="btn badge-filter active" onclick="filterAgents('all',this)">All</button>
+        <button class="btn badge-filter" onclick="filterAgents('active',this)">Active</button>
+        <button class="btn badge-filter" onclick="filterAgents('offline',this)">Offline</button>
+      </div>
+      <div id="agentsTable"><div class="loading">Loading agents...</div></div>
+    </div>
+  </div>
+
+<script>
+var API = '/wazuh-api';
+var charts = {};
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function statusBadge(s) {
+  var cls = s === 'active' ? 'badge-green' : s === 'offline' ? 'badge-red' : 'badge-gray';
+  return '<span class="badge ' + cls + '"><span class="status-dot status-' + s + '"></span>' + s + '</span>';
+}
+
+function timeAgo(d) {
+  if (!d || d === '9999-12-31T23:59:59+00:00') return 'Just now';
+  var sec = (Date.now() - new Date(d).getTime()) / 1000;
+  if (sec < 60) return 'Just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  return Math.floor(sec / 86400) + 'd ago';
+}
+
+function api(path) {
+  return fetch(API + path).then(function(r) {
+    if (!r.ok) throw new Error('API ' + r.status);
+    return r.json();
+  }).then(function(d) { return d.data || d; });
+}
+
+function loadDashboard() {
+  Promise.all([api('/overview'), api('/events/stats')]).then(function(res) {
+    var data = res[0], ev = res[1];
+    renderKPIs(data, ev);
+    renderCharts(data, ev);
+  }).catch(function(e) {
+    document.getElementById('kpiStrip').innerHTML = '<div class="error">Failed to load: ' + esc(e.message) + ' — <button class="btn" onclick="loadDashboard()">Retry</button></div>';
+  });
+
+  api('/agents?limit=500').then(function(data) {
+    var items = data.affected_items || [];
+    window._agents = items;
+    renderAgents(items);
+  }).catch(function(e) {
+    document.getElementById('agentsTable').innerHTML = '<div class="error">' + esc(e.message) + '</div>';
+  });
+}
+
+function renderKPIs(d, ev) {
+  var totalVuln = 0;
+  for (var k in d.vulnerabilities) totalVuln += (d.vulnerabilities[k] || 0);
+  var sev = ev.severity || {};
+  var totalAlerts = (sev.Critical||0) + (sev.High||0) + (sev.Medium||0) + (sev.Low||0);
+  var threatScore = sev.Critical ? Math.min(100, Math.round((sev.Critical / Math.max(1, totalAlerts)) * 100)) : 0;
+
+  document.getElementById('kpiStrip').innerHTML =
+    '<div class="kpi-box"><div class="kpi-label">Total Agents</div><div class="kpi-value text-blue">' + d.total_agents + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Active</div><div class="kpi-value text-green">' + d.active + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Offline</div><div class="kpi-value text-red">' + d.offline + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Vulnerabilities</div><div class="kpi-value text-amber">' + totalVuln + '</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">SCA Score</div><div class="kpi-value ' + (d.sca_score >= 80 ? 'text-green' : d.sca_score >= 50 ? 'text-amber' : 'text-red') + '">' + d.sca_score + '%</div></div>' +
+    '<div class="kpi-box"><div class="kpi-label">Threat Index</div><div class="kpi-value ' + (threatScore > 50 ? 'text-red' : threatScore > 20 ? 'text-amber' : 'text-green') + '">' + threatScore + '%</div><div class="kpi-sub">' + totalAlerts + ' alerts / 24h</div></div>';
+}
+
+function renderCharts(d, ev) {
+  var sev = ev.severity || {};
+  if (charts.status) charts.status.destroy();
+  charts.status = new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: { labels: ['Active','Offline','Never Connected'], datasets: [{ data: [d.active, d.offline, d.never_connected||0], backgroundColor: ['#22c55e','#ef4444','#94a3b8'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+  });
+
+  if (d.os_distribution) {
+    var osLabels = Object.keys(d.os_distribution);
+    if (charts.os) charts.os.destroy();
+    charts.os = new Chart(document.getElementById('chartOS'), {
+      type: 'bar',
+      data: { labels: osLabels, datasets: [{ label: 'Agents', data: osLabels.map(function(l){ return d.os_distribution[l]; }), backgroundColor: '#3b82f6' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, beginAtZero: true } } }
+    });
+  }
+
+  if (charts.alerts) charts.alerts.destroy();
+  charts.alerts = new Chart(document.getElementById('chartAlerts'), {
+    type: 'doughnut',
+    data: { labels: ['Critical','High','Medium','Low'], datasets: [{ data: [sev.Critical||0, sev.High||0, sev.Medium||0, sev.Low||0], backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#94a3b8'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+  });
+}
+
+function renderAgents(items) {
+  var h = '<table><thead><tr><th>ID</th><th>Name</th><th>IP</th><th>OS</th><th>Status</th><th>Version</th><th>Last Seen</th></tr></thead><tbody>';
+  for (var i = 0; i < items.length; i++) {
+    var a = items[i];
+    var os = a.os ? (a.os.name || '') + ' ' + (a.os.version || '') : 'Unknown';
+    h += '<tr data-status="' + a.status + '">' +
+      '<td>' + esc(a.id) + '</td>' +
+      '<td>' + esc(a.name) + '</td>' +
+      '<td>' + esc(a.ip) + '</td>' +
+      '<td>' + esc(os.substring(0,30)) + '</td>' +
+      '<td>' + statusBadge(a.status) + '</td>' +
+      '<td>' + esc(a.version || '-') + '</td>' +
+      '<td>' + timeAgo(a.lastKeepAlive) + '</td></tr>';
+  }
+  h += '</tbody></table>';
+  document.getElementById('agentsTable').innerHTML = h;
+}
+
+function filterAgents(status, el) {
+  var btns = document.querySelectorAll('.badge-filter');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  el.classList.add('active');
+  var rows = document.querySelectorAll('#agentsTable tbody tr');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].style.display = (status === 'all' || rows[i].getAttribute('data-status') === status) ? '' : 'none';
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

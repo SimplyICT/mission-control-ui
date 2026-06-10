@@ -1,0 +1,100 @@
+{
+  "task_id": "W5-03",
+  "candidate": "W5-03-initial",
+  "generated_at": "2026-06-05T22:56:45.303916+00:00",
+  "summary": {
+    "total_checks": 7,
+    "passed": 2,
+    "failed": 0,
+    "manual_required": 5,
+    "overall_status": "pending_manual_validation"
+  },
+  "checks": [
+    {
+      "id": "artifacts_directory_writable",
+      "description": "Tracker artifacts directory accepts writes for parity outputs",
+      "status": "pass",
+      "details": {
+        "reason": "writable"
+      }
+    },
+    {
+      "id": "platform_health_reachable",
+      "description": "Platform service health endpoint responds",
+      "status": "pass",
+      "details": {
+        "ok": true,
+        "status_code": 200,
+        "reason": "reachable"
+      }
+    },
+    {
+      "id": "object_upload_contract",
+      "description": "Verify upload endpoint supports required metadata and content-type parity",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "content_type",
+          "object_key",
+          "checksum",
+          "size_bytes"
+        ],
+        "next_action": "Run authenticated upload contract tests against platform-api image/object endpoint"
+      }
+    },
+    {
+      "id": "object_download_contract",
+      "description": "Verify download/read access parity and object path resolution",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "authorized_read",
+          "forbidden_read",
+          "path_mapping"
+        ],
+        "next_action": "Run authenticated read tests against platform-api signed URL/read path"
+      }
+    },
+    {
+      "id": "signed_url_ttl_and_acl",
+      "description": "Verify signed URL TTL boundaries and ACL equivalence",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "min_ttl",
+          "max_ttl",
+          "expired_url_rejected",
+          "role_restrictions"
+        ],
+        "next_action": "Execute signed URL issuance and expiry tests"
+      }
+    },
+    {
+      "id": "metadata_roundtrip_parity",
+      "description": "Verify metadata write/read parity across legacy and new object paths",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "filename",
+          "mime_type",
+          "owner_reference",
+          "created_at"
+        ],
+        "next_action": "Compare persisted metadata rows with legacy object metadata samples"
+      }
+    },
+    {
+      "id": "delete_lifecycle_parity",
+      "description": "Verify object deletion lifecycle and orphan cleanup parity",
+      "status": "manual_required",
+      "details": {
+        "expected": [
+          "soft_delete_or_hard_delete_policy",
+          "metadata_consistency",
+          "audit_event"
+        ],
+        "next_action": "Run delete flow tests and verify audit/log outputs"
+      }
+    }
+  ]
+}

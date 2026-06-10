@@ -1,0 +1,125 @@
+{
+  "task_id": "W4-02",
+  "generated_at": "2026-06-06T00:27:16Z",
+  "scope": "iOS client Firebase backend usage mapping to platform-api targets",
+  "source_root": "ios-master/ios-master/SimplyclikApp/Source",
+  "mappings": [
+    {
+      "area": "registration bootstrap",
+      "source": "RegistrationService.initializeUser in Services/FirebaseService.swift",
+      "current_backend": "FirebaseAuth anonymous sign-in bootstrap",
+      "target_backend": "Platform registration bootstrap/session-init endpoint",
+      "migration_status": "planned"
+    },
+    {
+      "area": "OTP validation",
+      "source": "RegistrationService.validatePasscode in Services/FirebaseService.swift",
+      "current_backend": "Firestore oneTimePasscodes lookup + reference dereference",
+      "target_backend": "Platform OTP validation endpoint",
+      "migration_status": "gap_identified"
+    },
+    {
+      "area": "OTP deletion",
+      "source": "RegistrationService.deletePasscode in Services/FirebaseService.swift",
+      "current_backend": "Firestore oneTimePasscodes delete",
+      "target_backend": "Platform OTP consume/delete endpoint",
+      "migration_status": "gap_identified"
+    },
+    {
+      "area": "user profile verification update",
+      "source": "RegistrationService.updateUserProfile in Services/FirebaseService.swift",
+      "current_backend": "Firestore profile update (isVerified, pushToken, uid)",
+      "target_backend": "Platform profile verification + push token endpoint",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "service types list",
+      "source": "RequestService.fetchServices in Services/FirebaseService.swift and AppDelegate.swift",
+      "current_backend": "Firestore enums/serviceTypes read",
+      "target_backend": "GET /v1/service-types",
+      "migration_status": "planned"
+    },
+    {
+      "area": "request list",
+      "source": "RequestService.fetchRequests in Services/FirebaseService.swift",
+      "current_backend": "Firestore requests query by role + status filter",
+      "target_backend": "GET /v1/requests with role-scoped filters",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request detail",
+      "source": "RequestService.fetchRequest in Services/FirebaseService.swift",
+      "current_backend": "Firestore requests document read by id",
+      "target_backend": "GET /v1/requests/:requestId",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request creation",
+      "source": "RequestService.createRequest in Services/FirebaseService.swift",
+      "current_backend": "Firestore requests document create",
+      "target_backend": "POST /v1/requests",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "request status transitions",
+      "source": "RequestService.udpateStatus in Services/FirebaseService.swift",
+      "current_backend": "Firestore request updateData patches",
+      "target_backend": "PATCH /v1/requests/:requestId/status",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "invoice read",
+      "source": "RequestService.fetchInvoice in Services/FirebaseService.swift",
+      "current_backend": "Firestore requestInvoicing document read",
+      "target_backend": "GET /v1/requests/:requestId/invoice",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "invoice submit/complete",
+      "source": "RequestService.completeRequest in Services/FirebaseService.swift",
+      "current_backend": "Firestore requestInvoicing write + status update",
+      "target_backend": "POST /v1/requests/:requestId/invoice + status transition",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "notes read",
+      "source": "RequestService.fetchNotes in Services/FirebaseService.swift",
+      "current_backend": "Firestore request history query with visibility filter",
+      "target_backend": "GET /v1/requests/:requestId/notes and timeline read",
+      "migration_status": "covered"
+    },
+    {
+      "area": "note create",
+      "source": "RequestService.createNote in Services/FirebaseService.swift",
+      "current_backend": "Firestore request history create",
+      "target_backend": "POST /v1/requests/:requestId/notes",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "image upload",
+      "source": "ImageService.uploadImage in Services/FirebaseService.swift",
+      "current_backend": "Firebase Storage putData to images/requests paths",
+      "target_backend": "Presigned upload URL flow + metadata finalize endpoint",
+      "migration_status": "gap_identified"
+    },
+    {
+      "area": "image list/read",
+      "source": "ImageService.fetchImageList/fetchImage in Services/FirebaseService.swift",
+      "current_backend": "Firebase Storage listAll/downloadURL + direct URL fetch + cache",
+      "target_backend": "GET /v1/requests/:requestId/images metadata + signed URLs",
+      "migration_status": "partially_covered"
+    },
+    {
+      "area": "push notification token lifecycle",
+      "source": "ConfirmRegistrationViewController.swift + AppDelegate.swift",
+      "current_backend": "Firebase Messaging token + Firestore profile pushToken updates",
+      "target_backend": "POST /v1/devices/push-token",
+      "migration_status": "covered"
+    }
+  ],
+  "migration_notes": [
+    "High-priority iOS migration gaps are OTP flow replacement and storage signed upload/download parity.",
+    "Requests, notes, timeline, invoice, and push-token flows have partial-to-strong platform-api alignment for phased cutover.",
+    "Suggested sequence: request list/detail/status + notes/timeline -> invoice -> storage flows -> OTP registration parity."
+  ]
+}

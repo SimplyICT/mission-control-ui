@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Remediation Tracker - Mission Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .topbar { background: #111827; padding: 18px 28px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { font-size: 24px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+    .container { max-width: 1400px; margin: 24px auto; padding: 0 20px; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 14px 0; font-size: 18px; color: #f8fafc; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .controls select, .controls button { padding: 9px 14px; border-radius: 8px; font-size: 13px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; outline: none; }
+    .controls select { min-width: 200px; }
+    .controls button { cursor: pointer; font-weight: bold; border: none; }
+    .btn-blue { background: #2563eb; color: #fff; }
+    .btn-blue:hover { background: #1d4ed8; }
+    .btn-green { background: #16a34a; color: #fff; }
+    .btn-green:hover { background: #15803d; }
+    .btn-amber { background: #d97706; color: #fff; }
+    .btn-amber:hover { background: #b45309; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .stat { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat .val { font-size: 28px; font-weight: bold; color: #f8fafc; }
+    .stat .lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat.open .val { color: #60a5fa; }
+    .stat.progress .val { color: #fbbf24; }
+    .stat.overdue .val { color: #f87171; }
+    .stat.resolved .val { color: #4ade80; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 10px; border: 1px solid #1e293b; text-align: left; }
+    th { background: #1e293b; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    tr:nth-child(even) { background: rgba(15,23,42,0.4); }
+    .priority-critical { color: #f87171; font-weight: bold; }
+    .priority-high { color: #fbbf24; font-weight: bold; }
+    .priority-medium { color: #60a5fa; }
+    .priority-low { color: #94a3b8; }
+    .status-open { color: #60a5fa; }
+    .status-in_progress { color: #fbbf24; }
+    .status-resolved { color: #4ade80; }
+    .status-accepted_risk { color: #a78bfa; }
+    .inline-select { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 4px 6px; font-size: 12px; cursor: pointer; }
+    .status-msg { margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 13px; display: none; }
+    .status-msg.success { display: block; background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .status-msg.error { display: block; background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .status-msg.info { display: block; background: #0c1929; color: #60a5fa; border: 1px solid #1e3a5f; }
+    .empty { text-align: center; color: #64748b; padding: 30px; font-size: 14px; }
+    .table-wrap { overflow-x: auto; }
+    .finding-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
+    .finding-missing_device { background: #7f1d1d; color: #fca5a5; }
+    .finding-photo_retention { background: #78350f; color: #fde68a; }
+    .finding-credential { background: #581c87; color: #d8b4fe; }
+    .finding-hardware { background: #1e3a5f; color: #93c5fd; }
+    .finding-sync { background: #064e3b; color: #6ee7b7; }
+    .finding-other { background: #1e293b; color: #94a3b8; }
+    .desc-cell { max-width: 320px; white-space: normal; line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Remediation Tracker</div>
+    <div class="subtitle">Track and resolve audit findings to closure</div>
+  </div>
+  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="controls">
+      <select id="siteSelect" onchange="onSiteChange()">
+        <option value="">-- Select a site --</option>
+      </select>
+      <select id="statusFilter" onchange="loadActions()">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="accepted_risk">Accepted Risk</option>
+      </select>
+      <select id="priorityFilter" onchange="loadActions()">
+        <option value="">All Priorities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button class="btn-amber" onclick="showGeneratePanel()">Generate from Audit</button>
+      <button class="btn-blue" onclick="showCreatePanel()">+ Add Manual Action</button>
+    </div>
+
+    <div id="generatePanel" style="display:none; margin-bottom: 16px; padding: 14px; background: #1e293b; border-radius: 10px;">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <select id="batchSelect" style="min-width:300px; padding:9px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#e2e8f0; font-size:13px;">
+          <option value="">-- Select audit batch --</option>
+        </select>
+        <button class="btn-green" onclick="generateFromAudit()">Generate Actions</button>
+        <button style="background:#334155; color:#94a3b8;" onclick="hidePanel('generatePanel')">Cancel</button>
+      </div>
+      <div class="status-msg" id="generateStatus"></div>
+    </div>
+
+    <div id="createPanel" style="display:none; margin-bottom: 16px; padding: 14px; background: #1e293b; border-radius: 10px;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+        <div><label style="font-size:11px;color:#94a3b8;">Description *</label><input type="text" id="newDesc" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;" placeholder="Describe the finding"></div>
+        <div><label style="font-size:11px;color:#94a3b8;">Finding Type</label><select id="newType" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;"><option value="other">Other</option><option value="missing_device">Missing Device</option><option value="photo_retention">Photo Retention</option><option value="credential">Credential</option><option value="hardware">Hardware</option><option value="sync">Sync</option></select></div>
+        <div><label style="font-size:11px;color:#94a3b8;">Priority</label><select id="newPriority" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;"><option value="medium">Medium</option><option value="critical">Critical</option><option value="high">High</option><option value="low">Low</option></select></div>
+        <div><label style="font-size:11px;color:#94a3b8;">Assigned To</label><input type="text" id="newAssigned" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;" placeholder="Person responsible"></div>
+        <div><label style="font-size:11px;color:#94a3b8;">Due Date</label><input type="date" id="newDue" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;"></div>
+        <div><label style="font-size:11px;color:#94a3b8;">Device Serial</label><input type="text" id="newSerial" style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;" placeholder="Optional"></div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:10px;">
+        <button class="btn-green" onclick="createAction()">Create</button>
+        <button style="background:#334155; color:#94a3b8;" onclick="hidePanel('createPanel')">Cancel</button>
+      </div>
+      <div class="status-msg" id="createStatus"></div>
+    </div>
+
+    <div id="summaryCards" class="stats-grid"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Device</th>
+            <th>Assigned To</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th>Resolution</th>
+          </tr>
+        </thead>
+        <tbody id="actionsTable">
+          <tr><td colspan="8" class="empty">Select a site to view remediation actions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var API = '/audit-api';
+var currentSiteId = null;
+
+function loadSites() {
+  return fetch(API + '/sites')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var sel = document.getElementById('siteSelect');
+      sel.innerHTML = '<option value="">-- Select a site --</option>';
+      (Array.isArray(data) ? data : []).forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.site_id;
+        opt.textContent = s.site_name;
+        sel.appendChild(opt);
+      });
+    });
+}
+
+function onSiteChange() {
+  currentSiteId = document.getElementById('siteSelect').value;
+  if (!currentSiteId) {
+    document.getElementById('actionsTable').innerHTML = '<tr><td colspan="8" class="empty">Select a site to view remediation actions.</td></tr>';
+    document.getElementById('summaryCards').innerHTML = '';
+    return;
+  }
+  loadActions();
+  loadSummary();
+  loadBatches();
+}
+
+function loadSummary() {
+  if (!currentSiteId) return;
+  fetch(API + '/remediation-summary?site_id=' + currentSiteId)
+    .then(function(r) { return r.json(); })
+    .then(function(s) {
+      var html = '';
+      html += '<div class="stat open"><div class="val">' + (s.open || 0) + '</div><div class="lbl">Open</div></div>';
+      html += '<div class="stat progress"><div class="val">' + (s.in_progress || 0) + '</div><div class="lbl">In Progress</div></div>';
+      html += '<div class="stat overdue"><div class="val">' + (s.overdue || 0) + '</div><div class="lbl">Overdue</div></div>';
+      html += '<div class="stat resolved"><div class="val">' + (s.resolved || 0) + '</div><div class="lbl">Resolved</div></div>';
+      html += '<div class="stat"><div class="val">' + (s.accepted_risk || 0) + '</div><div class="lbl">Accepted Risk</div></div>';
+      html += '<div class="stat"><div class="val">' + (s.total || 0) + '</div><div class="lbl">Total</div></div>';
+      document.getElementById('summaryCards').innerHTML = html;
+    });
+}
+
+function loadActions() {
+  if (!currentSiteId) return;
+  var url = API + '/remediation-actions?site_id=' + currentSiteId;
+  var status = document.getElementById('statusFilter').value;
+  var priority = document.getElementById('priorityFilter').value;
+  if (status) url += '&status=' + status;
+  if (priority) url += '&priority=' + priority;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(actions) {
+      var tbody = document.getElementById('actionsTable');
+      if (!actions.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty">No remediation actions found. Use "Generate from Audit" to create actions from audit findings.</td></tr>';
+        return;
+      }
+      var html = '';
+      actions.forEach(function(a) {
+        var pClass = 'priority-' + (a.priority || 'medium');
+        var fClass = 'finding-' + (a.finding_type || 'other');
+        var overdue = '';
+        if ((a.status === 'open' || a.status === 'in_progress') && a.due_date && a.due_date < new Date().toISOString().slice(0, 10)) {
+          overdue = ' style="color:#f87171;"';
+        }
+        html += '<tr>';
+        html += '<td class="' + pClass + '">' + (a.priority || 'medium').toUpperCase() + '</td>';
+        html += '<td><span class="finding-badge ' + fClass + '">' + (a.finding_type || 'other').replace(/_/g, ' ') + '</span></td>';
+        html += '<td class="desc-cell">' + esc(a.description || '') + '</td>';
+        html += '<td>' + esc(a.device_serial || '-') + '</td>';
+        html += '<td>' + esc(a.assigned_to || '-') + '</td>';
+        html += '<td' + overdue + '>' + esc(a.due_date || '-') + '</td>';
+        html += '<td><select class="inline-select" onchange="updateStatus(\'' + a.action_id + '\', this.value)">';
+        ['open', 'in_progress', 'resolved', 'accepted_risk'].forEach(function(s) {
+          html += '<option value="' + s + '"' + (a.status === s ? ' selected' : '') + '>' + s.replace(/_/g, ' ') + '</option>';
+        });
+        html += '</select></td>';
+        html += '<td>' + esc(a.resolution_notes || '-') + '</td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+    });
+}
+
+function updateStatus(actionId, newStatus) {
+  fetch(API + '/remediation-actions/' + actionId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      loadSummary();
+    });
+}
+
+function loadBatches() {
+  if (!currentSiteId) return;
+  fetch(API + '/audit-batches?site_id=' + currentSiteId)
+    .then(function(r) { return r.json(); })
+    .then(function(batches) {
+      var sel = document.getElementById('batchSelect');
+      sel.innerHTML = '<option value="">-- Select audit batch --</option>';
+      (Array.isArray(batches) ? batches : []).forEach(function(b) {
+        var opt = document.createElement('option');
+        opt.value = b.audit_batch_id;
+        opt.textContent = (b.audit_date || 'Unknown date') + ' - ' + (b.audit_batch_id || '').substring(0, 8) + '...';
+        sel.appendChild(opt);
+      });
+    });
+}
+
+function showGeneratePanel() {
+  if (!currentSiteId) { alert('Select a site first.'); return; }
+  document.getElementById('generatePanel').style.display = 'block';
+  document.getElementById('createPanel').style.display = 'none';
+  clearStatus('generateStatus');
+}
+
+function showCreatePanel() {
+  if (!currentSiteId) { alert('Select a site first.'); return; }
+  document.getElementById('createPanel').style.display = 'block';
+  document.getElementById('generatePanel').style.display = 'none';
+  clearStatus('createStatus');
+}
+
+function hidePanel(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function generateFromAudit() {
+  var batchId = document.getElementById('batchSelect').value;
+  if (!batchId) { showMsg('generateStatus', 'error', 'Select an audit batch.'); return; }
+
+  fetch(API + '/remediation-actions/generate/' + batchId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.actions_created > 0) {
+        showMsg('generateStatus', 'success', data.actions_created + ' actions created.');
+      } else {
+        showMsg('generateStatus', 'info', 'No new actions to create (findings already have actions or no issues found).');
+      }
+      loadActions();
+      loadSummary();
+    })
+    .catch(function(e) {
+      showMsg('generateStatus', 'error', 'Failed: ' + e.message);
+    });
+}
+
+function createAction() {
+  var desc = document.getElementById('newDesc').value.trim();
+  if (!desc) { showMsg('createStatus', 'error', 'Description is required.'); return; }
+
+  var payload = {
+    site_id: currentSiteId,
+    source: 'manual',
+    finding_type: document.getElementById('newType').value,
+    description: desc,
+    priority: document.getElementById('newPriority').value,
+    assigned_to: document.getElementById('newAssigned').value.trim() || null,
+    due_date: document.getElementById('newDue').value || null,
+    device_serial: document.getElementById('newSerial').value.trim() || null,
+    status: 'open'
+  };
+
+  fetch(API + '/remediation-actions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.action_id) {
+        showMsg('createStatus', 'success', 'Action created.');
+        document.getElementById('newDesc').value = '';
+        loadActions();
+        loadSummary();
+      } else {
+        showMsg('createStatus', 'error', data.detail || 'Create failed.');
+      }
+    })
+    .catch(function(e) {
+      showMsg('createStatus', 'error', 'Failed: ' + e.message);
+    });
+}
+
+function esc(v) {
+  var d = document.createElement('div');
+  d.textContent = v;
+  return d.innerHTML;
+}
+
+function showMsg(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg ' + type;
+  el.textContent = msg;
+}
+
+function clearStatus(id) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg';
+  el.textContent = '';
+}
+
+loadSites();
+</script>
+
+</body>
+</html>

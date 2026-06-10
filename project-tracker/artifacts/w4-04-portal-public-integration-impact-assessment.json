@@ -1,0 +1,152 @@
+{
+  "taskId": "W4-04",
+  "title": "Portal/public integration impact assessment",
+  "generatedAt": "2026-06-06T05:02:23Z",
+  "scope": {
+    "repositories": [
+      {
+        "name": "web-public-portal-master",
+        "type": "React SPA",
+        "firebaseIntegrated": true
+      },
+      {
+        "name": "web-public-master",
+        "type": "Static site",
+        "firebaseIntegrated": false
+      }
+    ],
+    "focusFlows": [
+      "request",
+      "note/history",
+      "notification"
+    ]
+  },
+  "firebaseSurface": {
+    "bootstrap": {
+      "file": "src/components/Firebase/Firebase.tsx",
+      "collections": [
+        "requests",
+        "requestInvoicing",
+        "requestContractorPriority",
+        "customerLocationContractors",
+        "customers",
+        "customerLocations",
+        "customerUsers",
+        "customerContractors",
+        "enums"
+      ],
+      "services": [
+        "auth",
+        "firestore",
+        "storage"
+      ]
+    },
+    "claimsAuth": {
+      "files": [
+        "src/components/Auth/AuthContext.tsx"
+      ],
+      "currentBehavior": "Reads custom token claims (role, customerRef) and signs out users without expected claims."
+    }
+  },
+  "flowImpactAssessment": [
+    {
+      "flow": "Request lifecycle",
+      "currentImplementation": [
+        "Realtime request feed via requests onSnapshot filtered by customer.id and ordered by status/requestStartDate.",
+        "Request state transitions persisted by direct document set in requests/{docId}.",
+        "Contractor assignment uses customerLocationContractors read + requestContractorPriority write."
+      ],
+      "keyFiles": [
+        "src/modules/Requests/RequestsContainer.tsx",
+        "src/modules/Requests/RequestFlow/ManageStep.tsx",
+        "src/modules/Requests/RequestFlow/RequestFlowContainer.tsx"
+      ],
+      "impactLevel": "high",
+      "migrationRisks": [
+        "Loss of realtime parity if API replaces onSnapshot with polling only.",
+        "State-transition integrity risk if business rules move client-side to server-side without explicit transition contracts.",
+        "Contractor prioritization side effects need atomic update behavior."
+      ],
+      "apiNeeds": [
+        "GET /api/portal/requests?customerId={id}&statusGroup={pending|open|closed}",
+        "GET /api/portal/requests/{id}",
+        "PATCH /api/portal/requests/{id}/status",
+        "PUT /api/portal/requests/{id}/contractor-priority",
+        "GET /api/portal/customer-locations/{id}/contractors"
+      ]
+    },
+    {
+      "flow": "Request notes/history",
+      "currentImplementation": [
+        "Reads/writes requests/{docId}/history subcollection.",
+        "Uses visibility levels public/internal/private on log entries.",
+        "Sets new-notes flags on request documents (e.g., newNotesHq) to manage unread state."
+      ],
+      "keyFiles": [
+        "src/modules/Requests/RequestsContainer.tsx",
+        "src/modules/Requests/RequestFlow/HistoryStep.tsx",
+        "src/modules/Requests/RequestUtilities.ts",
+        "src/modules/Requests/RequestInterfaces.ts"
+      ],
+      "impactLevel": "high",
+      "migrationRisks": [
+        "History ordering and timestamp shape must remain stable for existing UI render logic.",
+        "Visibility enforcement currently implied by client conventions; must become server-authoritative.",
+        "Unread-note markers can desync without event-driven update semantics."
+      ],
+      "apiNeeds": [
+        "GET /api/portal/requests/{id}/history",
+        "POST /api/portal/requests/{id}/history",
+        "POST /api/portal/requests/{id}/history/private",
+        "PATCH /api/portal/requests/{id}/notes-seen"
+      ]
+    },
+    {
+      "flow": "Notification behavior",
+      "currentImplementation": [
+        "No standalone notifications collection in portal client; notifications are implicit through request status and note flags.",
+        "UI text and workflows assume downstream notification dispatch on status transitions (assign contractor, request more information, accept/cancel).",
+        "Dashboard and request views rely on near-realtime updates to represent new work."
+      ],
+      "keyFiles": [
+        "src/modules/Requests/RequestUtilities.ts",
+        "src/modules/Requests/RequestFlow/ManageStep.tsx",
+        "src/modules/Dashboard/DashboardContainer.tsx"
+      ],
+      "impactLevel": "medium_high",
+      "migrationRisks": [
+        "If notification fan-out is not triggered by API transition endpoints, managers/contractors may miss events.",
+        "Delayed delivery without websocket/SSE replacement degrades operational responsiveness."
+      ],
+      "apiNeeds": [
+        "Server-side event dispatch bound to request transition endpoints",
+        "Optional GET /api/portal/notifications or SSE channel for unread/event stream parity"
+      ]
+    }
+  ],
+  "portalPublicSiteImpact": {
+    "webPublicMaster": {
+      "assessment": "Low migration impact for backend integration because repository is static (HTML/CSS/vendor assets) with no app-layer Firebase calls.",
+      "recommendation": "Treat as branding/content surface; only update links/session entrypoints if portal auth routes change."
+    }
+  },
+  "cutoverStrategy": {
+    "phases": [
+      "Introduce typed portal API client and replace Firebase wrapper methods behind compatibility adapters.",
+      "Migrate request list/detail and status update endpoints first; keep old Firestore listeners behind feature flag for rollback.",
+      "Migrate history/notes endpoints with visibility and unread-marker parity checks.",
+      "Enable server-side notification dispatch, then remove Firebase-specific request/note flag writes."
+    ],
+    "parityChecks": [
+      "Status transitions preserve existing allowed-state matrix.",
+      "History items maintain descending chronology and visibility filtering.",
+      "Unread/new-note indicators update within equivalent latency budget.",
+      "Dashboard counts remain consistent for selected date ranges."
+    ]
+  },
+  "acceptanceCriteria": [
+    "Request, note, and notification flows are fully mapped from Firebase operations to platform API responsibilities.",
+    "Critical migration risks are identified with concrete mitigations and API requirements.",
+    "Portal/public split impact is documented, including low backend impact for web-public static site."
+  ]
+}

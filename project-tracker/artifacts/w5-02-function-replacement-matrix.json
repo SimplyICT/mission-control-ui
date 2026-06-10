@@ -1,0 +1,146 @@
+{
+  "generated_at": "2026-06-05T22:32:18Z",
+  "task_id": "W5-02",
+  "scope": "Legacy Firebase Cloud Functions replacement planning",
+  "target_platform": "Platform API + Postgres jobs + service events",
+  "functions": [
+    {
+      "name": "createNewNote",
+      "trigger_type": "firestore.onCreate",
+      "current_role": "Create request note history side effects",
+      "replacement_target": "platform-api request notes endpoint + DB trigger/event table",
+      "status": "planned"
+    },
+    {
+      "name": "onCreateRequest",
+      "trigger_type": "firestore.onCreate",
+      "current_role": "Request creation side effects",
+      "replacement_target": "platform-api request create transaction + async job/event dispatcher",
+      "status": "planned"
+    },
+    {
+      "name": "requestStatusUpdate",
+      "trigger_type": "firestore.onUpdate",
+      "current_role": "Request status transition automation",
+      "replacement_target": "platform-api status transition endpoint + request_status_events backfill/emit",
+      "status": "partially_covered"
+    },
+    {
+      "name": "onWriteCustomerLocationContractors",
+      "trigger_type": "firestore.onWrite",
+      "current_role": "Contractor priority queue updates",
+      "replacement_target": "platform-api assignment service + queue table + worker",
+      "status": "planned"
+    },
+    {
+      "name": "scheduledAutoCompleteRequests",
+      "trigger_type": "pubsub.schedule",
+      "current_role": "Auto-complete approved requests after time window",
+      "replacement_target": "postgres scheduled job (cron) with idempotent update routine",
+      "status": "planned"
+    },
+    {
+      "name": "scheduledAutoContractorReassign",
+      "trigger_type": "pubsub.schedule",
+      "current_role": "Reassign timed-out contractor acceptances",
+      "replacement_target": "postgres scheduled job + assignment queue processor",
+      "status": "planned"
+    },
+    {
+      "name": "createContractorOTP",
+      "trigger_type": "firestore.onCreate",
+      "current_role": "Generate OTP records for contractor onboarding",
+      "replacement_target": "platform-api onboarding endpoint + OTP persistence",
+      "status": "planned"
+    },
+    {
+      "name": "createCustomerLocationOTP",
+      "trigger_type": "firestore.onCreate",
+      "current_role": "Generate OTP records for customer location onboarding",
+      "replacement_target": "platform-api onboarding endpoint + OTP persistence",
+      "status": "planned"
+    },
+    {
+      "name": "updateCustomerLocationOTP",
+      "trigger_type": "firestore.onUpdate",
+      "current_role": "Refresh or modify OTP state",
+      "replacement_target": "platform-api OTP lifecycle endpoint",
+      "status": "planned"
+    },
+    {
+      "name": "renewOtp",
+      "trigger_type": "https.callable",
+      "current_role": "Renew one-time passcodes",
+      "replacement_target": "platform-api OTP renew endpoint",
+      "status": "planned"
+    },
+    {
+      "name": "emailOTP",
+      "trigger_type": "firestore.onCreate",
+      "current_role": "Send OTP email notifications",
+      "replacement_target": "notification worker consuming event queue",
+      "status": "planned"
+    },
+    {
+      "name": "createCustomerLocationGeoPoints",
+      "trigger_type": "firestore.onWrite",
+      "current_role": "Geocode customer location addresses",
+      "replacement_target": "platform-api geocoding service + background job",
+      "status": "planned"
+    },
+    {
+      "name": "createAdminUser",
+      "trigger_type": "https.callable",
+      "current_role": "Administrative user creation",
+      "replacement_target": "platform-api admin user management endpoints",
+      "status": "planned"
+    },
+    {
+      "name": "createUser",
+      "trigger_type": "https.callable",
+      "current_role": "General user creation",
+      "replacement_target": "platform-api user provisioning endpoint",
+      "status": "planned"
+    },
+    {
+      "name": "deleteUser",
+      "trigger_type": "https.callable",
+      "current_role": "User deletion",
+      "replacement_target": "platform-api user deactivation/deletion endpoint",
+      "status": "planned"
+    },
+    {
+      "name": "createCustomerUser",
+      "trigger_type": "https.callable",
+      "current_role": "Portal customer user provisioning",
+      "replacement_target": "platform-api portal user lifecycle endpoints",
+      "status": "planned"
+    },
+    {
+      "name": "updateCustomerUser",
+      "trigger_type": "https.callable",
+      "current_role": "Portal customer user update + claim maintenance",
+      "replacement_target": "platform-api portal user update endpoints",
+      "status": "planned"
+    },
+    {
+      "name": "fetchCustomerSummaryData",
+      "trigger_type": "https.callable",
+      "current_role": "Dashboard aggregate summary",
+      "replacement_target": "platform-api dashboard summary endpoint",
+      "status": "gap_identified"
+    },
+    {
+      "name": "fetchCustomerDetailData",
+      "trigger_type": "https.callable",
+      "current_role": "Dashboard detail analytics",
+      "replacement_target": "platform-api dashboard detail endpoint",
+      "status": "gap_identified"
+    }
+  ],
+  "status_legend": {
+    "partially_covered": "Some behavior exists in platform-api but full parity pending",
+    "gap_identified": "No equivalent endpoint/service yet",
+    "planned": "Replacement target and implementation direction defined"
+  }
+}

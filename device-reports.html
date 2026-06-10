@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audit Reports</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; background: #f4f6f8; color: #111827; }
+    h1 { color: #1f2937; }
+    h2 { margin-top: 0; }
+    .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    select, button, input { padding: 7px; margin: 3px; box-sizing: border-box; }
+    select { min-width: 320px; }
+    button { cursor: pointer; }
+    .status-line { font-weight: bold; color: #2563eb; margin-top: 10px; }
+    .save-ok { font-weight: bold; color: #16a34a; }
+    .save-error { font-weight: bold; color: #dc2626; }
+    .banner { padding: 16px; border-radius: 10px; font-size: 20px; font-weight: bold; margin-bottom: 15px; text-align: center; }
+    .banner-green { background: #dcfce7; color: #166534; border: 2px solid #16a34a; }
+    .banner-amber { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
+    .banner-red { background: #fee2e2; color: #991b1b; border: 2px solid #dc2626; }
+    .dashboard { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 10px; }
+    .tile { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #e5e7eb; }
+    .tile span { display: block; font-size: 22px; margin-top: 5px; }
+    .green { background: #dcfce7; color: #166534; }
+    .amber { background: #fef3c7; color: #92400e; }
+    .red { background: #fee2e2; color: #991b1b; }
+    .neutral { background: #f3f4f6; color: #374151; }
+    .table-wrap { overflow-x: auto; max-width: 100%; }
+    table { width: max-content; min-width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 6px; border: 1px solid #ddd; font-size: 12px; vertical-align: middle; white-space: nowrap; }
+    th { background: #1f2937; color: white; position: sticky; top: 0; z-index: 1; }
+    .row-red { background: #fee2e2; }
+    .row-amber { background: #fef3c7; }
+    .row-green { background: #f8fafc; }
+    .readonly-cell { background: #f3f4f6; color: #374151; }
+    .serial-col { min-width: 130px; max-width: 160px; }
+    .type-col { min-width: 90px; max-width: 110px; }
+    .name-col { min-width: 130px; max-width: 170px; }
+    .room-col { min-width: 120px; max-width: 160px; }
+    .issue-col { min-width: 220px; max-width: 320px; white-space: normal; }
+    input.small-num { width: 75px; }
+    input.date-input { width: 130px; }
+    input.short-text { width: 130px; }
+    input.medium-text { width: 180px; }
+    input.long-text { width: 240px; }
+    .checkbox-cell { text-align: center; }
+    .checkbox-cell input { transform: scale(1.1); }
+    .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .nav-card { display: block; background: white; padding: 22px; border-radius: 10px; text-decoration: none; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+    .nav-card strong { display: block; font-size: 20px; margin-bottom: 8px; color: #1f2937; }
+  </style>
+</head>
+<body>
+
+<h1>Audit Reports</h1>
+
+<div class="card">
+  <h2>Load Reports</h2>
+  <div class="actions">
+    <button onclick="goHome()">Home</button>
+    <select id="siteSelect"></select>
+    <button onclick="loadBatches()">Load Audit Batches</button>
+  </div>
+  <p id="reportStatus" class="status-line">Select a site to load audit reports.</p>
+</div>
+
+<div class="card">
+  <h2>Audit Batches</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Download</th>
+          <th>View JSON</th>
+          <th>Batch ID</th>
+          <th>Site</th>
+          <th>Audit Date</th>
+          <th>Audit Type</th>
+          <th>Report Generated</th>
+        </tr>
+      </thead>
+      <tbody id="batchTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = "/audit-api";
+
+function safe(value) { return value ?? ""; }
+
+function goHome() {
+  window.location.href = "/index-platform.html";
+}
+
+function selectedSiteName() {
+  const select = document.getElementById("siteSelect");
+  return select.options[select.selectedIndex]?.textContent || "";
+}
+
+async function loadSites() {
+  const res = await fetch(`${API}/sites`);
+  const sites = await res.json();
+
+  const select = document.getElementById("siteSelect");
+  select.innerHTML = "";
+
+  sites.forEach(site => {
+    const option = document.createElement("option");
+    option.value = site.site_id;
+    option.textContent = site.site_name;
+    select.appendChild(option);
+  });
+
+  document.getElementById("reportStatus").textContent = `Sites loaded: ${sites.length}`;
+}
+
+async function loadBatches() {
+  const siteId = document.getElementById("siteSelect").value;
+  const siteName = selectedSiteName();
+
+  if (!siteId) {
+    alert("Please select a site first.");
+    return;
+  }
+
+  const res = await fetch(`${API}/audit-batches?site_id=${siteId}`);
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    alert("Could not load audit batches.");
+    return;
+  }
+
+  const batches = await res.json();
+  const tbody = document.getElementById("batchTable");
+  tbody.innerHTML = "";
+
+  document.getElementById("reportStatus").textContent =
+    `Audit batches loaded: ${siteName} | Batches: ${batches.length}`;
+
+  batches.forEach(batch => {
+    const batchId = batch.audit_batch_id;
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td><button onclick="downloadReport('${safe(batchId)}')">Download PDF</button></td>
+      <td><button onclick="viewReport('${safe(batchId)}')">View</button></td>
+      <td>${safe(batchId)}</td>
+      <td>${safe(batch.site_name)}</td>
+      <td>${safe(batch.audit_date)}</td>
+      <td>${safe(batch.audit_type)}</td>
+      <td>${safe(batch.report_generated)}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+}
+
+function viewReport(batchId) {
+  if (!batchId) {
+    alert("Missing batch ID.");
+    return;
+  }
+
+  window.open(`${API}/audit-report/${encodeURIComponent(batchId)}`, "_blank");
+}
+
+async function downloadReport(batchId) {
+  if (!batchId) {
+    alert("Missing batch ID.");
+    return;
+  }
+  window.open(`${API}/audit-report/executive-pdf/${encodeURIComponent(batchId)}`, "_blank");
+}
+
+loadSites();
+</script>
+
+</body>
+</html>

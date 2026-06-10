@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Device Audit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      padding: 14px;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, button, input {
+      border-radius: 8px;
+      border: 1px solid #334155;
+      padding: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    input[type="text"] { min-width: 150px; }
+    input[type="number"] { width: 90px; }
+    input[type="date"] { width: 135px; }
+    input[type="checkbox"] { transform: scale(1.15); }
+
+    select { min-width: 320px; }
+
+    button {
+      background: #2563eb;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover { background: #1d4ed8; }
+
+    .status-line {
+      margin-top: 12px;
+      color: #93c5fd;
+      font-weight: bold;
+    }
+
+    .save-ok { color: #4ade80; font-weight: bold; }
+    .save-error { color: #f87171; font-weight: bold; }
+
+    .banner {
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+
+    .banner-green { background: rgba(22,163,74,0.15); border: 1px solid #16a34a; color: #86efac; }
+    .banner-amber { background: rgba(245,158,11,0.15); border: 1px solid #f59e0b; color: #fcd34d; }
+    .banner-red { background: rgba(220,38,38,0.15); border: 1px solid #dc2626; color: #fca5a5; }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .tile {
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-weight: bold;
+      border: 1px solid #334155;
+    }
+
+    .tile span {
+      display: block;
+      font-size: 24px;
+      margin-top: 6px;
+    }
+
+    .green { background: rgba(22,163,74,0.15); color: #86efac; }
+    .amber { background: rgba(245,158,11,0.15); color: #fcd34d; }
+    .red { background: rgba(220,38,38,0.15); color: #fca5a5; }
+    .neutral { background: #0f172a; color: #cbd5e1; }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: calc(100vh - 330px);
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th, td {
+      padding: 7px;
+      border-right: 1px solid #334155;
+      border-bottom: 1px solid #334155;
+      font-size: 12px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 0 #334155;
+    }
+
+    .row-red { background: rgba(220,38,38,0.12); }
+    .row-amber { background: rgba(245,158,11,0.12); }
+    .row-green { background: rgba(15,23,42,0.5); }
+
+    .readonly-cell { background: #0b1220; color: #cbd5e1; }
+    .issue-col { white-space: normal; min-width: 260px; max-width: 360px; }
+    .room-col { min-width: 160px; }
+    .device-col { min-width: 160px; }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 18px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+<div>
+    <div class="title">Mission Control Device Audit</div>
+    <div class="subtitle">Operational Audit & Compliance Monitoring</div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="card">
+  <h2>Start Audit</h2>
+  <div class="actions">
+    <button onclick="goHome()">Home</button>
+    <select id="siteSelect"></select>
+    <button onclick="startAudit()">Start Audit</button>
+    <button onclick="openReports()">Reports</button>
+  </div>
+  <p id="siteStatus" class="status-line">Select a site to begin.</p>
+</div>
+
+<div class="card">
+  <h2>Compliance Dashboard</h2>
+  <div id="complianceBanner" class="banner neutral">No audit loaded</div>
+  <div class="dashboard" id="dashboard"></div>
+</div>
+
+<div class="card">
+  <h2>Current Audit</h2>
+  <div class="actions" style="margin-bottom:8px;">
+    <p id="auditStatus" class="status-line" style="margin:0;">No audit started.</p>
+    <button onclick="saveAllRows()" style="background:#16a34a;">Save All Rows</button>
+  </div>
+  <p id="saveStatus"></p>
+  <p id="completenessStatus" style="font-size:12px;color:#94a3b8;margin:4px 0 8px 0;"></p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Save</th>
+          <th>Result</th>
+          <th>Data</th>
+          <th>Room/User</th>
+          <th>Device Name</th>
+          <th>Serial</th>
+          <th>Type</th>
+          <th>Issue Reasons</th>
+          <th>Present</th>
+          <th>Windows OS</th>
+          <th>iOS Version</th>
+          <th>Windows Updates</th>
+          <th>Update Status</th>
+          <th>Security Check</th>
+          <th>Photos</th>
+          <th>Photo Date</th>
+          <th>Password</th>
+          <th>Weak PIN</th>
+          <th>Breach</th>
+          <th>Camera Sync Off</th>
+          <th>OneDrive Sync On</th>
+          <th>Breach Notes</th>
+          <th>Audit Notes</th>
+        </tr>
+      </thead>
+      <tbody id="auditTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">Mission Control Audit Platform</div>
+</div>
+
+<script>
+const API = "/audit-api";
+let batchId = null;
+
+function safe(value) { return value ?? ""; }
+function escHtml(value) {
+  return String(safe(value))
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+function escAttr(value) { return escHtml(value); }
+function boolChecked(value) { return value === true || value === "true" || value === "yes" || value === "Yes" || value === 1; }
+function dateValue(value) { if (!value) return ""; return String(value).substring(0, 10); }
+function roomName(row) { return row.assigned_user_room || row.assigned_room || row.assigned_user || "Unassigned"; }
+function deviceName(row) { return row.device_name || row.brand_model || row.device_type || ""; }
+
+function goHome() { window.location.href = "/index-platform.html"; }
+function openReports() { window.location.href = "/audit-reports.html"; }
+
+function setSaveStatus(message, type) {
+  const el = document.getElementById("saveStatus");
+  el.textContent = message;
+  el.className = type || "";
+}
+
+function selectedSiteName() {
+  const select = document.getElementById("siteSelect");
+  return select.options[select.selectedIndex]?.textContent || "";
+}
+
+function tile(label, value, className) {
+  return `<div class="tile ${className || "neutral"}">${escHtml(label)}<span>${escHtml(value)}</span></div>`;
+}
+
+function isPhotoDevice(row) {
+  const text = `${safe(row.device_type)} ${safe(row.device_name)} ${safe(row.brand_model)} ${safe(row.ios_version)} ${safe(row.windows_os)}`.toLowerCase();
+  if (text.includes("laptop") || text.includes("desktop") || text.includes("windows") || text.includes("voip") || text.includes("phone")) return false;
+  return text.includes("ipad") || text.includes("tablet") || text.includes("apple device") || text.includes("ios") || text.includes("samsung galaxy tab");
+}
+
+function calculateDashboard(rows) {
+  const summary = { total_devices: 0, missing: 0, critical: 0, warnings: 0, photo_breaches: 0, password_issues: 0 };
+  rows.forEach(r => {
+    if (r.ignore_flag === true) return;
+    summary.total_devices++;
+    if (r.device_present === false) summary.missing++;
+    if (r.status === "critical") summary.critical++;
+    if (r.status === "warning") summary.warnings++;
+    if (r.password_issue || r.weak_pin_detected || r.security_breach) summary.password_issues++;
+    if (isPhotoDevice(r) && r.photos_date) {
+      const photoDate = new Date(r.photos_date);
+      const ageDays = (Date.now() - photoDate.getTime()) / 86400000;
+      if (ageDays > 31) summary.photo_breaches++;
+    }
+  });
+  return summary;
+}
+
+function renderDashboard(summary) {
+  const el = document.getElementById("dashboard");
+  el.innerHTML =
+    tile("Total", summary.total_devices, "neutral") +
+    tile("Missing", summary.missing, summary.missing > 0 ? "red" : "green") +
+    tile("Critical", summary.critical, summary.critical > 0 ? "red" : "green") +
+    tile("Warnings", summary.warnings, summary.warnings > 0 ? "amber" : "green") +
+    tile("Photo Breaches", summary.photo_breaches, summary.photo_breaches > 0 ? "red" : "green") +
+    tile("Password Issues", summary.password_issues, summary.password_issues > 0 ? "red" : "green");
+
+  const banner = document.getElementById("complianceBanner");
+  if (summary.critical > 0) {
+    banner.className = "banner banner-red";
+    banner.textContent = "🔴 CRITICAL COMPLIANCE ISSUES DETECTED";
+  } else if (summary.warnings > 0) {
+    banner.className = "banner banner-amber";
+    banner.textContent = "🟡 WARNINGS PRESENT — REVIEW REQUIRED";
+  } else {
+    banner.className = "banner banner-green";
+    banner.textContent = "🟢 NO CRITICAL ISSUES DETECTED";
+  }
+}
+
+async function loadSites() {
+  const res = await fetch(`${API}/sites`);
+  const sites = await res.json();
+  const select = document.getElementById("siteSelect");
+  select.innerHTML = "";
+  sites.forEach(site => {
+    const option = document.createElement("option");
+    option.value = site.site_id;
+    option.textContent = site.site_name;
+    select.appendChild(option);
+  });
+  document.getElementById("siteStatus").textContent = `Sites loaded: ${sites.length}`;
+}
+
+async function startAudit() {
+  const siteId = document.getElementById("siteSelect").value;
+  const siteName = selectedSiteName();
+  if (!siteId) { alert("Please select a site first."); return; }
+  setSaveStatus("", "");
+
+  const res = await fetch(`${API}/audits/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ site_id: siteId, site_name: siteName })
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    alert("Start audit failed. Check console.");
+    return;
+  }
+
+  const data = await res.json();
+  batchId = data.audit_batch_id;
+  document.getElementById("auditStatus").textContent = `Current audit: ${siteName} | Batch: ${batchId}`;
+  await loadAudit();
+}
+
+function sortAuditRows(rows) {
+  return [...rows].sort((a, b) => {
+    const ak = `${roomName(a).toLowerCase()}|${deviceName(a).toLowerCase()}|${safe(a.serial_number).toLowerCase()}`;
+    const bk = `${roomName(b).toLowerCase()}|${deviceName(b).toLowerCase()}|${safe(b.serial_number).toLowerCase()}`;
+    return ak.localeCompare(bk);
+  });
+}
+
+async function loadAudit() {
+  if (!batchId) return;
+  const res = await fetch(`${API}/audit-entries/${batchId}`);
+  const rows = sortAuditRows(await res.json());
+  renderDashboard(calculateDashboard(rows));
+
+  const tbody = document.getElementById("auditTable");
+  tbody.innerHTML = "";
+
+  rows.forEach(rowData => {
+    const status = rowData.status || "ok";
+    const reasons = rowData.reasons || ["OK"];
+    const row = document.createElement("tr");
+    row.dataset.auditId = rowData.audit_id || rowData.id || "";
+    row.dataset.serialNumber = rowData.serial_number || "";
+
+    if (status === "critical") row.classList.add("row-red");
+    else if (status === "warning") row.classList.add("row-amber");
+    else row.classList.add("row-green");
+
+    const resultLabel = status === "critical" ? "🔴 Critical" : status === "warning" ? "🟡 Warning" : status === "ignored" ? "⚪ Ignored" : "🟢 OK";
+
+    // Calculate data completeness
+    const dtype = (rowData.device_type || "").toLowerCase();
+    const isTablet = dtype.includes("tablet") || dtype.includes("ipad");
+    const isLaptop = dtype.includes("laptop") || dtype.includes("desktop");
+    const isPhone = dtype.includes("phone");
+    let filledCount = 0;
+    let expectedCount = 0;
+    // Core fields every device should have
+    const coreFields = ["device_present"];
+    if (isTablet) {
+      expectedCount = 6; // photos_count, photos_date, camera_sync_off, onedrive_sync_on, ios_version, security_check
+      if (rowData.photos_count != null && rowData.photos_count !== "") filledCount++;
+      if (rowData.photos_date) filledCount++;
+      if (rowData.camera_sync_off != null) filledCount++;
+      if (rowData.onedrive_sync_on != null) filledCount++;
+      if (rowData.ios_version) filledCount++;
+      if (rowData.security_check) filledCount++;
+    } else if (isLaptop) {
+      expectedCount = 4; // windows_os, windows_updates, security_check, onedrive_sync_on
+      if (rowData.windows_os) filledCount++;
+      if (rowData.windows_updates) filledCount++;
+      if (rowData.security_check) filledCount++;
+      if (rowData.onedrive_sync_on != null) filledCount++;
+    } else if (isPhone) {
+      expectedCount = 3; // ios_version, security_check, photos_count
+      if (rowData.ios_version) filledCount++;
+      if (rowData.security_check) filledCount++;
+      if (rowData.photos_count != null && rowData.photos_count !== "") filledCount++;
+    } else {
+      expectedCount = 2; // security_check + one OS field
+      if (rowData.security_check) filledCount++;
+      if (rowData.windows_os || rowData.ios_version) filledCount++;
+    }
+
+    let dataLabel, dataStyle;
+    if (expectedCount === 0 || filledCount >= expectedCount) {
+      dataLabel = "✅ Complete";
+      dataStyle = "color:#4ade80;font-size:11px;font-weight:bold;";
+    } else if (filledCount > 0) {
+      dataLabel = "⚠️ " + filledCount + "/" + expectedCount;
+      dataStyle = "color:#fbbf24;font-size:11px;font-weight:bold;";
+    } else {
+      dataLabel = "❌ Empty";
+      dataStyle = "color:#f87171;font-size:11px;font-weight:bold;";
+    }
+
+    row.innerHTML = `
+      <td><button onclick="saveRow(this)">Save</button></td>
+      <td>${escHtml(resultLabel)}</td>
+      <td style="${dataStyle}">${dataLabel}</td>
+      <td class="readonly-cell room-col">${escHtml(roomName(rowData))}</td>
+      <td class="readonly-cell device-col">${escHtml(deviceName(rowData))}</td>
+      <td class="readonly-cell">${escHtml(rowData.serial_number)}</td>
+      <td class="readonly-cell">${escHtml(rowData.device_type)}</td>
+      <td class="issue-col">${escHtml(reasons.join(", "))}</td>
+      <td><input data-field="device_present" type="checkbox" ${boolChecked(rowData.device_present) ? "checked" : ""}></td>
+      <td><input data-field="windows_os" type="text" value="${escAttr(rowData.windows_os)}"></td>
+      <td><input data-field="ios_version" type="text" value="${escAttr(rowData.ios_version)}"></td>
+      <td><input data-field="windows_updates" type="text" value="${escAttr(rowData.windows_updates)}"></td>
+      <td><input data-field="update_status" type="text" value="${escAttr(rowData.update_status)}"></td>
+      <td><input data-field="security_check" type="text" value="${escAttr(rowData.security_check)}"></td>
+      <td><input data-field="photos_count" type="number" value="${escAttr(rowData.photos_count)}"></td>
+      <td><input data-field="photos_date" type="date" value="${escAttr(dateValue(rowData.photos_date))}"></td>
+      <td><input data-field="password_issue" type="checkbox" ${boolChecked(rowData.password_issue) ? "checked" : ""}></td>
+      <td><input data-field="weak_pin_detected" type="checkbox" ${boolChecked(rowData.weak_pin_detected) ? "checked" : ""}></td>
+      <td><input data-field="security_breach" type="checkbox" ${boolChecked(rowData.security_breach) ? "checked" : ""}></td>
+      <td><input data-field="camera_sync_off" type="checkbox" ${boolChecked(rowData.camera_sync_off) ? "checked" : ""}></td>
+      <td><input data-field="onedrive_sync_on" type="checkbox" ${boolChecked(rowData.onedrive_sync_on) ? "checked" : ""}></td>
+      <td><input data-field="breach_notes" type="text" value="${escAttr(rowData.breach_notes)}"></td>
+      <td><input data-field="notes" type="text" value="${escAttr(rowData.notes)}"></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function collectRowData(row) {
+  const payload = {};
+  const inputs = row.querySelectorAll("input[data-field]");
+  inputs.forEach(input => {
+    const field = input.dataset.field;
+    if (input.type === "checkbox") payload[field] = input.checked;
+    else if (input.type === "number") payload[field] = input.value === "" ? null : Number(input.value);
+    else if (input.type === "date") payload[field] = input.value === "" ? null : input.value;
+    else payload[field] = input.value === "" ? null : input.value;
+  });
+  return payload;
+}
+
+async function saveRow(button) {
+  const row = button.closest("tr");
+  const auditId = row.dataset.auditId;
+  const serialNumber = row.dataset.serialNumber || row.children[4].textContent.trim();
+  const payload = collectRowData(row);
+
+  if (!batchId || (!auditId && !serialNumber)) {
+    alert("Missing audit batch and audit row identifier.");
+    return;
+  }
+
+  setSaveStatus(`Saving ${serialNumber || auditId}...`, "status-line");
+
+  const body = auditId
+    ? { audit_id: auditId, values: payload }
+    : { audit_batch_id: batchId, serial_number: serialNumber, values: payload };
+
+  const res = await fetch(`${API}/audit-entry-update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+    setSaveStatus(`Save failed for ${serialNumber || auditId}. Check console.`, "save-error");
+    alert("Save failed. Check console.");
+    return;
+  }
+
+  button.textContent = "Saved";
+  setSaveStatus(`Saved ${serialNumber || auditId}`, "save-ok");
+  setTimeout(() => { button.textContent = "Save"; }, 1200);
+  await loadAudit();
+}
+
+
+async function saveAllRows() {
+  const rows = document.querySelectorAll("#auditTable tr");
+  if (rows.length === 0) { alert("No audit loaded."); return; }
+  setSaveStatus("Saving all rows...", "status-line");
+  let saved = 0, failed = 0;
+  for (const row of rows) {
+    const auditId = row.dataset.auditId;
+    const serialNumber = row.dataset.serialNumber || "";
+    if (!batchId || (!auditId && !serialNumber)) { failed++; continue; }
+    const payload = collectRowData(row);
+    const body = auditId
+      ? { audit_id: auditId, values: payload }
+      : { audit_batch_id: batchId, serial_number: serialNumber, values: payload };
+    try {
+      const res = await fetch(API + "/audit-entry-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) saved++; else failed++;
+    } catch(e) { failed++; }
+  }
+  setSaveStatus("Saved " + saved + " rows" + (failed > 0 ? ", " + failed + " failed" : ""), failed > 0 ? "save-error" : "save-ok");
+  await loadAudit();
+}
+
+loadSites();
+</script>
+</body>
+</html>

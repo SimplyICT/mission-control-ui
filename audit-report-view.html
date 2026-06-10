@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Audit Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 14px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(15,23,42,0.95));
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 20px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 16px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    button:hover { background: #1d4ed8; }
+
+    .muted { color: #94a3b8; }
+    .critical { color: #fca5a5; font-weight: bold; }
+    .warning { color: #fcd34d; font-weight: bold; }
+    .ok { color: #86efac; font-weight: bold; }
+
+    .status-pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #334155;
+      margin-left: 8px;
+    }
+
+    .pill-critical { background: rgba(220,38,38,0.16); color: #fca5a5; border-color: #dc2626; }
+    .pill-warning { background: rgba(245,158,11,0.16); color: #fcd34d; border-color: #f59e0b; }
+    .pill-ok { background: rgba(22,163,74,0.16); color: #86efac; border-color: #16a34a; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 10px;
+    }
+
+    .tile {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+      font-weight: bold;
+      min-height: 86px;
+    }
+
+    .tile span {
+      display: block;
+      font-size: 26px;
+      margin-top: 7px;
+    }
+
+    .tile-red { border-color: rgba(220,38,38,0.65); background: rgba(220,38,38,0.10); }
+    .tile-amber { border-color: rgba(245,158,11,0.65); background: rgba(245,158,11,0.10); }
+    .tile-green { border-color: rgba(22,163,74,0.65); background: rgba(22,163,74,0.10); }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 14px;
+    }
+
+    .finding {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
+
+    .finding-red { border-color: rgba(220,38,38,0.65); background: rgba(220,38,38,0.10); }
+    .finding-amber { border-color: rgba(245,158,11,0.65); background: rgba(245,158,11,0.10); }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 72vh;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th, td {
+      border-right: 1px solid #334155;
+      border-bottom: 1px solid #334155;
+      padding: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+      vertical-align: top;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .row-critical { background: rgba(220,38,38,0.12); }
+    .row-warning { background: rgba(245,158,11,0.12); }
+    .row-ok { background: rgba(15,23,42,0.55); }
+
+    .wrap-cell {
+      white-space: normal;
+      min-width: 260px;
+      max-width: 460px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+      gap: 14px;
+    }
+
+    ul {
+      margin-top: 8px;
+      padding-left: 22px;
+      line-height: 1.55;
+    }
+
+    @media print {
+      body { background: white; color: black; }
+      .topbar, .actions, button { display: none; }
+      .container { padding: 0; }
+      .card, .hero, .finding, .tile { border: 1px solid #888; background: white; color: black; break-inside: avoid; }
+      h1, h2, h3 { color: black; }
+      .muted { color: #444; }
+      .table-wrap { max-height: none; overflow: visible; }
+      th { position: static; background: #eee; color: black; }
+      th, td { color: black; border-color: #999; }
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="topbar">
+    <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
+
+<div class="title">Mission Control Audit Report</div>
+  <div class="subtitle">Executive Summary · Compliance Findings · Audit Evidence</div>
+</div>
+
+<div class="container">
+  <div class="card actions">
+    <button onclick="goReports()">Back to Reports</button>
+    <button onclick="window.print()">Print / Save PDF</button>
+    <button onclick="downloadPdf()">Download PDF</button>
+    <button onclick="refreshReport()">Refresh</button>
+    <p id="status">Loading audit report...</p>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+const API = "/audit-api";
+let currentId = null;
+
+function safe(v){ return v ?? ""; }
+function esc(v){ return String(safe(v)).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
+function yesNo(v){ if(v === true) return "Yes"; if(v === false) return "No"; return ""; }
+function auDate(v){
+  if(!v) return "";
+  const text = String(v);
+  const isoDate = text.substring(0, 10);
+  const parts = isoDate.split("-");
+  if(parts.length === 3 && parts[0].length === 4){
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  const d = new Date(v);
+  if(!Number.isNaN(d.getTime())){
+    return d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+  return text;
+}
+function dateOnly(v){ return auDate(v); }
+function goReports(){ window.location.href="/audit-reports.html"; }
+function getId(){ const p = new URLSearchParams(window.location.search); return p.get("id") || p.get("audit_batch_id"); }
+function downloadPdf(){ if(currentId) window.location.href = `${API}/audit-report/executive-pdf/${encodeURIComponent(currentId)}`; }
+function refreshReport(){ loadReport(true); }
+
+function roomName(r){ return r.assigned_user_room || r.assigned_room || r.assigned_user || "Unassigned"; }
+function deviceName(r){ return r.brand_model || r.device_name || r.device_type || "Device"; }
+function photoCount(r){ return r.photos_count ?? r.total_photos ?? ""; }
+function statusClass(status){ if(status === "Critical") return "critical"; if(status === "Warning") return "warning"; return "ok"; }
+function statusPill(status){ if(status === "Critical") return "pill-critical"; if(status === "Warning") return "pill-warning"; return "pill-ok"; }
+function rowClass(status){ if(status === "critical") return "row-critical"; if(status === "warning") return "row-warning"; return "row-ok"; }
+function tileClass(value, type){
+  const n = Number(value || 0);
+  if(type === "critical" && n > 0) return "tile-red";
+  if(type === "warning" && n > 0) return "tile-amber";
+  if(type === "ok") return "tile-green";
+  return "";
+}
+
+function findingType(row){
+  if(row.device_present === false) return "Missing Asset";
+  if(row.password_issue || row.weak_pin_detected || row.security_breach) return "Security Issue";
+  if((row.reasons || []).join(" ").toLowerCase().includes("photo")) return "Photo Retention";
+  if(row.status === "warning") return "Warning";
+  if(row.status === "critical") return "Critical";
+  return "Review";
+}
+
+function renderFinding(r, level){
+  const css = level === "critical" ? "finding finding-red" : level === "warning" ? "finding finding-amber" : "finding";
+  return `<div class="${css}">
+    <b>${esc(findingType(r))}</b><br>
+    <b>${esc(roomName(r))}</b> · ${esc(deviceName(r))}<br>
+    <span class="muted">Serial:</span> ${esc(r.serial_number)}<br>
+    <span class="muted">Reasons:</span> ${esc((r.reasons || []).join(", "))}<br>
+    <span class="muted">Notes:</span> ${esc(r.breach_notes || r.recommended_action || r.notes || "")}
+  </div>`;
+}
+
+function rowsTable(rows){
+  const rowsHtml = (rows || []).map(r => `
+    <tr class="${rowClass(r.status)}">
+      <td>${esc(roomName(r))}</td>
+      <td>${esc(r.device_type)}</td>
+      <td>${esc(deviceName(r))}</td>
+      <td>${esc(r.serial_number)}</td>
+      <td>${esc(r.status)}</td>
+      <td class="wrap-cell">${esc((r.reasons || []).join(", "))}</td>
+      <td>${yesNo(r.device_present)}</td>
+      <td>${esc(r.windows_os || r.os_version)}</td>
+      <td>${esc(r.ios_version || r.update_status)}</td>
+      <td>${esc(r.windows_updates)}</td>
+      <td>${esc(r.security_check)}</td>
+      <td>${esc(photoCount(r))}</td>
+      <td>${esc(dateOnly(r.photos_date))}</td>
+      <td>${yesNo(r.camera_sync_off)}</td>
+      <td>${yesNo(r.onedrive_sync_on)}</td>
+      <td>${yesNo(r.password_issue)}</td>
+      <td>${yesNo(r.weak_pin_detected)}</td>
+      <td>${yesNo(r.security_breach)}</td>
+      <td class="wrap-cell">${esc(r.breach_notes)}</td>
+      <td class="wrap-cell">${esc(r.recommended_action)}</td>
+      <td class="wrap-cell">${esc(r.notes)}</td>
+    </tr>
+  `).join("");
+
+  return `<div class="table-wrap"><table><thead><tr>
+    <th>Room/User</th><th>Type</th><th>Device</th><th>Serial</th><th>Status</th><th>Reasons</th><th>Present</th>
+    <th>Windows OS</th><th>iOS/Update</th><th>Windows Updates</th><th>Security Check</th><th>Photos</th><th>Photo Date</th>
+    <th>Camera Sync Off</th><th>OneDrive Sync On</th><th>Password</th><th>Weak PIN</th><th>Breach</th><th>Breach Notes</th><th>Recommended Action</th><th>Audit Notes</th>
+  </tr></thead><tbody>${rowsHtml || `<tr><td colspan="21" class="muted">No rows recorded.</td></tr>`}</tbody></table></div>`;
+}
+
+function roomSections(rows){
+  const groups = {};
+  rows.forEach(r => {
+    const room = roomName(r);
+    if(!groups[room]) groups[room] = [];
+    groups[room].push(r);
+  });
+
+  return Object.keys(groups).sort((a,b) => a.localeCompare(b)).map(room => {
+    const roomRows = groups[room].sort((a,b) => `${safe(a.device_type)}|${deviceName(a)}|${safe(a.serial_number)}`.localeCompare(`${safe(b.device_type)}|${deviceName(b)}|${safe(b.serial_number)}`));
+    return `<div class="card"><h2>${esc(room)}</h2>${rowsTable(roomRows)}</div>`;
+  }).join("");
+}
+
+async function loadReport(force){
+  const id = getId();
+  currentId = id;
+  if(!id){ document.getElementById("status").textContent = "Missing audit report id."; return; }
+
+  document.getElementById("status").textContent = force ? "Refreshing audit report..." : "Loading audit report...";
+
+  const res = await fetch(`${API}/audit-report/${encodeURIComponent(id)}${force ? `?t=${Date.now()}` : ""}`);
+  if(!res.ok){ document.getElementById("status").textContent = "Could not load audit report."; return; }
+
+  const report = await res.json();
+  const s = report.summary || {};
+  const allRows = report.rows || [];
+  const sortedRows = [...allRows].sort((a,b) => `${roomName(a)}|${deviceName(a)}|${safe(a.serial_number)}`.localeCompare(`${roomName(b)}|${deviceName(b)}|${safe(b.serial_number)}`));
+
+  const critical = report.critical_incidents || [];
+  const warnings = report.warnings || [];
+  const missing = report.missing_devices || [];
+  const photos = report.photo_retention_breaches || [];
+  const security = report.security_issues || [];
+
+  document.getElementById("content").innerHTML = `
+    <div class="hero">
+      <h1>Site Audit Report: ${esc(report.site_name)}</h1>
+      <p><b>Audit Date:</b> ${esc(auDate(report.audit_date))} · <b>Generated:</b> ${esc(auDate(report.generated_at))}</p>
+      <p><b>Overall Status:</b> <span class="status-pill ${statusPill(report.overall_status)}">${esc(report.overall_status)}</span></p>
+      <p class="muted"><b>Batch:</b> ${esc(report.audit_batch_id)}</p>
+    </div>
+
+    <div class="card">
+      <h2>Executive Summary</h2>
+      <p>
+        This report summarises the device audit for <b>${esc(report.site_name)}</b>. It includes the active audit register,
+        missing assets, critical findings, warning items, photo retention indicators, security issues and recommended actions.
+      </p>
+      <div class="summary">
+        <div class="tile">Total Devices<span>${esc(s.total_devices)}</span></div>
+        <div class="tile ${tileClass(s.missing, "critical")}">Missing<span>${esc(s.missing)}</span></div>
+        <div class="tile ${tileClass(s.critical, "critical")}">Critical<span>${esc(s.critical)}</span></div>
+        <div class="tile ${tileClass(s.warnings, "warning")}">Warnings<span>${esc(s.warnings)}</span></div>
+        <div class="tile ${tileClass(s.ok, "ok")}">OK<span>${esc(s.ok)}</span></div>
+        <div class="tile ${tileClass(s.photo_retention_breaches, "critical")}">Photo Retention<span>${esc(s.photo_retention_breaches)}</span></div>
+        <div class="tile ${tileClass(s.security_issues, "critical")}">Security Issues<span>${esc(s.security_issues)}</span></div>
+        <div class="tile">Ignored<span>${esc(s.ignored)}</span></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Key Findings</h2>
+        <ul>
+          <li>${esc(s.total_devices)} active audit records are included in this report.</li>
+          <li>${esc(s.missing)} devices were marked missing during the audit.</li>
+          <li>${esc(s.critical)} critical findings require immediate review.</li>
+          <li>${esc(s.warnings)} warning items require follow-up.</li>
+          <li>${esc(s.photo_retention_breaches)} photo retention breaches were identified.</li>
+          <li>${esc(s.security_issues)} security or credential issues were identified.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Priority Actions</h2>
+        ${(report.recommendations || []).length ? `<ul>${(report.recommendations || []).map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : `<p>None recorded.</p>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Critical Incidents & Immediate Actions</h2>
+      ${critical.length ? critical.map(r => renderFinding(r, "critical")).join("") : "<p>None recorded.</p>"}
+    </div>
+
+    <div class="section-grid">
+      <div class="card"><h2>Missing Devices</h2>${missing.length ? missing.map(r => renderFinding(r, "critical")).join("") : "<p>None recorded.</p>"}</div>
+      <div class="card"><h2>Warnings</h2>${warnings.length ? warnings.map(r => renderFinding(r, "warning")).join("") : "<p>None recorded.</p>"}</div>
+      <div class="card"><h2>Photo Retention Review</h2>${photos.length ? photos.map(r => renderFinding(r, "critical")).join("") : "<p>None recorded.</p>"}</div>
+      <div class="card"><h2>Security Issues</h2>${security.length ? security.map(r => renderFinding(r, "critical")).join("") : "<p>None recorded.</p>"}</div>
+    </div>
+
+    <div class="card">
+      <h2>Detailed Audit by Room / User</h2>
+      <p class="muted">The following section groups devices by room/user so the report follows the physical audit workflow.</p>
+    </div>
+    ${roomSections(sortedRows)}
+
+    <div class="card">
+      <h2>Full Audit Register</h2>
+      ${rowsTable(sortedRows)}
+    </div>
+  `;
+
+  document.getElementById("status").textContent = "Audit report loaded.";
+}
+
+loadReport(false);
+</script>
+</body>
+</html>

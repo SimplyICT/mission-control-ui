@@ -1,0 +1,270 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse, Response
+import subprocess
+import shlex
+import requests
+from pathlib import Path
+
+app = FastAPI(title="Mission Control UI")
+
+BASE_DIR = Path(__file__).resolve().parent
+AUDIT_API_BASE = "http://127.0.0.1:8090"
+
+SERVERS = {
+    "local": {
+        "host": "127.0.0.1",
+        "services": ["ollama", "openwebui", "mission-control-ui", "nginx"]
+    },
+    "test": {
+        "host": "10.121.16.60",
+        "services": ["nginx"]
+    },
+    "RMM": {
+        "host": "10.121.16.124",
+        "services": ["nginx"]
+    },
+    "OCS": {
+        "host": "10.121.16.88",
+        "services": ["nginx"]
+    },
+    "ITFLOW": {
+        "host": "10.121.16.95",
+        "services": ["nginx"]
+    },
+    "Wazuh": {
+        "host": "10.121.16.231",
+        "services": ["wazuh-manager"]
+    },
+    "Docker1": {
+        "host": "10.121.16.36",
+        "services": ["docker"]
+    },
+    "Docker2": {
+        "host": "10.121.16.64",
+        "services": ["docker"]
+    },
+    "Ansible": {
+        "host": "10.121.16.129",
+        "services": ["ansible"]
+    },
+}
+
+
+def read_html(filename: str):
+    path = BASE_DIR / filename
+    if not path.exists():
+        return HTMLResponse(
+            content=f"<h1>File not found</h1><p>{filename} was not found in {BASE_DIR}</p>",
+            status_code=404,
+        )
+    return HTMLResponse(content=path.read_text(encoding="utf-8"))
+
+
+def run_cmd(cmd, server):
+    host = SERVERS[server]["host"]
+
+    if host == "127.0.0.1":
+        final = cmd
+    else:
+        final = f"ssh -o BatchMode=yes -o ConnectTimeout=5 {shlex.quote(host)} {shlex.quote(cmd)}"
+
+    try:
+        r = subprocess.run(final, shell=True, capture_output=True, text=True, timeout=15)
+        return (r.stdout + "\n" + r.stderr).strip()
+    except Exception as e:
+        return str(e)
+
+
+@app.get("/", response_class=HTMLResponse)
+def index():
+    return read_html("index.html")
+
+
+@app.get("/index.html", response_class=HTMLResponse)
+def index_html():
+    return read_html("index.html")
+
+
+@app.get("/audit-index.html", response_class=HTMLResponse)
+def audit_index():
+    return read_html("audit-index.html")
+
+
+@app.get("/device-records.html", response_class=HTMLResponse)
+def device_records():
+    return read_html("device-records.html")
+
+
+@app.get("/device-audit.html", response_class=HTMLResponse)
+def device_audit():
+    return read_html("device-audit.html")
+
+
+@app.get("/device-update.html", response_class=HTMLResponse)
+def device_update():
+    return read_html("device-update.html")
+
+
+@app.get("/audit-reports.html", response_class=HTMLResponse)
+def audit_reports():
+    return read_html("audit-reports.html")
+
+
+@app.get("/active-device-register.html", response_class=HTMLResponse)
+def active_device_register():
+    return read_html("active-device-register.html")
+
+
+@app.get("/audit-report-view.html", response_class=HTMLResponse)
+def audit_report_view():
+    return read_html("audit-report-view.html")
+
+
+@app.get("/director-view.html", response_class=HTMLResponse)
+def director_view():
+    return read_html("director-view.html")
+
+
+@app.get("/audit-cleanup.html", response_class=HTMLResponse)
+def audit_cleanup():
+    return read_html("audit-cleanup.html")
+
+
+@app.get("/api/fleet")
+def fleet():
+    results = []
+
+    for name in SERVERS:
+        raw = run_cmd("""
+HOST=$(hostname)
+UPTIME=$(uptime -p)
+LOAD=$(cat /proc/loadavg | awk '{print $1}')
+DISK=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
+MEM=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
+FAILED=$(systemctl --failed --no-pager --plain | grep -E "failed|loaded" | wc -l)
+
+echo "HOST:$HOST"
+echo "UPTIME:$UPTIME"
+echo "LOAD:$LOAD"
+echo "DISK:$DISK"
+echo "MEM:$MEM"
+echo "FAILED:$FAILED"
+""", name)
+
+        data = {
+            "name": name,
+            "host": "unknown",
+            "uptime": "",
+            "load": "0",
+            "disk": 0,
+            "memory": 0,
+            "failed": 0,
+            "status": "GREEN",
+            "services": SERVERS[name]["services"]
+        }
+
+        for line in raw.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                if k == "HOST":
+                    data["host"] = v
+                if k == "UPTIME":
+                    data["uptime"] = v
+                if k == "LOAD":
+                    data["load"] = v
+                if k == "DISK":
+                    data["disk"] = int(v or 0)
+                if k == "MEM":
+                    data["memory"] = int(v or 0)
+                if k == "FAILED":
+                    data["failed"] = int(v or 0)
+
+        if data["failed"] > 0 or data["disk"] > 85 or data["memory"] > 90:
+            data["status"] = "RED"
+        elif data["disk"] > 75 or data["memory"] > 80 or float(data["load"]) > 2:
+            data["status"] = "AMBER"
+
+        results.append(data)
+
+    return results
+
+
+@app.get("/api/logs/{server}/{service}")
+def logs(server: str, service: str):
+    if server not in SERVERS:
+        return {"error": "server not allowed"}
+
+    if service not in SERVERS[server]["services"]:
+        return {"error": "not allowed"}
+
+    return {"logs": run_cmd(f"journalctl -u {service} -n 80 --no-pager", server)}
+
+
+@app.post("/api/restart/{server}/{service}")
+def restart(server: str, service: str):
+    if server not in SERVERS:
+        return {"error": "server not allowed"}
+
+    if service not in SERVERS[server]["services"]:
+        return {"error": "not allowed"}
+
+    return {"result": run_cmd(f"sudo systemctl restart {service}", server)}
+
+
+@app.api_route("/audit-api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def audit_api_proxy(path: str, request: Request):
+    target_url = f"{AUDIT_API_BASE}/{path}"
+
+    try:
+        body = await request.body()
+
+        incoming_headers = {}
+        content_type = request.headers.get("content-type")
+        if content_type:
+            incoming_headers["Content-Type"] = content_type
+
+        response = requests.request(
+            method=request.method,
+            url=target_url,
+            params=dict(request.query_params),
+            data=body if body else None,
+            headers=incoming_headers,
+            timeout=60,
+        )
+
+        response_content_type = response.headers.get("content-type", "")
+
+        if "application/json" in response_content_type.lower():
+            try:
+                return JSONResponse(
+                    content=response.json(),
+                    status_code=response.status_code
+                )
+            except Exception:
+                return JSONResponse(
+                    content={"raw": response.text},
+                    status_code=response.status_code
+                )
+
+        passthrough_headers = {}
+
+        content_disposition = response.headers.get("content-disposition")
+        if content_disposition:
+            passthrough_headers["Content-Disposition"] = content_disposition
+
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            media_type=response_content_type or "application/octet-stream",
+            headers=passthrough_headers,
+        )
+
+    except requests.exceptions.RequestException as e:
+        return JSONResponse(
+            status_code=502,
+            content={
+                "detail": "Audit API proxy error",
+                "error": str(e),
+                "target": target_url
+            }
+        )

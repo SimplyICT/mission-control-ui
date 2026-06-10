@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "user_id": "0f65b046-fca4-4386-a8cd-fbcf021c3dec",
+      "username": "admin",
+      "password_hash": "3aa0f13ee6a2140a13ec47e79d08b69ffe5869321f6a83cb524a98f1779340b8",
+      "full_name": "Administrator",
+      "role": "admin",
+      "custom_pages": null,
+      "active": true,
+      "created_at": "2026-06-03T03:20:02.277613+00:00",
+      "totp_secret": null,
+      "totp_enabled": false
+    }
+  ]
+}

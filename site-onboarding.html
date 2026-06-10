@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Site Onboarding - Mission Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .topbar { background: #111827; padding: 18px 28px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { font-size: 24px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
+    .selector-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .selector-bar select, .selector-bar input { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; }
+    .selector-bar select { min-width: 260px; }
+    .selector-bar select:focus, .selector-bar input:focus { border-color: #3b82f6; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 16px 0; font-size: 18px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+    .card h2 .badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge.details { background: #1e3a5f; color: #60a5fa; }
+    .badge.sharepoint { background: #1a2e1a; color: #4ade80; }
+    .badge.history { background: #2d2305; color: #fbbf24; }
+    .badge.compliance { background: #1a2e2e; color: #2dd4bf; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-group label { font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group textarea, .form-group select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #3b82f6; }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group input[type="password"] { font-family: monospace; }
+    .form-group .hint { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+    .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
+    .toggle input { display: none; }
+    .toggle .slider { position: absolute; inset: 0; background: #334155; border-radius: 12px; transition: background 0.2s; }
+    .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #e2e8f0; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .slider { background: #22c55e; }
+    .toggle input:checked + .slider::before { transform: translateX(20px); }
+    .toggle-label { font-size: 13px; color: #94a3b8; }
+    .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    button { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.15s; }
+    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-secondary:hover { background: #334155; color: #f8fafc; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .status-msg { margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 13px; display: none; }
+    .status-msg.success { display: block; background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .status-msg.error { display: block; background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .status-msg.info { display: block; background: #0c1929; color: #60a5fa; border: 1px solid #1e3a5f; }
+    .test-steps { margin-top: 10px; font-size: 13px; }
+    .test-step { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+    .test-step .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot.pass { background: #22c55e; }
+    .dot.fail { background: #ef4444; }
+    .dot.pending { background: #64748b; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-card .value { font-size: 24px; font-weight: bold; color: #f8fafc; }
+    .stat-card .label { font-size: 11px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .empty-state { text-align: center; color: #64748b; padding: 24px; font-size: 14px; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #64748b; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Site Onboarding</div>
+    <div class="subtitle">Configure client sites, contacts, and SharePoint integration</div>
+  </div>
+  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+</div>
+
+<div class="container">
+
+  <div class="selector-bar">
+    <select id="siteSelect" onchange="loadSite()">
+      <option value="">-- Select a site --</option>
+    </select>
+    <button class="btn-primary" onclick="showNewSiteForm()">+ Add New Site</button>
+  </div>
+
+  <div class="card" id="newSiteCard" style="display:none;">
+    <h2>Create New Site</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Site Name *</label>
+        <input type="text" id="newSiteName" placeholder="e.g. Benowa ELC">
+      </div>
+      <div class="form-group">
+        <label>Company Name</label>
+        <input type="text" id="newCompanyName" placeholder="e.g. Gold Coast Early Learning">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-success" onclick="createSite()">Create Site</button>
+      <button class="btn-secondary" onclick="hideNewSiteForm()">Cancel</button>
+    </div>
+    <div class="status-msg" id="newSiteStatus"></div>
+  </div>
+
+  <div id="siteContent" style="display:none;">
+
+    <div class="card">
+      <h2><span class="badge details">Details</span> Site Information</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Site Name</label>
+          <input type="text" id="siteName">
+        </div>
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" id="companyName" placeholder="Organisation or business name">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="location" placeholder="City, region or campus">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" id="address" placeholder="Street address">
+        </div>
+        <div class="form-group">
+          <label>Contact Name</label>
+          <input type="text" id="contactName" placeholder="Primary site contact">
+        </div>
+        <div class="form-group">
+          <label>Contact Email</label>
+          <input type="email" id="contactEmail" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label>Contact Phone</label>
+          <input type="tel" id="contactPhone" placeholder="Phone number">
+        </div>
+        <div class="form-group">
+          <label>Active</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="siteActive" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label" id="activeLabel">Active</span>
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Notes</label>
+          <textarea id="siteNotes" placeholder="Any additional notes about this site..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="badge sharepoint">SharePoint</span> SharePoint Integration</h2>
+      <p style="color: #64748b; font-size: 13px; margin: -8px 0 16px 0;">
+        Configure Microsoft Graph API credentials to automatically upload PDF audit reports to this site's SharePoint document library.
+        Requires an Azure AD app registration with <code>Sites.ReadWrite.All</code> application permission.
+      </p>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Enable SharePoint Upload</label>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="spEnabled" onchange="toggleSpFields()">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label" id="spEnabledLabel">Disabled</span>
+        </div>
+      </div>
+      <div id="spFields">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tenant ID</label>
+            <input type="text" id="spTenantId" placeholder="Azure AD tenant GUID">
+            <span class="hint">From Azure AD &rarr; App registrations &rarr; Directory (tenant) ID</span>
+          </div>
+          <div class="form-group">
+            <label>Client ID</label>
+            <input type="text" id="spClientId" placeholder="Application (client) ID">
+            <span class="hint">From Azure AD &rarr; App registrations &rarr; Application (client) ID</span>
+          </div>
+          <div class="form-group">
+            <label>Client Secret</label>
+            <input type="password" id="spClientSecret" placeholder="Client secret value">
+            <span class="hint">From Azure AD &rarr; App registrations &rarr; Certificates &amp; secrets</span>
+          </div>
+          <div class="form-group">
+            <label>SharePoint Site URL</label>
+            <input type="text" id="spSiteUrl" placeholder="contoso.sharepoint.com/sites/MySite">
+            <span class="hint">The SharePoint site URL - supports various formats</span>
+          </div>
+          <div class="form-group">
+            <label>Drive ID <span style="color:#64748b;">(optional)</span></label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="spDriveId" placeholder="Auto-discovered if blank" style="flex:1;">
+              <button class="btn-secondary" onclick="discoverDrive()" id="discoverBtn" style="white-space:nowrap;">Auto-Discover</button>
+            </div>
+            <span class="hint">Leave blank to use the default document library</span>
+          </div>
+          <div class="form-group">
+            <label>Upload Folder</label>
+            <input type="text" id="spFolder" placeholder="Audit Reports/2026">
+            <span class="hint">Folder path in the document library (created automatically)</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="testConnection()" id="testBtn">Test Connection</button>
+        </div>
+        <div id="testResult" class="status-msg"></div>
+        <div id="testSteps" class="test-steps"></div>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <h2><span class="badge compliance">Compliance</span> Compliance Policy Configuration</h2>
+      <p style="color: #64748b; font-size: 13px; margin: -8px 0 16px 0;">
+        Set site-specific photo retention thresholds and confirm policy documentation status.
+        These values are used in audit classification and PDF reports.
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Photo Retention Days</label>
+          <input type="number" id="photoRetentionDays" min="1" max="365" placeholder="31">
+          <span class="hint">Photos older than this are flagged as critical (default: 31)</span>
+        </div>
+        <div class="form-group">
+          <label>Photo Count Threshold</label>
+          <input type="number" id="photoCountThreshold" min="1" placeholder="1000">
+          <span class="hint">Devices with more photos than this receive a warning (default: 1000)</span>
+        </div>
+        <div class="form-group">
+          <label>Audit Frequency (Days)</label>
+          <input type="number" id="auditFrequencyDays" min="1" placeholder="90">
+          <span class="hint">Expected days between site audits (default: 90)</span>
+        </div>
+      </div>
+      <div style="margin-top: 18px;">
+        <div style="font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Policy Checklist</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polConsentForms"><span class="slider"></span></label>
+            <span class="toggle-label">Consent forms current</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polPhotoPolicy"><span class="slider"></span></label>
+            <span class="toggle-label">Photo policy documented</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polStaffTraining"><span class="slider"></span></label>
+            <span class="toggle-label">Staff privacy training current</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polEncryption"><span class="slider"></span></label>
+            <span class="toggle-label">Device encryption enforced</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polAccessControls"><span class="slider"></span></label>
+            <span class="toggle-label">Access controls documented</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polDataRetention"><span class="slider"></span></label>
+            <span class="toggle-label">Data retention policy in place</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polIncidentResponse"><span class="slider"></span></label>
+            <span class="toggle-label">Incident response plan exists</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polPrivacyImpact"><span class="slider"></span></label>
+            <span class="toggle-label">Privacy impact assessment completed</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="polThirdParty"><span class="slider"></span></label>
+            <span class="toggle-label">Third-party data agreements in place</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom: 12px;">
+      <button class="btn-success" onclick="saveSite()" id="saveBtn" style="padding: 12px 32px; font-size: 15px;">Save All Changes</button>
+    </div>
+    <div class="status-msg" id="saveStatus"></div>
+
+    <div class="card" style="margin-top: 20px;">
+      <h2><span class="badge history">History</span> Audit Summary</h2>
+      <div id="auditHistory">
+        <div class="empty-state">Loading audit history...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var API = '/audit-api';
+var currentSiteId = null;
+var sites = [];
+
+function safeJson(response) {
+  return response.text().then(function(text) {
+    try { return JSON.parse(text); }
+    catch(e) { return { detail: text || ('HTTP ' + response.status) }; }
+  });
+}
+
+function val(id) {
+  return (document.getElementById(id).value || '').trim() || null;
+}
+
+function showStatus(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg ' + type;
+  el.textContent = msg;
+}
+
+function clearStatus(id) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg';
+  el.textContent = '';
+}
+
+function clearStatuses() {
+  clearStatus('saveStatus');
+  clearStatus('testResult');
+  document.getElementById('testSteps').innerHTML = '';
+}
+
+function updateActiveLabel() {
+  var el = document.getElementById('siteActive');
+  document.getElementById('activeLabel').textContent = el.checked ? 'Active' : 'Inactive';
+}
+
+function toggleSpFields() {
+  var enabled = document.getElementById('spEnabled').checked;
+  document.getElementById('spEnabledLabel').textContent = enabled ? 'Enabled' : 'Disabled';
+}
+
+function showNewSiteForm() {
+  document.getElementById('newSiteCard').style.display = 'block';
+  document.getElementById('newSiteName').value = '';
+  document.getElementById('newCompanyName').value = '';
+  clearStatus('newSiteStatus');
+  document.getElementById('newSiteName').focus();
+}
+
+function hideNewSiteForm() {
+  document.getElementById('newSiteCard').style.display = 'none';
+  clearStatus('newSiteStatus');
+}
+
+function statCard(value, label) {
+  return '<div class="stat-card"><div class="value">' + value + '</div><div class="label">' + label + '</div></div>';
+}
+
+function loadSites() {
+  return fetch(API + '/sites')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      sites = Array.isArray(data) ? data : [];
+      var sel = document.getElementById('siteSelect');
+      sel.innerHTML = '<option value="">-- Select a site --</option>';
+      sites.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.site_id;
+        opt.textContent = s.site_name + (s.company_name ? ' (' + s.company_name + ')' : '');
+        sel.appendChild(opt);
+      });
+    })
+    .catch(function(e) { console.error('Failed to load sites:', e); });
+}
+
+function loadSite() {
+  var siteId = document.getElementById('siteSelect').value;
+  if (!siteId) {
+    document.getElementById('siteContent').style.display = 'none';
+    currentSiteId = null;
+    return;
+  }
+  currentSiteId = siteId;
+  clearStatuses();
+
+  fetch(API + '/sites/' + siteId)
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) throw new Error(res.data.detail || 'Failed to load site');
+      var site = res.data;
+      document.getElementById('siteName').value = site.site_name || '';
+      document.getElementById('companyName').value = site.company_name || '';
+      document.getElementById('location').value = site.location || '';
+      document.getElementById('address').value = site.address || '';
+      document.getElementById('contactName').value = site.contact_name || '';
+      document.getElementById('contactEmail').value = site.contact_email || '';
+      document.getElementById('contactPhone').value = site.contact_phone || '';
+      document.getElementById('siteNotes').value = site.notes || '';
+      document.getElementById('siteActive').checked = site.active !== false;
+      updateActiveLabel();
+      document.getElementById('spEnabled').checked = site.sharepoint_enabled === true;
+      // Compliance thresholds
+      document.getElementById('photoRetentionDays').value = site.photo_retention_days || '';
+      document.getElementById('photoCountThreshold').value = site.photo_count_threshold || '';
+      document.getElementById('auditFrequencyDays').value = site.audit_frequency_days || '';
+      // Policy toggles
+      document.getElementById('polConsentForms').checked = site.consent_forms_current === true;
+      document.getElementById('polPhotoPolicy').checked = site.photo_policy_documented === true;
+      document.getElementById('polStaffTraining').checked = site.staff_training_current === true;
+      document.getElementById('polEncryption').checked = site.encryption_enforced === true;
+      document.getElementById('polAccessControls').checked = site.access_controls_documented === true;
+      document.getElementById('polDataRetention').checked = site.data_retention_policy === true;
+      document.getElementById('polIncidentResponse').checked = site.incident_response_plan === true;
+      document.getElementById('polPrivacyImpact').checked = site.privacy_impact_assessment === true;
+      document.getElementById('polThirdParty').checked = site.third_party_data_agreement === true;
+      document.getElementById('spTenantId').value = site.sharepoint_tenant_id || '';
+      document.getElementById('spClientId').value = site.sharepoint_client_id || '';
+      document.getElementById('spClientSecret').value = site.sharepoint_client_secret || '';
+      document.getElementById('spSiteUrl').value = site.sharepoint_site_url || '';
+      document.getElementById('spDriveId').value = site.sharepoint_drive_id || '';
+      document.getElementById('spFolder').value = site.sharepoint_folder || '';
+      toggleSpFields();
+      document.getElementById('siteContent').style.display = 'block';
+      loadAuditHistory(siteId);
+    })
+    .catch(function(e) {
+      console.error(e);
+      showStatus('saveStatus', 'error', 'Failed to load site details.');
+      document.getElementById('siteContent').style.display = 'block';
+    });
+}
+
+function saveSite() {
+  if (!currentSiteId) return;
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+  var payload = {
+    site_name: val('siteName'),
+    company_name: val('companyName'),
+    location: val('location'),
+    address: val('address'),
+    contact_name: val('contactName'),
+    contact_email: val('contactEmail'),
+    contact_phone: val('contactPhone'),
+    notes: val('siteNotes'),
+    active: document.getElementById('siteActive').checked,
+    sharepoint_enabled: document.getElementById('spEnabled').checked,
+    photo_retention_days: parseInt(document.getElementById('photoRetentionDays').value) || null,
+    photo_count_threshold: parseInt(document.getElementById('photoCountThreshold').value) || null,
+    audit_frequency_days: parseInt(document.getElementById('auditFrequencyDays').value) || null,
+    consent_forms_current: document.getElementById('polConsentForms').checked,
+    photo_policy_documented: document.getElementById('polPhotoPolicy').checked,
+    staff_training_current: document.getElementById('polStaffTraining').checked,
+    encryption_enforced: document.getElementById('polEncryption').checked,
+    access_controls_documented: document.getElementById('polAccessControls').checked,
+    data_retention_policy: document.getElementById('polDataRetention').checked,
+    incident_response_plan: document.getElementById('polIncidentResponse').checked,
+    privacy_impact_assessment: document.getElementById('polPrivacyImpact').checked,
+    third_party_data_agreement: document.getElementById('polThirdParty').checked,
+    sharepoint_tenant_id: val('spTenantId'),
+    sharepoint_client_id: val('spClientId'),
+    sharepoint_client_secret: val('spClientSecret'),
+    sharepoint_site_url: val('spSiteUrl'),
+    sharepoint_drive_id: val('spDriveId'),
+    sharepoint_folder: val('spFolder')
+  };
+
+  fetch(API + '/sites/' + currentSiteId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) throw new Error(res.data.detail || 'Save failed');
+      showStatus('saveStatus', 'success', 'Site saved successfully.');
+      loadSites();
+    })
+    .catch(function(e) {
+      showStatus('saveStatus', 'error', 'Save failed: ' + e.message);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Save All Changes';
+    });
+}
+
+function createSite() {
+  var name = document.getElementById('newSiteName').value.trim();
+  if (!name) {
+    showStatus('newSiteStatus', 'error', 'Site name is required.');
+    return;
+  }
+
+  var existingSite = null;
+  for (var i = 0; i < sites.length; i++) {
+    if ((sites[i].site_name || '').toLowerCase() === name.toLowerCase()) {
+      existingSite = sites[i];
+      break;
+    }
+  }
+  if (existingSite) {
+    document.getElementById('siteSelect').value = existingSite.site_id;
+    loadSite();
+    hideNewSiteForm();
+    return;
+  }
+
+  fetch(API + '/sites', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      site_name: name,
+      company_name: document.getElementById('newCompanyName').value.trim() || null
+    })
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) throw new Error(res.data.detail || 'Create failed');
+      showStatus('newSiteStatus', 'success', 'Site "' + name + '" created.');
+      return loadSites().then(function() {
+        var newId = res.data.site_id;
+        if (newId) {
+          document.getElementById('siteSelect').value = newId;
+          loadSite();
+        }
+        setTimeout(hideNewSiteForm, 1500);
+      });
+    })
+    .catch(function(e) {
+      showStatus('newSiteStatus', 'error', 'Create failed: ' + e.message);
+    });
+}
+
+function testConnection() {
+  if (!currentSiteId) return;
+  var btn = document.getElementById('testBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Testing...';
+  clearStatus('testResult');
+  document.getElementById('testSteps').innerHTML = '';
+
+  fetch(API + '/sites/' + currentSiteId + '/test-sharepoint', { method: 'POST' })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) throw new Error(res.data.detail || 'Test request failed');
+      var data = res.data;
+      var steps = [
+        { key: 'auth', label: 'Authentication' },
+        { key: 'site_resolved', label: 'SharePoint site resolved' },
+        { key: 'drive_resolved', label: 'Document library found' },
+        { key: 'folder_accessible', label: 'Target folder accessible' }
+      ];
+      var html = '';
+      for (var i = 0; i < steps.length; i++) {
+        var passed = data[steps[i].key] === true;
+        var cls = passed ? 'pass' : (data.error && !passed ? 'fail' : 'pending');
+        html += '<div class="test-step"><span class="dot ' + cls + '"></span> ' + steps[i].label + '</div>';
+      }
+      if (data.site_display_name) {
+        html += '<div class="test-step" style="margin-top:6px;color:#94a3b8;">Site: ' + data.site_display_name + '</div>';
+      }
+      if (data.drive_id) {
+        html += '<div class="test-step" style="color:#94a3b8;">Drive ID: <code style="background:#1e293b;padding:2px 6px;border-radius:4px;">' + data.drive_id + '</code></div>';
+      }
+      document.getElementById('testSteps').innerHTML = html;
+      if (data.error) {
+        showStatus('testResult', 'error', data.error);
+      } else if (data.folder_accessible) {
+        showStatus('testResult', 'success', 'Connection successful - all checks passed.');
+        if (data.drive_id && !document.getElementById('spDriveId').value) {
+          document.getElementById('spDriveId').value = data.drive_id;
+        }
+      }
+    })
+    .catch(function(e) {
+      showStatus('testResult', 'error', 'Test failed: ' + e.message);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Test Connection';
+    });
+}
+
+function discoverDrive() {
+  testConnection();
+}
+
+function loadAuditHistory(siteId) {
+  var container = document.getElementById('auditHistory');
+  fetch(API + '/audit-batches?site_id=' + siteId)
+    .then(function(r) { return r.json(); })
+    .then(function(batches) {
+      if (!batches.length) {
+        container.innerHTML = '<div class="empty-state">No audits recorded for this site yet.</div>';
+        return;
+      }
+      var total = batches.length;
+      var latest = batches[0];
+      var withReports = 0;
+      for (var i = 0; i < batches.length; i++) {
+        if (batches[i].report_generated) withReports++;
+      }
+      var html = '<div class="stats-grid">';
+      html += statCard(total, 'Total Audits');
+      html += statCard(latest.audit_date || 'N/A', 'Latest Audit');
+      html += statCard(withReports, 'Reports Generated');
+      html += statCard(latest.audit_batch_id ? latest.audit_batch_id.substring(0, 8) + '...' : 'N/A', 'Latest Batch');
+      html += '</div>';
+      html += '<div style="margin-top: 14px; max-height: 200px; overflow-y: auto;">';
+      html += '<table style="width:100%; font-size:13px; border-collapse: collapse;">';
+      html += '<tr style="color:#94a3b8; text-align:left; border-bottom:1px solid #1e293b;"><th style="padding:6px;">Date</th><th style="padding:6px;">Batch ID</th><th style="padding:6px;">Report</th></tr>';
+      var limit = Math.min(batches.length, 20);
+      for (var j = 0; j < limit; j++) {
+        var b = batches[j];
+        var hasReport = b.report_generated ? '<span style="color:#22c55e;">&#10003;</span>' : '<span style="color:#64748b;">-</span>';
+        html += '<tr style="border-bottom:1px solid #1e293b;">';
+        html += '<td style="padding:6px;">' + (b.audit_date || 'N/A') + '</td>';
+        html += '<td style="padding:6px; font-family:monospace; font-size:12px;">' + (b.audit_batch_id || '') + '</td>';
+        html += '<td style="padding:6px;">' + hasReport + '</td>';
+        html += '</tr>';
+      }
+      html += '</table></div>';
+      container.innerHTML = html;
+    })
+    .catch(function(e) {
+      container.innerHTML = '<div class="empty-state">Failed to load audit history.</div>';
+    });
+}
+
+document.getElementById('siteActive').addEventListener('change', updateActiveLabel);
+
+loadSites().then(function() {
+  var params = new URLSearchParams(window.location.search);
+  var preselect = params.get('site_id');
+  if (preselect) {
+    document.getElementById('siteSelect').value = preselect;
+    loadSite();
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,91 @@
+{
+  "passed": 21,
+  "failed": 0,
+  "total": 21,
+  "checks": [
+    {
+      "check": "pool_connect",
+      "status": "PASS"
+    },
+    {
+      "check": "schema_tables",
+      "status": "PASS"
+    },
+    {
+      "check": "users_create",
+      "status": "PASS"
+    },
+    {
+      "check": "users_get",
+      "status": "PASS"
+    },
+    {
+      "check": "users_authenticate",
+      "status": "PASS"
+    },
+    {
+      "check": "users_list",
+      "status": "PASS"
+    },
+    {
+      "check": "users_update",
+      "status": "PASS"
+    },
+    {
+      "check": "users_delete",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_score_write",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_incident_create",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_incident_list",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_incident_get",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_incident_update",
+      "status": "PASS"
+    },
+    {
+      "check": "triage_score_history",
+      "status": "PASS"
+    },
+    {
+      "check": "m365_tenant_create",
+      "status": "PASS"
+    },
+    {
+      "check": "m365_tenant_get",
+      "status": "PASS"
+    },
+    {
+      "check": "m365_tenant_list",
+      "status": "PASS"
+    },
+    {
+      "check": "m365_tenant_update",
+      "status": "PASS"
+    },
+    {
+      "check": "m365_tenant_delete",
+      "status": "PASS"
+    },
+    {
+      "check": "audit_log_populated",
+      "status": "PASS"
+    },
+    {
+      "check": "audit_log_readable",
+      "status": "PASS"
+    }
+  ]
+}

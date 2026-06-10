@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Active Device Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1700px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #f8fafc;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .status-line {
+      margin-top: 12px;
+      color: #93c5fd;
+      font-weight: bold;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .tile {
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid #334155;
+      font-weight: bold;
+      background: #0f172a;
+    }
+
+    .tile span {
+      display: block;
+      font-size: 28px;
+      margin-top: 8px;
+      color: #f8fafc;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #334155;
+      font-size: 12px;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #1e293b;
+      color: #f8fafc;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(15,23,42,0.4);
+    }
+
+    .compliant {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .not-compliant {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .muted {
+      color: #94a3b8;
+    }
+
+    .status-ok {
+      color: #86efac;
+      font-weight: bold;
+    }
+
+    .status-warning {
+      color: #fcd34d;
+      font-weight: bold;
+    }
+
+    .status-critical {
+      color: #fca5a5;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      .no-print {
+        display: none;
+      }
+
+      .card {
+        border: 1px solid #ccc;
+        box-shadow: none;
+      }
+
+      th {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="topbar">
+    <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
+
+<div class="title">Mission Control Active Device Register</div>
+  <div class="subtitle">Operational Compliance & Active Asset Register</div>
+</div>
+
+<div class="container">
+
+<div class="card no-print">
+  <button onclick="goReports()">Back to Reports</button>
+  <button onclick="window.print()">Print / Save PDF</button>
+
+  <p id="status" class="status-line">
+    Loading active device register...
+  </p>
+</div>
+
+<div id="content"></div>
+
+<div class="footer">
+  Mission Control Audit Platform
+</div>
+
+</div>
+
+<script>
+const API = "/audit-api";
+
+function safe(value) {
+  return value ?? "";
+}
+
+function getSiteId() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get("site_id");
+}
+
+function goReports() {
+  window.location.href = "/audit-reports.html";
+}
+
+function complianceClass(value) {
+  return value === "Compliant"
+    ? "compliant"
+    : "not-compliant";
+}
+
+function auditStatusClass(value) {
+  if (value === "ok") return "status-ok";
+  if (value === "warning") return "status-warning";
+  if (value === "critical") return "status-critical";
+  return "";
+}
+
+function auditStatusText(value) {
+  if (value === "ok") return "On Track";
+  if (value === "warning") return "Needs Attention";
+  if (value === "critical") return "High Risk";
+  return "No latest audit match";
+}
+
+async function loadRegister() {
+
+  const siteId = getSiteId();
+
+  if (!siteId) {
+    document.getElementById("status").textContent =
+      "Missing site_id.";
+    return;
+  }
+
+  const res = await fetch(
+    `${API}/active-device-register?site_id=${encodeURIComponent(siteId)}`
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log(text);
+
+    document.getElementById("status").textContent =
+      "Could not load Active Device Register.";
+
+    return;
+  }
+
+  const report = await res.json();
+  const rows = report.rows || [];
+
+  let compliant = 0;
+  let nonCompliant = 0;
+
+  rows.forEach(r => {
+    if (r.compliance === "Compliant") compliant++;
+    else nonCompliant++;
+  });
+
+  let rowsHtml = "";
+
+  rows.forEach(r => {
+
+    rowsHtml += `
+      <tr>
+        <td>${safe(r.device_type)}</td>
+        <td>${safe(r.serial_number)}</td>
+        <td>${safe(r.asset_tag)}</td>
+        <td>${safe(r.device_name)}</td>
+        <td>${safe(r.brand_model)}</td>
+        <td>${safe(r.assigned_user_room)}</td>
+        <td>${safe(r.operating_system)}</td>
+        <td>${safe(r.os_version)}</td>
+        <td>${safe(r.status)}</td>
+        <td>${safe(r.latest_audit_date)}</td>
+
+        <td class="${auditStatusClass(r.latest_audit_status)}">
+          ${auditStatusText(r.latest_audit_status)}
+        </td>
+
+        <td class="${complianceClass(r.compliance)}">
+          ${safe(r.compliance)}
+        </td>
+
+        <td>${(r.latest_audit_reasons || []).join(", ")}</td>
+
+        <td>${safe(r.notes)}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("content").innerHTML = `
+
+    <div class="card">
+      <h2>${safe(report.site_name)}</h2>
+
+      <p><b>Report:</b> ${safe(report.report_type)}</p>
+
+      <p><b>Report Date:</b> ${safe(report.report_date)}</p>
+
+      <p><b>Latest Audit Date:</b>
+        ${safe(report.latest_audit_date) || "No audit found"}
+      </p>
+
+      <p><b>Latest Audit Batch:</b>
+        ${safe(report.latest_audit_batch_id) || "N/A"}
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Compliance Summary</h2>
+
+      <div class="summary">
+
+        <div class="tile">
+          Active Devices
+          <span>${rows.length}</span>
+        </div>
+
+        <div class="tile">
+          Compliant
+          <span>${compliant}</span>
+        </div>
+
+        <div class="tile">
+          Non-Compliant
+          <span>${nonCompliant}</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+
+      <h2>Device Register</h2>
+
+      <p class="muted">
+        Only active devices are shown.
+        Inactive devices remain in the database but are excluded from this register.
+      </p>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Serial</th>
+              <th>Asset Tag</th>
+              <th>Device Name</th>
+              <th>Model</th>
+              <th>Room/User</th>
+              <th>Operating System</th>
+              <th>OS Version</th>
+              <th>Device Status</th>
+              <th>Latest Audit Date</th>
+              <th>Latest Audit Status</th>
+              <th>Compliance</th>
+              <th>Latest Audit Reasons</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="14">No active devices found for this site.</td></tr>'}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById("status").textContent =
+    `Loaded Active Device Register: ${rows.length} devices.`;
+}
+
+loadRegister();
+</script>
+
+</body>
+</html>

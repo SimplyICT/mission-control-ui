@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Alerts</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #2d2d3d;background:var(--panel);position:sticky;top:0;z-index:10}
+.topbar h1{font-size:18px}.topbar span{color:var(--muted);font-size:13px}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.btn{background:var(--card);color:var(--text);border:1px solid #2d2d3d;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.btn:hover{background:var(--hover);border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-sm{padding:4px 8px;font-size:11px}
+.toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.toolbar input{background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px 12px;font-size:13px;outline:none;min-width:200px}
+.toolbar input:focus{border-color:var(--accent)}
+.toolbar select{background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px;font-size:13px;outline:none}
+.stats{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;font-size:13px}
+.stat span{font-weight:700}.stat .red{color:var(--red)}.stat .amber{color:var(--amber)}.stat .accent{color:var(--accent)}.stat .green{color:var(--green)}
+.table-wrap{overflow-x:auto;border:1px solid #2d2d3d;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;border-bottom:1px solid #2d2d3d;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+tr:hover td{background:var(--hover)!important}
+.sev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.sev-critical{background:var(--red)}.sev-high{background:#ff7a18}.sev-medium{background:var(--amber)}.sev-low{background:var(--accent)}
+.pill{display:inline-block;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.pill-open{background:rgba(255,23,68,.12);color:var(--red)}.ill-acknowledged{background:rgba(255,202,40,.12);color:var(--amber)}
+.pill-resolved{background:rgba(0,230,118,.12);color:var(--green)}.pill-suppressed{background:rgba(139,148,158,.12);color:var(--muted)}
+.badge-red{background:rgba(255,23,68,.15);color:var(--red)}.badge-amber{background:rgba(255,202,40,.15);color:var(--amber)}.badge-green{background:rgba(0,230,118,.15);color:var(--green)}.badge-gray{background:rgba(139,148,158,.15);color:var(--muted)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;font-size:13px;z-index:100;display:none}
+.empty{text-align:center;padding:40px;color:var(--muted)}
+@media(max-width:700px){.toolbar{flex-direction:column;align-items:stretch}.toolbar input{min-width:100%}}
+</style>
+</head>
+<body>
+<div class="topbar"><div><h1>Alerts</h1><span id="countLabel">Loading...</span></div><div><a class="btn btn-sm" href="/index-platform.html">&#9664; Home</a><a class="btn btn-sm" href="/soc-agent-dashboard.html">SOC Agent</a><button class="btn btn-sm" onclick="exportCSV()">CSV</button><button class="btn btn-sm" onclick="location.reload()">Refresh</button></div></div>
+<div class="wrap" id="content">Loading...</div>
+<div class="toast" id="toast"></div>
+<script>
+var API="";
+var allAlerts=[];
+
+function $(id){return document.getElementById(id)}
+function esc(v){var d=document.createElement("div");d.textContent=v;return d.innerHTML}
+
+function toast(msg){
+  var t=$("toast");t.textContent=msg;t.style.display="block";
+  setTimeout(function(){t.style.display="none"},2500)
+}
+
+function updateAlert(id,status){
+  fetch(API+"/api/alert/"+id+"/"+status,{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+    toast(d.message||"Updated");loadAlerts()
+  }).catch(function(e){toast("Failed: "+e.message)})
+}
+
+function loadAlerts(){
+  $("countLabel").textContent="Loading...";
+  var search=$("searchInput")?$("searchInput").value:"";
+  var sev=$("sevFilter")?$("sevFilter").value:"";
+  var type=$("typeFilter")?$("typeFilter").value:"";
+  var status=$("statusFilter")?$("statusFilter").value:"";
+  var params="?limit=200";
+  fetch(API+"/api/soc-agent/alert-list"+params).then(function(r){return r.json()}).then(function(d){
+    allAlerts=d.alerts||[];
+    renderAlerts();
+  }).catch(function(e){$("content").innerHTML='<div class="empty">Error: '+esc(e.message)+'</div>'})
+}
+
+function renderAlerts(){
+  var search=($("searchInput")||{}).value||"";
+  var sev=($("sevFilter")||{}).value||"";
+  var type=($("typeFilter")||{}).value||"";
+  var status=($("statusFilter")||{}).value||"";
+
+  var filtered=allAlerts;
+  if(search){var q=search.toLowerCase();filtered=filtered.filter(function(a){return(a.title||"").toLowerCase().indexOf(q)!==-1||(a.message||"").toLowerCase().indexOf(q)!==-1||(a.alert_type||"").toLowerCase().indexOf(q)!==-1})}
+  if(sev)filtered=filtered.filter(function(a){return(a.severity||"").toUpperCase()===sev.toUpperCase()});
+  if(type)filtered=filtered.filter(function(a){return(a.alert_type||"").toUpperCase()===type.toUpperCase()});
+  if(status)filtered=filtered.filter(function(a){return(a.status||"").toUpperCase()===status.toUpperCase()});
+
+  var total=allAlerts.length;
+  var crit=allAlerts.filter(function(a){return(a.severity||"").toUpperCase()==="CRITICAL"}).length;
+  var high=allAlerts.filter(function(a){return(a.severity||"").toUpperCase()==="HIGH"}).length;
+  var open=allAlerts.filter(function(a){return(a.status||"").toUpperCase()==="OPEN"}).length;
+  var types=[];var tm={};allAlerts.forEach(function(a){var t=a.alert_type||"UNKNOWN";if(!tm[t]){tm[t]=true;types.push(t)}});
+  var statuses=[];var sm={};allAlerts.forEach(function(a){var s=a.status||"UNKNOWN";if(!sm[s]){sm[s]=true;statuses.push(s)}});
+
+  $("countLabel").textContent=filtered.length+"/"+total+" alerts";
+  var h='<div class="stats"><div class="stat">Total: <span class="accent">'+total+'</span></div><div class="stat">Open: <span class="red">'+open+'</span></div><div class="stat">Critical: <span class="red">'+crit+'</span></div><div class="stat">High: <span class="amber">'+high+'</span></div></div>';
+  h+='<div class="toolbar"><input id="searchInput" placeholder="Search title, message, type..." value="'+esc(search)+'" oninput="renderAlerts()">'
+    +'<select id="sevFilter" onchange="renderAlerts()"><option value="">All Severities</option><option value="CRITICAL" '+(sev==="CRITICAL"?"selected":"")+'>Critical</option><option value="HIGH" '+(sev==="HIGH"?"selected":"")+'>High</option><option value="MEDIUM" '+(sev==="MEDIUM"?"selected":"")+'>Medium</option><option value="LOW" '+(sev==="LOW"?"selected":"")+'>Low</option></select>'
+    +'<select id="typeFilter" onchange="renderAlerts()"><option value="">All Types</option>'+types.map(function(t){return'<option value="'+esc(t)+'" '+(type===t?"selected":"")+'>'+esc(t)+'</option>'}).join("")+'</select>'
+    +'<select id="statusFilter" onchange="renderAlerts()"><option value="">All Statuses</option>'+statuses.map(function(s){return'<option value="'+esc(s)+'" '+(status===s?"selected":"")+'>'+esc(s)+'</option>'}).join("")+'</select>'
+    +'</div>';
+
+  h+='<div class="table-wrap"><table><thead><tr><th>Severity</th><th>Status</th><th>Title</th><th>Type</th><th>Device</th><th>Site</th><th>Count</th><th>Last Seen</th><th></th></tr></thead><tbody>';
+  filtered.forEach(function(a){
+    var sev=(a.severity||"low").toUpperCase();
+    var st=(a.status||"open").toUpperCase();
+    var dev=a.device||{};
+    var site=a.site||{};
+    var isOpen=st==="OPEN";
+    h+='<tr><td><span class="sev-dot sev-'+sev.toLowerCase()+'"></span>'+sev+'</td>'
+      +'<td><span class="pill pill-'+st.toLowerCase()+'">'+st+'</span></td>'
+      +'<td><strong>'+esc(a.title||"")+'</strong>'+(a.message?'<div style="color:var(--muted);font-size:11px;margin-top:2px">'+esc(a.message.substring(0,80))+'</div>':'')+'</td>'
+      +'<td><span class="badge-gray" style="padding:2px 6px;border-radius:4px;font-size:11px">'+esc(a.alert_type||"-")+'</span></td>'
+      +'<td style="font-size:12px">'+(dev.ip_address?'<span style="font-family:monospace">'+esc(dev.ip_address)+'</span>':'<span class="muted">-</span>')+'<div style="color:var(--muted);font-size:11px">'+esc(dev.hostname||dev.device_type||"")+'</div></td>'
+      +'<td style="font-size:12px">'+esc(site.site_name||site.site_code||"-")+'</td>'
+      +'<td>'+(a.count||1)+'</td>'
+      +'<td style="white-space:nowrap;font-size:12px">'+(a.last_seen_at?new Date(a.last_seen_at).toLocaleString().split(",")[0]:'-')+'</td>'
+      +'<td>'+(isOpen?'<button class="btn btn-sm" onclick="updateAlert(\''+a.id+'\',\'acknowledge\')">Ack</button><button class="btn btn-sm" style="border-color:var(--green)" onclick="updateAlert(\''+a.id+'\',\'resolve\')">Resolve</button>':'')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  if(!filtered.length)h='<div class="empty">No alerts match your filters.</div>';
+  $("content").innerHTML=h;
+}
+
+function exportCSV(){
+  if(!allAlerts.length){toast("No data to export");return}
+  var lines=["ID,Severity,Status,Title,Type,Device IP,Hostname,Site,Count,First Seen,Last Seen"];
+  allAlerts.forEach(function(a){
+    lines.push('"'+a.id+'","'+(a.severity||"")+'","'+(a.status||"")+'","'+esc(a.title||"")+'","'+esc(a.alert_type||"")+'","'+((a.device||{}).ip_address||"")+'","'+((a.device||{}).hostname||"")+'","'+((a.site||{}).site_name||"")+'","'+(a.count||1)+'","'+(a.first_seen_at||"")+'","'+(a.last_seen_at||"")+'"');
+  });
+  var blob=new Blob([lines.join("\n")],{type:"text/csv"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="alerts_export.csv";a.click();toast("Exported "+allAlerts.length+" alerts")
+}
+
+loadAlerts();
+var sse=new EventSource("/api/events/stream");sse.onmessage=function(){loadAlerts()};
+setInterval(loadAlerts,60000);
+</script>
+</body>
+</html>

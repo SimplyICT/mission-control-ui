@@ -1,0 +1,253 @@
+{
+  "taskId": "W4-03",
+  "title": "Web admin integration plan",
+  "generatedAt": "2026-06-06T04:19:23Z",
+  "sourceRepository": "web-admin-master",
+  "summary": {
+    "goal": "Replace direct Firebase client SDK usage in web-admin with platform API interfaces while preserving existing behavior and authz constraints.",
+    "currentState": {
+      "firebaseAccessPattern": "Client-side Firestore/Auth/Storage/Functions calls are centralized in components/Firebase/Firebase.tsx and consumed across feature containers.",
+      "riskProfile": "High migration risk if data-shape and pagination/filter semantics are changed because current screens assume Firestore document structure and optimistic updates."
+    }
+  },
+  "inventory": {
+    "firebaseBootstrap": {
+      "file": "src/components/Firebase/Firebase.tsx",
+      "details": [
+        "Initializes app auth, firestore, storage, and callable functions region asia-northeast1.",
+        "Exposes collection helpers: customers, customerLocations, contractors, customerLocationContractors, oneTimePasscodes, requests, requestInvoicing, assets, leads.",
+        "Exposes auth methods: signInWithEmailAndPassword, sendPasswordResetEmail, signOut.",
+        "Exposes custom-claim check: isAdmin() using getIdTokenResult().claims.hasAdminAccess."
+      ]
+    },
+    "featureTouchpoints": [
+      {
+        "feature": "Authentication",
+        "files": [
+          "src/modules/Login/LoginContainer.tsx",
+          "src/modules/Login/PasswordReset.tsx",
+          "src/components/Auth/AuthContext.tsx"
+        ],
+        "firebaseUsage": [
+          "Email/password login",
+          "Session persistence",
+          "Password reset email",
+          "Admin custom-claim evaluation"
+        ]
+      },
+      {
+        "feature": "Customers",
+        "files": [
+          "src/modules/Customers/CustomersContainer.tsx"
+        ],
+        "firebaseUsage": [
+          "customers collection CRUD",
+          "customerLocations queries and batched writes",
+          "oneTimePasscodes scan for OTP status",
+          "storage image upload/delete (images/*)",
+          "callable function renewOtp"
+        ]
+      },
+      {
+        "feature": "Contractors",
+        "files": [
+          "src/modules/Contractors/ContractorsContainer.tsx"
+        ],
+        "firebaseUsage": [
+          "contractors collection CRUD",
+          "customerLocationContractors batch upsert/delete",
+          "customerLocations filtered lookups",
+          "enums read for service types",
+          "callable function renewOtp"
+        ]
+      },
+      {
+        "feature": "Assets",
+        "files": [
+          "src/modules/Assets/AssetsContainer.tsx"
+        ],
+        "firebaseUsage": [
+          "assets collection CRUD",
+          "assets/{id}/history writes",
+          "customers and customerLocations reference-data loads",
+          "serverTimestamp metadata writes"
+        ]
+      },
+      {
+        "feature": "Dashboard",
+        "files": [
+          "src/modules/Landing/LandingContainer.tsx"
+        ],
+        "firebaseUsage": [
+          "customers/contractors/requests aggregate queries",
+          "leads realtime onSnapshot listener",
+          "date-range filtering on requestStartDate"
+        ]
+      },
+      {
+        "feature": "Activity",
+        "files": [
+          "src/modules/Activity/ActivityContainer.tsx"
+        ],
+        "firebaseUsage": [
+          "callable functions fetchCustomerSummaryData and fetchCustomerDetailData"
+        ]
+      }
+    ]
+  },
+  "apiTargetPlan": {
+    "authAndSession": [
+      {
+        "current": "firebase.doSignInWithEmailAndPassword",
+        "target": "POST /api/admin/auth/login",
+        "notes": "Return access/refresh tokens and admin authorization payload."
+      },
+      {
+        "current": "firebase.doSendPasswordResetEmail",
+        "target": "POST /api/admin/auth/password-reset",
+        "notes": "Mirror existing UX success/error semantics."
+      },
+      {
+        "current": "firebase.isAdmin (custom claim)",
+        "target": "GET /api/admin/auth/me",
+        "notes": "Server-authoritative role response replacing client token-claim parsing."
+      }
+    ],
+    "domainResources": [
+      {
+        "resource": "customers",
+        "currentCollections": [
+          "customers",
+          "customerLocations",
+          "oneTimePasscodes"
+        ],
+        "targetEndpoints": [
+          "GET/POST /api/admin/customers",
+          "GET/PATCH /api/admin/customers/{id}",
+          "GET/POST /api/admin/customers/{id}/locations",
+          "POST /api/admin/customer-locations/{id}/renew-otp"
+        ]
+      },
+      {
+        "resource": "contractors",
+        "currentCollections": [
+          "contractors",
+          "customerLocationContractors",
+          "enums"
+        ],
+        "targetEndpoints": [
+          "GET/POST /api/admin/contractors",
+          "GET/PATCH /api/admin/contractors/{id}",
+          "PUT /api/admin/customer-location-contractors:batch",
+          "GET /api/admin/reference/enums"
+        ]
+      },
+      {
+        "resource": "assets",
+        "currentCollections": [
+          "assets",
+          "assets/{id}/history"
+        ],
+        "targetEndpoints": [
+          "GET/POST /api/admin/assets",
+          "GET/PATCH /api/admin/assets/{id}",
+          "POST /api/admin/assets/{id}/history"
+        ]
+      },
+      {
+        "resource": "dashboard-analytics",
+        "currentCollections": [
+          "leads",
+          "requests",
+          "customers",
+          "contractors"
+        ],
+        "targetEndpoints": [
+          "GET /api/admin/dashboard/summary",
+          "GET /api/admin/dashboard/activity?month={month}",
+          "GET /api/admin/dashboard/requests?rangeDays={n}"
+        ]
+      },
+      {
+        "resource": "activity-reporting",
+        "currentCallableFunctions": [
+          "fetchCustomerSummaryData",
+          "fetchCustomerDetailData"
+        ],
+        "targetEndpoints": [
+          "GET /api/admin/activity/summary?month={month}",
+          "GET /api/admin/activity/customers/{customerId}?month={month}"
+        ]
+      }
+    ],
+    "fileHandling": [
+      {
+        "current": "firebase.storage.ref(images/*) upload/delete",
+        "target": "Pre-signed upload/download API via platform storage service",
+        "notes": "Keep URL contract stable for existing logo rendering."
+      }
+    ]
+  },
+  "phasedExecution": [
+    {
+      "phase": 1,
+      "name": "API contract stabilization",
+      "outcomes": [
+        "Define DTOs and pagination/filter semantics per screen.",
+        "Align field names to current Firestore-backed UI model to minimize churn."
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Adapter layer introduction",
+      "outcomes": [
+        "Add typed admin API client.",
+        "Replace direct firebase calls in each container with service methods behind a compatibility interface."
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Feature-by-feature migration",
+      "outcomes": [
+        "Migrate Auth, Customers, Contractors, Assets, Landing, Activity in that order.",
+        "Gate each migration behind smoke tests and parity checks."
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Firebase dependency retirement",
+      "outcomes": [
+        "Remove Firebase SDK usage from web-admin.",
+        "Keep only analytics/telemetry integrations if separately required."
+      ]
+    }
+  ],
+  "gapsAndRisks": [
+    {
+      "id": "R1",
+      "risk": "Firestore batch semantics and partial failure handling are currently implicit.",
+      "mitigation": "Expose explicit transactional/batch endpoints with deterministic per-item results."
+    },
+    {
+      "id": "R2",
+      "risk": "Callable cloud functions encapsulate business logic not yet reflected in REST surface.",
+      "mitigation": "Port renewOtp/fetchCustomerSummaryData/fetchCustomerDetailData server logic before UI cutover."
+    },
+    {
+      "id": "R3",
+      "risk": "Realtime leads onSnapshot behavior may not match polling APIs.",
+      "mitigation": "Adopt websocket/SSE stream or short-poll interval with stale-data indicator."
+    },
+    {
+      "id": "R4",
+      "risk": "Client-side admin claim checks can drift from server policy.",
+      "mitigation": "Centralize authorization in platform API and use role payload from /auth/me."
+    }
+  ],
+  "acceptanceCriteria": [
+    "All web-admin Firebase SDK references are replaced by platform API clients.",
+    "Core flows (login, customer/contractor CRUD, asset CRUD, dashboard, activity) preserve existing functional behavior.",
+    "OTP renew and activity reporting features are available through platform API equivalents.",
+    "Regression checklist and endpoint-to-screen traceability are attached to release evidence."
+  ]
+}

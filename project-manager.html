@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Project Manager</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--blue:#3b82f6}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #2d2d3d;background:var(--panel);position:sticky;top:0;z-index:10}
+.topbar h1{font-size:18px;font-weight:600}.topbar span{color:var(--muted);font-size:13px}
+.topbar-actions{display:flex;gap:8px}
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+.btn{background:var(--card);color:var(--text);border:1px solid #2d2d3d;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--hover);border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-primary:hover{background:#0096b4}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid #2d2d3d;border-radius:10px;padding:20px;cursor:pointer;transition:border-color .15s}
+.card:hover{border-color:var(--accent)}
+.card h3{font-size:16px;margin-bottom:4px}.card p{color:var(--muted);font-size:13px;margin-bottom:12px;line-height:1.4}
+.stat-row{display:flex;gap:16px;margin-bottom:12px;font-size:12px;color:var(--muted)}
+.stat-row span{display:flex;align-items:center;gap:4px}
+.bar{height:6px;border-radius:999px;background:#0b1220;overflow:hidden;margin-bottom:8px}
+.bar-fill{height:100%;border-radius:999px;background:var(--accent);transition:width .3s}
+.bar-fill.done{background:var(--green)}
+.meta{color:var(--muted);font-size:11px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--panel);border:1px solid #2d2d3d;border-radius:12px;padding:28px;width:480px;max-width:90vw}
+.modal h2{margin-bottom:16px;font-size:18px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+
+/* detail view */
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:16px;text-decoration:none}
+.back:hover{color:var(--text)}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.detail-header h2{font-size:22px}.detail-header p{color:var(--muted);font-size:13px;margin-top:2px}
+.filter-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.filter-tab{background:var(--bg);border:1px solid #2d2d3d;border-radius:999px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;font-weight:600}
+.filter-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(0,180,216,.08)}
+.table-container{overflow-x:auto;border-radius:8px;border:1px solid #2d2d3d}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;border-bottom:1px solid #2d2d3d;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:hover td{background:var(--hover) !important}
+.view-toggle{display:flex;gap:4px;background:var(--bg);border-radius:6px;padding:3px;border:1px solid #2d2d3d}
+.view-toggle span{padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600}
+.view-toggle span.active{background:var(--accent);color:#000}
+
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;min-height:300px}
+.kanban-col{background:rgba(255,255,255,.02);border:1px solid #2d2d3d;border-radius:10px;padding:12px;display:flex;flex-direction:column}
+.kanban-col h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #2d2d3d}
+.kanban-card{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;font-size:13px;transition:border-color .15s,opacity .15s}
+.kanban-card:hover{border-color:var(--accent)}
+.kanban-card.dragging{opacity:.5}
+.kanban-card .k-title{font-weight:600;margin-bottom:4px}
+.kanban-card .k-meta{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.kanban-col.drag-over{background:rgba(0,180,216,.06);border-color:var(--accent)}
+.kanban-empty{text-align:center;padding:20px;color:var(--muted);font-size:12px}
+
+.status{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700}
+.status-not_started{background:rgba(100,116,139,.15);color:#94a3b8}
+.status-in_progress{background:rgba(56,189,248,.12);color:#38bdf8}
+.status-blocked{background:rgba(239,68,68,.12);color:#ef4444}
+.status-review{background:rgba(245,158,11,.12);color:#f59e0b}
+.status-done{background:rgba(34,197,94,.12);color:#22c55e}
+.priority-box{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.priority-high{background:rgba(239,68,68,.12);color:#ef4444}
+.priority-medium{background:rgba(245,158,11,.12);color:#f59e0b}
+.priority-low{background:rgba(100,116,139,.12);color:#94a3b8}
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.inline-add{display:flex;gap:8px;padding:12px;align-items:center;flex-wrap:wrap}
+.inline-add input{flex:1;min-width:200px;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px 12px;font-size:13px;outline:none}
+.inline-add input:focus{border-color:var(--accent)}
+select.task-status{background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:4px;padding:3px 6px;font-size:12px;cursor:pointer;outline:none}
+select.task-status:focus{border-color:var(--accent)}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.detail-header{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><h1>Project Manager</h1><span id="viewLabel">Loading...</span></div>
+  <div class="topbar-actions">
+    <a class="btn btn-sm" href="/index-platform.html">&#9664; Home</a>
+    <button class="btn btn-sm btn-primary" id="btnNewProject">+ New Project</button>
+    <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
+    <button class="btn btn-sm" id="btnExportCSV" onclick="exportCSV()" style="display:none">CSV</button>
+    <button class="btn btn-sm" onclick="window.open('/api/backup/projects')">Backup</button>
+  </div>
+</div>
+<div class="wrap" id="content"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">New Project</h2>
+    <div class="form-group"><label>Project Name</label><input id="fldName" placeholder="e.g. SOC Automation"></div>
+    <div class="form-group"><label>Description</label><textarea id="fldDesc" placeholder="What is this project about?"></textarea></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalSave">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = "";
+var currentView = "list";
+var currentProjectId = null;
+var currentFilter = "all";
+
+function $(id){return document.getElementById(id)}
+function esc(v){var d=document.createElement("div");d.textContent=v;return d.innerHTML}
+
+function loadList(){
+  currentView="list";currentProjectId=null;
+  $("viewLabel").textContent="All Projects";
+  fetch(API+"/api/projects").then(function(r){return r.json()}).then(function(d){
+    var projects=d.projects||[];
+    var h='';
+    if(!projects.length){h='<div class="empty"><p>No projects yet. Click "+ New Project" to start.</p></div>'}
+    else{h='<div class="grid">';
+      for(var i=0;i<projects.length;i++){var p=projects[i];
+        var barClass=p.progress>=100?"done":"";
+        h+='<div class="card" onclick="loadProject(\''+p.id+'\')"><h3>'+esc(p.name)+'</h3><p>'+esc(p.description||"")+'</p>'
+          +'<div class="stat-row"><span>&#128203; '+p.total_tasks+' tasks</span><span>&#9989; '+p.done_tasks+' done</span></div>'
+          +'<div class="bar"><div class="bar-fill '+barClass+'" style="width:'+p.progress+'%"></div></div>'
+          +'<div class="meta">Created: '+(p.created_at?new Date(p.created_at).toLocaleDateString():"")+'</div></div>'}
+      h+='</div>'}
+    $("content").innerHTML=h;
+  }).catch(function(e){$("content").innerHTML='<div class="empty">Failed to load projects: '+esc(e.message)+'</div>'})
+}
+
+function loadProject(id){
+  currentView="project";currentProjectId=id;currentFilter="all";
+  $("viewLabel").textContent="Loading...";
+  fetch(API+"/api/projects/"+id).then(function(r){return r.json()}).then(function(p){
+    $("viewLabel").textContent=p.name;
+    var tasks=p.tasks||[];
+    var total=tasks.length;
+    var done=tasks.filter(function(t){return t.status==="done"}).length;
+    var progress=total?Math.round(done/total*100):0;
+    var h='<a class="back" onclick="loadList()">&#9664; All Projects</a>'
+      +'<div class="detail-header"><div><h2>'+esc(p.name)+'</h2><p>'+esc(p.description||"")+'</p></div>'
+      +'<div style="text-align:right;min-width:120px"><div style="font-size:24px;font-weight:700">'+progress+'%</div><div style="color:var(--muted);font-size:12px">'+done+'/'+total+' done</div>'
+      +'<div class="bar" style="width:100%;margin-top:6px"><div class="bar-fill '+(progress>=100?"done":"")+'" style="width:'+progress+'%"></div></div></div></div>';
+
+    $("btnExportCSV").style.display="inline-block";
+
+    if(kanbanView){
+      h+=renderKanban(tasks,p.id);
+    }else{
+      var statuses=[{k:"all",l:"All ("+total+")"},{k:"not_started",l:"To Do"},{k:"in_progress",l:"In Progress"},{k:"blocked",l:"Blocked"},{k:"review",l:"Review"},{k:"done",l:"Done"}];
+      h+='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn btn-sm" onclick="toggleView()">&#9632; Kanban</button><button class="btn btn-sm" onclick="exportCSV()">CSV</button></div>';
+      h+='<div class="filter-tabs">';
+      statuses.forEach(function(s){var count=tasks.filter(function(t){return s.k==="all"||t.status===s.k}).length;h+='<span class="filter-tab '+(currentFilter===s.k?"active":"")+'" onclick="filterTasks(\''+s.k+'\')">'+s.l+' ('+count+')</span>'});
+      h+='</div>';
+
+      var filtered=tasks;
+      if(currentFilter!=="all")filtered=tasks.filter(function(t){return t.status===currentFilter});
+
+      h+='<div class="table-container"><table><thead><tr><th style="width:36px"></th><th>Task</th><th>Status</th><th>Priority</th><th>Owner</th><th>Target</th><th style="width:40px"></th></tr></thead><tbody>';
+      for(var i=0;i<filtered.length;i++){var t=filtered[i];
+        var checked=t.status==="done"?"checked":"";
+        h+='<tr><td><input type="checkbox" '+checked+' onchange="toggleTask(\''+t.id+'\',this.checked)"></td>'
+          +'<td><strong>'+esc(t.title)+'</strong>'+(t.description?'<div style="color:var(--muted);font-size:12px;margin-top:2px">'+esc(t.description.substring(0,80))+'</div>':'')+'</td>'
+          +'<td><select class="task-status" onchange="updateStatus(\''+t.id+'\',this.value)">'+
+            ['not_started','in_progress','blocked','review','done'].map(function(s){return '<option value="'+s+'" '+(t.status===s?'selected':'')+'>'+s.replace("_"," ")+'</option>'}).join("")+'</select></td>'
+          +'<td><span class="priority-box priority-'+(t.priority||"medium")+'">'+esc(t.priority||"medium")+'</span></td>'
+          +'<td style="color:var(--muted)">'+esc(t.owner||"-")+'</td>'
+          +'<td style="color:var(--muted);font-size:12px">'+(t.target_date||"-")+'</td>'
+          +'<td><button class="btn btn-sm" style="padding:2px 6px;font-size:14px;color:var(--red)" onclick="deleteTask(\''+t.id+'\')">&#10005;</button></td></tr>'}
+      h+='</tbody></table></div>';
+    }
+
+    h+='<div class="card" style="margin-top:16px"><div class="card-header" style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:600;font-size:14px">Add Task</span></div>'
+      +'<div class="inline-add"><input id="newTaskInput" placeholder="Task title..." onkeydown="if(event.key==\'Enter\')addTask()">'
+      +'<select id="newTaskPriority" style="background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px;font-size:13px"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>'
+      +'<input id="newTaskOwner" placeholder="Owner" style="width:120px;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px 12px;font-size:13px;outline:none">'
+      +'<button class="btn btn-primary btn-sm" onclick="addTask()">+ Add</button></div></div>';
+    $("content").innerHTML=h;
+  }).catch(function(e){$("content").innerHTML='<div class="empty">Failed to load project: '+esc(e.message)+'</div>'})
+}
+
+function filterTasks(status){currentFilter=status;loadProject(currentProjectId)}
+
+function addTask(){
+  var title=$("newTaskInput").value.trim();
+  if(!title)return;
+  var priority=$("newTaskPriority").value;
+  var owner=$("newTaskOwner").value.trim();
+  fetch(API+"/api/projects/"+currentProjectId+"/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:title,priority:priority,owner:owner})})
+  .then(function(r){return r.json()}).then(function(){loadProject(currentProjectId)})
+  .catch(function(e){alert("Failed: "+e.message)})
+}
+
+function toggleTask(id,checked){
+  fetch(API+"/api/tasks/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:checked?"done":"not_started"})})
+  .then(function(){if(currentView==="project")loadProject(currentProjectId)})
+}
+
+function updateStatus(id,status){
+  fetch(API+"/api/tasks/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:status})})
+  .then(function(){if(currentView==="project")loadProject(currentProjectId)})
+}
+
+function deleteTask(id){
+  if(!confirm("Delete this task?"))return;
+  fetch(API+"/api/tasks/"+id,{method:"DELETE"}).then(function(){loadProject(currentProjectId)})
+}
+
+/* ── Kanban View ────────────────────────────────── */
+var kanbanView=false;
+function toggleView(){
+  kanbanView=!kanbanView;
+  if(currentView==="project")loadProject(currentProjectId);
+}
+function renderKanban(tasks,projectId){
+  var cols=["not_started","in_progress","blocked","review","done"];
+  var labels={"not_started":"To Do","in_progress":"In Progress","blocked":"Blocked","review":"Review","done":"Done"};
+  var h='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn btn-sm" onclick="toggleView()">&#9776; List View</button><button class="btn btn-sm" onclick="exportCSV()">CSV</button></div>';
+  h+='<div class="kanban">';
+  cols.forEach(function(col){
+    var items=tasks.filter(function(t){return t.status===col});
+    h+='<div class="kanban-col" data-status="'+col+'"><h4>'+labels[col]+' ('+items.length+')</h4>';
+    if(items.length){
+      items.forEach(function(t){
+        var pclass=t.priority||"medium";
+        h+='<div class="kanban-card" draggable="true" data-id="'+t.id+'" ondragstart="kDragStart(event)" ondragend="kDragEnd(event)">'
+          +'<div class="k-title">'+esc(t.title)+'</div>'
+          +'<div class="k-meta"><span class="priority-box priority-'+pclass+'">'+esc(pclass)+'</span>'
+          +(t.owner?'<span>'+esc(t.owner)+'</span>':'')
+          +'</div></div>';
+      });
+    }else{
+      h+='<div class="kanban-empty">No tasks</div>';
+    }
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+function kDragStart(e){
+  e.dataTransfer.setData("text/plain",e.target.dataset.id);
+  e.target.classList.add("dragging");
+}
+function kDragEnd(e){e.target.classList.remove("dragging")}
+document.addEventListener("dragover",function(e){
+  var col=e.target.closest(".kanban-col");
+  if(col){e.preventDefault();col.classList.add("drag-over")}
+});
+document.addEventListener("dragleave",function(e){
+  var col=e.target.closest(".kanban-col");
+  if(col)col.classList.remove("drag-over");
+});
+document.addEventListener("drop",function(e){
+  var col=e.target.closest(".kanban-col");
+  if(!col)return;
+  e.preventDefault();col.classList.remove("drag-over");
+  var taskId=e.dataTransfer.getData("text/plain");
+  if(!taskId)return;
+  var newStatus=col.dataset.status;
+  var card=document.querySelector('.kanban-card[data-id="'+taskId+'"]');
+  if(card){card.style.opacity="0.5"}
+  fetch(API+"/api/tasks/"+taskId,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:newStatus})})
+  .then(function(){loadProject(currentProjectId)})
+  .catch(function(){if(card)card.style.opacity="1"});
+});
+
+/* ── CSV Export ─────────────────────────────────── */
+function exportCSV(){
+  if(currentView!=="project"||!currentProjectId)return;
+  fetch(API+"/api/projects/"+currentProjectId).then(function(r){return r.json()}).then(function(p){
+    var tasks=p.tasks||[];
+    var lines=["Title,Status,Priority,Owner,Target Date,Notes,ID"];
+    tasks.forEach(function(t){
+      lines.push('"'+esc(t.title)+'","'+t.status+'","'+(t.priority||"medium")+'","'+(t.owner||"")+'","'+(t.target_date||"")+'","'+(t.notes||"")+'","'+t.id+'"');
+    });
+    var csv=lines.join("\n");
+    var blob=new Blob([csv],{type:"text/csv"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=p.name.replace(/\s+/g,"_")+"_tasks.csv";a.click();
+  });
+}
+
+function openModal(){document.getElementById("modalOverlay").classList.add("show");$("fldName").value="";$("fldDesc").value="";$("fldName").focus()}
+function closeModal(){document.getElementById("modalOverlay").classList.remove("show")}
+document.getElementById("modalOverlay").addEventListener("click",function(e){if(e.target===this)closeModal()});
+
+document.getElementById("btnNewProject").addEventListener("click",openModal);
+document.getElementById("modalSave").addEventListener("click",function(){
+  var name=$("fldName").value.trim();if(!name)return;
+  var desc=$("fldDesc").value.trim();
+  fetch(API+"/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:name,description:desc})})
+  .then(function(r){return r.json()}).then(function(){closeModal();loadList()})
+  .catch(function(e){alert("Failed: "+e.message)})
+});
+
+loadList();
+var sse=new EventSource("/api/events/stream");
+sse.onmessage=function(){
+  if(currentView==="list")loadList();
+  else if(currentView==="project"&&currentProjectId)loadProject(currentProjectId);
+};
+sse.onerror=function(){};
+setInterval(function(){
+  if(currentView==="list")loadList();
+  else if(currentView==="project"&&currentProjectId)loadProject(currentProjectId);
+}, 120000);
+</script>
+</body>
+</html>

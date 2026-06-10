@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — User Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+
+    .topbar { background: #111827; border-bottom: 1px solid #1e293b; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .topbar .title { font-size: 22px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 3px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+
+    .doc-meta { background: #1a2e1a; border-bottom: 1px solid #166534; padding: 10px 28px; font-size: 12px; color: #4ade80; display: flex; gap: 24px; flex-wrap: wrap; }
+    .doc-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .layout { display: flex; }
+
+    /* Sidebar */
+    .sidebar { width: 260px; flex-shrink: 0; background: #111827; border-right: 1px solid #1e293b; overflow-y: auto; padding: 20px 0; position: sticky; top: 0; height: 100vh; align-self: flex-start; }
+    .sidebar-group { margin-bottom: 6px; }
+    .sidebar-group-label { font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 20px 4px 20px; }
+    .sidebar a { display: block; padding: 7px 20px; color: #94a3b8; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; transition: all 0.12s; }
+    .sidebar a:hover { color: #f8fafc; background: #1e293b; border-left-color: #334155; }
+    .sidebar a.active { color: #60a5fa; background: #0c1929; border-left-color: #3b82f6; }
+
+    /* Content */
+    .content { flex: 1; padding: 32px 40px; max-width: 900px; }
+
+    h1 { font-size: 28px; color: #f8fafc; margin: 0 0 8px 0; }
+    h2 { font-size: 20px; color: #f8fafc; margin: 40px 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+    h3 { font-size: 15px; color: #cbd5e1; margin: 24px 0 8px 0; }
+    p { color: #94a3b8; line-height: 1.7; margin: 0 0 14px 0; font-size: 14px; }
+    a { color: #60a5fa; }
+
+    .lead { font-size: 15px; color: #cbd5e1; line-height: 1.7; margin-bottom: 20px; }
+
+    /* Steps */
+    ol.steps { margin: 0 0 16px 0; padding-left: 0; list-style: none; counter-reset: step-counter; }
+    ol.steps li { counter-increment: step-counter; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; font-size: 14px; color: #cbd5e1; line-height: 1.6; }
+    ol.steps li::before { content: counter(step-counter); background: #1e3a5f; color: #60a5fa; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+
+    /* Callout boxes */
+    .callout { border-radius: 10px; padding: 14px 16px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+    .callout.tip { background: #0c1929; border: 1px solid #1e3a5f; color: #93c5fd; }
+    .callout.tip::before { content: "Tip  "; font-weight: bold; }
+    .callout.warning { background: #2d1f0a; border: 1px solid #92400e; color: #fcd34d; }
+    .callout.warning::before { content: "Important  "; font-weight: bold; }
+    .callout.info { background: #1a2e1a; border: 1px solid #166534; color: #86efac; }
+    .callout.info::before { content: "Note  "; font-weight: bold; }
+
+    /* Badge */
+    .badge { display: inline-block; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
+    .badge.audit    { background: #3b1f2b; color: #f472b6; }
+    .badge.compliance { background: #1a2e2e; color: #2dd4bf; }
+    .badge.executive { background: #1a2e1a; color: #4ade80; }
+    .badge.tools    { background: #2d2305; color: #fbbf24; }
+    .badge.new      { background: #1e3a5f; color: #60a5fa; }
+
+    /* Tag pills */
+    .tag { display: inline-block; background: #1e293b; color: #94a3b8; border-radius: 4px; padding: 1px 7px; font-size: 12px; font-family: monospace; }
+
+    /* Table */
+    table.guide { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+    table.guide th { background: #1e293b; color: #f8fafc; padding: 9px 12px; text-align: left; border-bottom: 2px solid #334155; }
+    table.guide td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+    table.guide td:first-child { color: #cbd5e1; font-weight: bold; white-space: nowrap; }
+
+    /* Section anchor offset for sticky topbar */
+    .section-anchor { padding-top: 24px; }
+
+    .footer { text-align: center; color: #475569; font-size: 12px; padding: 24px; border-top: 1px solid #1e293b; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Mission Control — User Guide</div>
+    <div class="subtitle">Platform how-to, workflows and reference</div>
+  </div>
+  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+</div>
+
+<div class="doc-meta">
+  <span>&#128196; Living Document</span>
+  <span>&#128197; Last Updated: June 2026</span>
+  <span>&#127381; Version: 1.0</span>
+  <span>&#128274; Internal use only</span>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Overview</div>
+      <a href="#overview">Platform Overview</a>
+      <a href="#navigation">Navigation</a>
+      <a href="#modules">Module Summary</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Auditing</div>
+      <a href="#running-audit">Running a Device Audit</a>
+      <a href="#audit-reports">Generating PDF Reports</a>
+      <a href="#active-register">Active Device Register</a>
+      <a href="#csv-import-export">CSV Import / Export</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Compliance — New</div>
+      <a href="#remediation">Remediation Tracker</a>
+      <a href="#incidents">Incident Register</a>
+      <a href="#site-policy">Site Policy Configuration</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Dashboards</div>
+      <a href="#director-view">Director View</a>
+      <a href="#governance-tiles">Governance Overview Tiles</a>
+      <a href="#per-site-policy">Per-Site Policy Table</a>
+      <a href="#audit-recency">Audit Recency Table</a>
+      <a href="#nqs-mapping">NQS Quality Area Mapping</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Administration</div>
+      <a href="#site-onboarding">Site Onboarding</a>
+      <a href="#sharepoint">SharePoint Integration</a>
+      <a href="#two-factor-auth">Two-Factor Auth (2FA)</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Security Operations</div>
+      <a href="#soc-overview">SOC Dashboard</a>
+      <a href="#soc-command-center">Command Center</a>
+      <a href="#soc-agents">Agents &amp; Detail</a>
+      <a href="#soc-sca">SCA Compliance</a>
+      <a href="#soc-fim">File Integrity</a>
+      <a href="#soc-vulnerabilities">Vulnerabilities</a>
+      <a href="#soc-mitre">MITRE ATT&amp;CK</a>
+      <a href="#soc-rules">Rules &amp; Decoders</a>
+      <a href="#soc-events">Events &amp; Alerts</a>
+      <a href="#soc-topology">Topology</a>
+      <a href="#soc-threats">Threat Intelligence</a>
+      <a href="#soc-autopilot">SOC Autopilot</a>
+      <a href="#soc-manager">Manager Health</a>
+      <a href="#soc-groups">Groups</a>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Reference</div>
+      <a href="#status-labels">Status Labels</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="#changelog">Changelog</a>
+    </div>
+
+  </nav>
+
+  <!-- Main content -->
+  <main class="content" id="mainContent">
+
+    <!-- ── OVERVIEW ── -->
+    <div id="overview" class="section-anchor">
+      <h1>Mission Control Platform</h1>
+      <p class="lead">Mission Control is a centralised device audit and compliance management platform for early childhood education services. It manages device audits, compliance reporting, remediation tracking and incident management to support ACECQA Assessment &amp; Rating obligations.</p>
+      <p>This guide covers every module available on the platform. Use the sidebar to jump to the section you need. This is a living document — it will be updated as features are added or workflows change.</p>
+    </div>
+
+    <!-- ── NAVIGATION ── -->
+    <div id="navigation" class="section-anchor">
+      <h2>Navigation</h2>
+      <p>The <strong>Platform Home</strong> (<span class="tag">/index-platform.html</span>) is the central hub. All modules are accessible from here, grouped into sections:</p>
+      <table class="guide">
+        <thead><tr><th>Section</th><th>What's there</th></tr></thead>
+        <tbody>
+          <tr><td>Network Monitoring</td><td>Live device status, alerts and site health from probe agents</td></tr>
+          <tr><td>Executive Dashboards</td><td>Director View and executive availability overview</td></tr>
+          <tr><td>Device Auditing</td><td>Audit Centre, Device Records, Audit Reports, Device Audit Form</td></tr>
+          <tr><td>Compliance <span class="badge new">New</span></td><td>Remediation Tracker and Incident Register</td></tr>
+          <tr><td>Administration</td><td>Site Onboarding (including compliance policy config) and User Guide</td></tr>
+          <tr><td>Fleet &amp; Infrastructure</td><td>Server health, service logs and restart controls</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── MODULE SUMMARY ── -->
+    <div id="modules" class="section-anchor">
+      <h2>Module Summary</h2>
+      <table class="guide">
+        <thead><tr><th>Module</th><th>Purpose</th><th>Who uses it</th></tr></thead>
+        <tbody>
+          <tr><td>Audit Centre</td><td>Start and manage device audit batches per site</td><td>IT / Coordinator</td></tr>
+          <tr><td>Device Audit Form</td><td>Per-device data entry during an on-site audit</td><td>IT field staff</td></tr>
+          <tr><td>Audit Reports</td><td>Generate and download PDF compliance reports</td><td>IT / Management</td></tr>
+          <tr><td>Remediation Tracker</td><td>Track actions arising from audit findings through to resolution</td><td>IT / Coordinator</td></tr>
+          <tr><td>Incident Register</td><td>Log, manage and report ACECQA mandatory incidents</td><td>Coordinator / Director</td></tr>
+          <tr><td>Site Onboarding</td><td>Configure site details, SharePoint and compliance policy</td><td>IT Admin</td></tr>
+          <tr><td>Director View</td><td>Executive compliance overview across all sites</td><td>Director / Management</td></tr>
+          <tr><td>Active Device Register</td><td>Cross-reference audited devices with monitored network devices</td><td>IT</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── RUNNING AN AUDIT ── -->
+    <div id="running-audit" class="section-anchor">
+      <h2><span class="badge audit">Audit</span> Running a Device Audit</h2>
+      <p>A device audit records the security, photo retention and hardware condition of every device at a site. Audits produce a compliance score and generate remediation actions automatically.</p>
+
+      <h3>Starting an audit</h3>
+      <ol class="steps">
+        <li>Go to <strong>Audit Centre</strong> from Platform Home.</li>
+        <li>Select the site from the dropdown.</li>
+        <li>Click <strong>New Audit Batch</strong>. A new batch ID is created.</li>
+        <li>Click <strong>Start Audit</strong> to open the Device Audit Form pre-filtered to that batch.</li>
+      </ol>
+
+      <h3>Filling in the Device Audit Form</h3>
+      <ol class="steps">
+        <li>Select the site and the active batch at the top of the form.</li>
+        <li>For each device, enter the serial number or select it from the device register.</li>
+        <li>Complete all fields: device present, photos count, photo date, password/PIN status, camera sync, OneDrive sync, update status, hardware condition.</li>
+        <li>Mark <strong>Ignore</strong> if the device is retired or excluded from compliance scoring.</li>
+        <li>Click <strong>Save Entry</strong> for each device. The entry is saved to the database immediately.</li>
+        <li>Repeat for all devices at the site.</li>
+      </ol>
+
+      <div class="callout tip">Photo date should be the date photos were last reviewed/culled — not the date of the earliest photo. This is what drives the retention breach calculation.</div>
+      <div class="callout warning">Each site may have a custom photo retention threshold configured in Site Onboarding. The default is 31 days for photo age and 1,000 photos count. Check the site's policy settings before auditing.</div>
+
+      <h3>Reviewing audit results</h3>
+      <ol class="steps">
+        <li>Return to <strong>Audit Centre</strong> and select the batch.</li>
+        <li>Click <strong>View Report</strong> to see a live summary of critical/warning/ok counts.</li>
+        <li>Use the filter controls to focus on critical or warning items.</li>
+      </ol>
+    </div>
+
+    <!-- ── PDF REPORTS ── -->
+    <div id="audit-reports" class="section-anchor">
+      <h2><span class="badge audit">Reports</span> Generating PDF Reports</h2>
+      <p>PDF reports are executive-grade compliance documents suitable for ACECQA evidence packages and internal records. They include site-specific thresholds and, if policy data is configured, a Policy Compliance Checklist page.</p>
+
+      <h3>Generate a PDF</h3>
+      <ol class="steps">
+        <li>Go to <strong>Audit Reports</strong> from Platform Home.</li>
+        <li>Select the site and locate the batch you want to report on.</li>
+        <li>Click <strong>Generate PDF</strong>. The report is built server-side and downloaded automatically.</li>
+        <li>Alternatively, open <strong>Director View</strong> and click the <strong>PDF</strong> button in the site row.</li>
+      </ol>
+
+      <h3>What the report contains</h3>
+      <table class="guide">
+        <thead><tr><th>Section</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td>Cover page</td><td>Site name, audit date, overall status, compliance score, photo retention policy thresholds</td></tr>
+          <tr><td>Executive Summary</td><td>KPI tiles — total devices, critical, warnings, missing, photo breaches, security issues</td></tr>
+          <tr><td>Key Findings</td><td>Narrative findings grouped by category</td></tr>
+          <tr><td>Recommendations</td><td>Prioritised action items derived from findings</td></tr>
+          <tr><td>Missing Devices</td><td>Full list of devices not sighted during audit</td></tr>
+          <tr><td>Credential / Security Issues</td><td>Devices with password, PIN or breach concerns</td></tr>
+          <tr><td>Photo Retention Review</td><td>Devices exceeding retention thresholds</td></tr>
+          <tr><td>Full Device Table</td><td>Every audited device with all fields</td></tr>
+          <tr><td>Policy Compliance Checklist</td><td>Appears only if policy data has been configured in Site Onboarding</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">If a site has SharePoint integration configured, you can also upload directly to the site's SharePoint document library from Audit Reports using the Upload button.</div>
+    </div>
+
+    <!-- ── ACTIVE DEVICE REGISTER ── -->
+    <div id="active-register" class="section-anchor">
+      <h2><span class="badge audit">Devices</span> Active Device Register</h2>
+      <p>Cross-references audit records with the network monitoring probe to show which devices are actively seen on the network versus what was audited.</p>
+      <ol class="steps">
+        <li>Go to <strong>Device Records</strong> from Platform Home.</li>
+        <li>Select a site to view the full register.</li>
+        <li>Devices are shown with their latest audit status and network presence.</li>
+        <li>Use <strong>Audit-Monitoring Links</strong> to link a network-discovered device to an audit asset record.</li>
+      </ol>
+    </div>
+
+    <!-- ── CSV IMPORT/EXPORT ── -->
+    <div id="csv-import-export" class="section-anchor">
+      <h2><span class="badge audit">Devices</span> CSV Import / Export</h2>
+      <p>The Device Records page supports bulk export and import of all device records via CSV. This is useful for initial data migration, bulk updates, and maintaining records in spreadsheet tools.</p>
+
+      <h3>Exporting device records</h3>
+      <ol class="steps">
+        <li>Go to <strong>Device Records</strong> from Platform Home.</li>
+        <li>Click <strong>Export CSV</strong> in the toolbar. A download begins immediately.</li>
+        <li>The file contains all 26 device fields: device ID, site, asset tag, type, brand/model, name, purchase date, warranty expiry, assigned room and user, status, connectivity, IP/MAC addresses, storage, OS, and more.</li>
+      </ol>
+
+      <h3>Importing device records</h3>
+      <ol class="steps">
+        <li>Prepare a CSV using the exported file as a template — the column headers must match exactly.</li>
+        <li>Click <strong>Import CSV</strong> in the Device Records toolbar and select your file.</li>
+        <li>The import uses <em>upsert</em> logic: rows with an existing <span class="tag">device_id</span> are updated; rows without a <span class="tag">device_id</span> are created as new records.</li>
+        <li>A confirmation message shows the count of created and updated records.</li>
+      </ol>
+
+      <div class="callout tip">To bulk-update a field (e.g. assigned room after a room reshuffle), export the CSV, update the column in your spreadsheet app, and re-import. Only changed fields are updated.</div>
+      <div class="callout warning">Do not modify the <span class="tag">device_id</span> column for existing records — this is the unique key used for upsert. Changing a device_id will create a duplicate record instead of updating the existing one.</div>
+
+      <table class="guide">
+        <thead><tr><th>Column</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>device_id</td><td>Leave blank for new records. Required for updates.</td></tr>
+          <tr><td>site_id / site_name</td><td>Either field can be used to assign a site.</td></tr>
+          <tr><td>is_active</td><td>TRUE / FALSE. Inactive devices are hidden from audit dropdowns.</td></tr>
+          <tr><td>warranty_expiry</td><td>ISO date format: YYYY-MM-DD</td></tr>
+          <tr><td>recording_storage_capabilities</td><td>YES / NO</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── REMEDIATION ── -->
+    <div id="remediation" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Remediation Tracker <span class="badge new">New</span></h2>
+      <p>The Remediation Tracker converts audit findings into tracked action items with owners, priorities, due dates and resolution status. It is the formal record that corrective actions were taken — critical for ACECQA evidence.</p>
+
+      <h3>Auto-generating actions from an audit</h3>
+      <ol class="steps">
+        <li>Go to <strong>Remediation Tracker</strong> from the Compliance section.</li>
+        <li>Select the site.</li>
+        <li>Click <strong>Generate from Audit</strong> and select the audit batch.</li>
+        <li>The system auto-creates actions for: missing devices, photo retention breaches, credential/security issues, hardware problems.</li>
+        <li>Duplicate finding types for the same device are skipped automatically.</li>
+      </ol>
+
+      <h3>Creating a manual action</h3>
+      <ol class="steps">
+        <li>Click <strong>New Action</strong>.</li>
+        <li>Select the site, finding type, priority and due date.</li>
+        <li>Enter a description and optionally assign to a staff member.</li>
+        <li>Click <strong>Save</strong>.</li>
+      </ol>
+
+      <h3>Updating action status</h3>
+      <ol class="steps">
+        <li>Find the action in the table (filter by site, status or priority as needed).</li>
+        <li>Click the status dropdown in the action row and select the new status.</li>
+        <li>For resolved actions, add resolution notes in the notes field before saving.</li>
+      </ol>
+
+      <table class="guide">
+        <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Open</td><td>Action identified, not yet started</td></tr>
+          <tr><td>In Progress</td><td>Work underway</td></tr>
+          <tr><td>Resolved</td><td>Finding corrected — add resolution notes</td></tr>
+          <tr><td>Accepted Risk</td><td>Risk formally accepted by management — document rationale in notes</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warning">Overdue actions (past due date and not resolved) are highlighted in red on the Director View. Regularly review and close resolved items to keep the governance dashboard accurate.</div>
+    </div>
+
+    <!-- ── INCIDENT REGISTER ── -->
+    <div id="incidents" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Incident Register <span class="badge new">New</span></h2>
+      <p>The Incident Register is the formal log of privacy, data and device security incidents at each site. Incidents marked as Mandatory Reportable are flagged prominently and tracked through to regulatory notification.</p>
+
+      <h3>Logging a new incident</h3>
+      <ol class="steps">
+        <li>Go to <strong>Incident Register</strong> from the Compliance section.</li>
+        <li>Click <strong>New Incident</strong>.</li>
+        <li>Select the site and set the incident date.</li>
+        <li>Choose the <strong>Incident Type</strong> (e.g. Privacy Breach, Missing Device with Data, Photo Policy Violation).</li>
+        <li>Set <strong>Severity</strong> (Critical / High / Medium / Low).</li>
+        <li>Write a description of what occurred.</li>
+        <li>Toggle <strong>Children Affected</strong> if child data or images may be involved. Enter the affected count if known.</li>
+        <li>Toggle <strong>Mandatory Reportable</strong> if the incident meets the threshold for regulatory notification.</li>
+        <li>Enter response actions taken so far.</li>
+        <li>Click <strong>Save Incident</strong>.</li>
+      </ol>
+
+      <h3>Mandatory reporting workflow</h3>
+      <ol class="steps">
+        <li>When an incident is flagged as Mandatory Reportable, the register highlights it in red.</li>
+        <li>Once reported to the regulator, update the <strong>Reported To</strong> field (e.g. "Queensland Department of Education") and set the <strong>Reported Date</strong>.</li>
+        <li>Change status to <strong>Reported</strong>.</li>
+        <li>Once investigated and closed, set status to <strong>Resolved</strong> and add resolution notes.</li>
+      </ol>
+
+      <div class="callout warning">In Queensland, mandatory notifications under the Education and Care Services National Law must be made to the regulatory authority as soon as practicable. The Incident Register records the notification but does not replace direct contact with the regulator.</div>
+
+      <h3>Linking an incident to an audit</h3>
+      <p>If the incident arose from an audit finding (e.g. a photo retention breach that constitutes a privacy incident), you can link the incident to the audit batch and device serial in the incident form. This creates a traceable record from finding to incident to resolution.</p>
+    </div>
+
+    <!-- ── SITE POLICY ── -->
+    <div id="site-policy" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Site Policy Configuration <span class="badge new">New</span></h2>
+      <p>Each site can have its own photo retention thresholds and a policy documentation checklist. These values drive audit classification and appear in PDF reports.</p>
+
+      <h3>Setting site thresholds</h3>
+      <ol class="steps">
+        <li>Go to <strong>Site Onboarding</strong> from the Administration section.</li>
+        <li>Select the site from the dropdown.</li>
+        <li>Scroll to the <strong>Compliance Policy Configuration</strong> card.</li>
+        <li>Set <strong>Photo Retention Days</strong> — devices with photos older than this are flagged Critical. Default: 31.</li>
+        <li>Set <strong>Photo Count Threshold</strong> — devices with more photos than this receive a Warning. Default: 1,000.</li>
+        <li>Set <strong>Audit Frequency (Days)</strong> — the expected interval between audits. Default: 90.</li>
+        <li>Click <strong>Save All Changes</strong>.</li>
+      </ol>
+
+      <div class="callout tip">If your service has a specific policy (e.g. 28-day photo retention), set this here. All subsequent audits and PDF reports for that site will use the site-specific threshold, not the system default.</div>
+
+      <h3>Completing the policy checklist</h3>
+      <ol class="steps">
+        <li>In the same Compliance Policy card, scroll to the <strong>Policy Checklist</strong> section.</li>
+        <li>Toggle each item to green when the corresponding policy or document is in place and current.</li>
+        <li>Click <strong>Save All Changes</strong>.</li>
+        <li>The checklist status flows through to PDF reports (Policy Compliance Checklist page) and the Director View governance tiles.</li>
+      </ol>
+
+      <table class="guide">
+        <thead><tr><th>Policy Item</th><th>What to check</th></tr></thead>
+        <tbody>
+          <tr><td>Consent forms current</td><td>Photo and media consent forms are current for all enrolled children</td></tr>
+          <tr><td>Photo policy documented</td><td>A written photo and video policy exists and is accessible to staff</td></tr>
+          <tr><td>Staff privacy training current</td><td>All staff have completed privacy/data handling training in the last 12 months</td></tr>
+          <tr><td>Device encryption enforced</td><td>All devices have encryption enabled (e.g. BitLocker, FileVault)</td></tr>
+          <tr><td>Access controls documented</td><td>Device access control procedures are documented and applied</td></tr>
+          <tr><td>Data retention policy</td><td>A formal data retention and disposal policy is in place</td></tr>
+          <tr><td>Incident response plan</td><td>A documented incident response plan exists and staff are aware of it</td></tr>
+          <tr><td>Privacy impact assessment</td><td>A privacy impact assessment has been completed for device and photo management</td></tr>
+          <tr><td>Third-party data agreements</td><td>Data processing agreements are in place with all relevant third-party providers</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── DIRECTOR VIEW ── -->
+    <div id="director-view" class="section-anchor">
+      <h2><span class="badge executive">Executive</span> Director View</h2>
+      <p>The Director View provides a single-screen compliance overview for all sites. It is designed for directors, coordinators and executives who need a high-level picture without navigating individual audit reports.</p>
+
+      <h3>Reading the dashboard</h3>
+      <ol class="steps">
+        <li>Go to <strong>Director View</strong> from the Executive Dashboards section.</li>
+        <li>The top row of tiles summarises all audits in the last 30 days: average score, risk counts, device and issue totals.</li>
+        <li>The <strong>Latest Audit by Site</strong> table shows the most recent audit for each site — risk label, score, status, photo breaches, and a link to view or download the PDF.</li>
+        <li>The <strong>Recent Audits</strong> table lists every audit batch in the last 30 days.</li>
+        <li>The <strong>Compliance Overview</strong> tiles show open/overdue remediation actions, open/mandatory incidents, and policy gap count.</li>
+        <li>The <strong>NQS Quality Area Mapping</strong> table maps all findings to relevant NQS areas — see below.</li>
+      </ol>
+
+      <h3>Risk label guide</h3>
+      <table class="guide">
+        <thead><tr><th>Label</th><th>Meaning</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td style="color:#fca5a5;">High Risk</td><td>Critical findings present (missing devices, security breach, photos >31 days)</td><td>Immediate remediation required</td></tr>
+          <tr><td style="color:#fcd34d;">Needs Attention</td><td>Warning-level findings present (photo count, sync issues, update status)</td><td>Review and address within audit cycle</td></tr>
+          <tr><td style="color:#86efac;">On Track</td><td>No critical or warning findings</td><td>Maintain current practices</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">Click <strong>Refresh All</strong> at the top to reload both director and governance data simultaneously. The dashboard does not auto-refresh.</div>
+    </div>
+
+    <!-- ── GOVERNANCE TILES ── -->
+    <div id="governance-tiles" class="section-anchor">
+      <h2><span class="badge executive">Executive</span> Governance Overview Tiles</h2>
+      <p>The <strong>Governance Overview</strong> card displays 11 live KPI tiles drawn from the remediation tracker, incident register and site policy configuration.</p>
+
+      <table class="guide">
+        <thead><tr><th>Tile</th><th>Colour</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Remediations Open</td><td>Amber if &gt; 0</td><td>Remediation actions with status Open or In Progress</td></tr>
+          <tr><td>Remediations Overdue</td><td>Red if &gt; 0</td><td>Open remediations past their due date</td></tr>
+          <tr><td>Remediations Resolved</td><td>Green</td><td>Actions with status Resolved or Closed</td></tr>
+          <tr><td>Critical Priority</td><td>Red if &gt; 0</td><td>Open remediations with Critical priority</td></tr>
+          <tr><td>High Priority</td><td>Amber if &gt; 0</td><td>Open remediations with High priority</td></tr>
+          <tr><td>Incidents Open</td><td>Amber if &gt; 0</td><td>Incidents not yet Closed or Resolved</td></tr>
+          <tr><td>Mandatory Reports</td><td>Red if &gt; 0</td><td>Incidents flagged Mandatory Reportable</td></tr>
+          <tr><td>Critical Incidents</td><td>Red if &gt; 0</td><td>Incidents with Critical severity</td></tr>
+          <tr><td>High Severity</td><td>Amber if &gt; 0</td><td>Incidents with High severity</td></tr>
+          <tr><td>Policy Gaps</td><td>Amber if &gt; 0</td><td>Policy checklist items set to No across all sites</td></tr>
+          <tr><td>Sites Policy Complete</td><td>Green when all sites complete</td><td>Sites where all 9 policy items are confirmed Yes</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">A timestamp below the tiles shows when governance data was last loaded. Click <strong>Refresh All</strong> to update.</div>
+    </div>
+
+    <!-- ── PER-SITE POLICY TABLE ── -->
+    <div id="per-site-policy" class="section-anchor">
+      <h2><span class="badge executive">Executive</span> Per-Site Policy Compliance Table</h2>
+      <p>Below the governance tiles, the <strong>Per-Site Policy Compliance</strong> table shows a row for each site with a breakdown of its policy checklist status. Sites with gaps are sorted to the top.</p>
+
+      <table class="guide">
+        <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Site</td><td>Site name</td></tr>
+          <tr><td>Confirmed</td><td>Number of policy items set to Yes (out of 9)</td></tr>
+          <tr><td>Gaps (No)</td><td>Items explicitly set to No — these require action</td></tr>
+          <tr><td>Not Set</td><td>Items not yet configured — visit Site Onboarding to complete</td></tr>
+          <tr><td>Missing Policies</td><td>Names of the specific policies that are set to No</td></tr>
+          <tr><td>Status</td><td>Green = All confirmed &bull; Amber = gaps present</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warning">Sites with Gaps require a visit to <strong>Site Onboarding → Compliance Policy Configuration</strong>. Address each policy item shown in the Missing Policies column and save the checklist. The table updates on next Refresh All.</div>
+    </div>
+
+    <!-- ── AUDIT RECENCY TABLE ── -->
+    <div id="audit-recency" class="section-anchor">
+      <h2><span class="badge executive">Executive</span> Audit Recency Table</h2>
+      <p>The <strong>Audit Recency</strong> table shows each site's most recent audit date and how many days have passed. Sites are ordered most-overdue first.</p>
+
+      <table class="guide">
+        <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Site</td><td>Site name</td></tr>
+          <tr><td>Last Audit Date</td><td>Date of the most recent audit batch for this site</td></tr>
+          <tr><td>Days Since Audit</td><td>Calendar days from the last audit date to today</td></tr>
+          <tr><td>Status</td><td>Green = On Track (&lt; 60 days) &bull; Amber = Due Soon (60–90 days) &bull; Red = Overdue (&gt; 90 days)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warning">Sites showing Overdue (red) have exceeded the 90-day audit threshold. Schedule an audit and update the site's <strong>Audit Frequency</strong> in Site Onboarding if the default 90-day interval is not appropriate.</div>
+      <div class="callout tip">Sites with no audit history will not appear in this table. Complete at least one audit for a site to begin tracking its recency.</div>
+    </div>
+
+    <!-- ── NQS MAPPING ── -->
+    <div id="nqs-mapping" class="section-anchor">
+      <h2><span class="badge executive">Executive</span> NQS Quality Area Mapping</h2>
+      <p>The NQS mapping table in Director View shows how audit findings, remediation actions and incidents relate to specific ACECQA National Quality Standard elements.</p>
+
+      <table class="guide">
+        <thead><tr><th>NQS Area</th><th>What it captures</th></tr></thead>
+        <tbody>
+          <tr><td>NQS 2.2 — Children's Health &amp; Safety</td><td>Photo retention breaches, open incidents, mandatory reportable incidents</td></tr>
+          <tr><td>NQS 3.2 — Use of Space &amp; Equipment</td><td>Missing or unaccounted devices, hardware condition issues</td></tr>
+          <tr><td>NQS 4.2 — Professionalism</td><td>Credential/security findings, staff training policy gaps</td></tr>
+          <tr><td>NQS 7.3 — Governance &amp; Responsibilities</td><td>All open remediation actions, data retention and policy documentation gaps</td></tr>
+        </tbody>
+      </table>
+
+      <p>The <strong>Status</strong> column shows:</p>
+      <ul style="color:#94a3b8;font-size:14px;line-height:1.8;">
+        <li><span style="color:#86efac;font-weight:bold;">On Track</span> — no open issues in this area</li>
+        <li><span style="color:#fcd34d;font-weight:bold;">Needs Attention</span> — open remediations or policy gaps present</li>
+        <li><span style="color:#fca5a5;font-weight:bold;">Action Required</span> — mandatory reportable incidents open</li>
+      </ul>
+
+      <div class="callout info">This mapping provides a working view of NQS alignment. For formal Assessment &amp; Rating submissions, source evidence from the PDF audit reports and the Incident Register.</div>
+    </div>
+
+    <!-- ── SITE ONBOARDING ── -->
+    <div id="site-onboarding" class="section-anchor">
+      <h2><span class="badge tools">Admin</span> Site Onboarding</h2>
+      <p>Site Onboarding is where you configure all site-level details used across the platform.</p>
+      <h3>Creating a new site</h3>
+      <ol class="steps">
+        <li>Go to <strong>Site Onboarding</strong>.</li>
+        <li>Click <strong>+ Add New Site</strong>.</li>
+        <li>Enter the site name and company name.</li>
+        <li>Click <strong>Create Site</strong>.</li>
+        <li>The site is now available in all dropdowns across the platform.</li>
+      </ol>
+      <h3>Updating site details</h3>
+      <ol class="steps">
+        <li>Select the site from the dropdown.</li>
+        <li>Update the <strong>Site Information</strong> card: name, location, address, contact, active status.</li>
+        <li>Update <strong>SharePoint Integration</strong> if applicable.</li>
+        <li>Update <strong>Compliance Policy Configuration</strong> (thresholds and policy checklist).</li>
+        <li>Click <strong>Save All Changes</strong> — all cards are saved in a single action.</li>
+      </ol>
+    </div>
+
+    <!-- ── SHAREPOINT ── -->
+    <div id="sharepoint" class="section-anchor">
+      <h2><span class="badge tools">Admin</span> SharePoint Integration</h2>
+      <p>PDF audit reports can be automatically uploaded to a site's SharePoint document library after generation.</p>
+      <h3>Setup</h3>
+      <ol class="steps">
+        <li>In Azure AD, create an App Registration with <span class="tag">Sites.ReadWrite.All</span> application permission.</li>
+        <li>In Site Onboarding, enable <strong>SharePoint Upload</strong> for the site.</li>
+        <li>Enter the Tenant ID, Client ID, Client Secret, SharePoint Site URL and target folder.</li>
+        <li>Click <strong>Auto-Discover</strong> to find the Drive ID automatically, or enter it manually.</li>
+        <li>Click <strong>Test Connection</strong> to validate all steps before saving.</li>
+        <li>Click <strong>Save All Changes</strong>.</li>
+      </ol>
+      <div class="callout tip">Once configured, use the <strong>Upload to SharePoint</strong> button in Audit Reports to push a generated PDF directly to the site's library.</div>
+    </div>
+
+    <!-- ── TWO-FACTOR AUTH ── -->
+    <div id="two-factor-auth" class="section-anchor">
+      <h2><span class="badge tools">Admin</span> Two-Factor Authentication (2FA)</h2>
+      <p>Mission Control uses Time-based One-Time Passwords (TOTP) for two-factor authentication, compatible with any authenticator app (Google Authenticator, Microsoft Authenticator, Aegis, etc.).</p>
+
+      <h3>Login flow</h3>
+      <ol class="steps">
+        <li>Enter your username and password on the login page. Click <strong>Sign In</strong>.</li>
+        <li>If 2FA is enabled on your account, you are redirected to the <strong>Verification</strong> page.</li>
+        <li>Open your authenticator app and enter the current 6-digit code.</li>
+        <li>Click <strong>Verify</strong>. Codes expire every 30 seconds — if the code is rejected, wait for the next one.</li>
+      </ol>
+
+      <div class="callout warning">After <strong>5 consecutive failed login attempts</strong> (wrong password or wrong 2FA code), your IP address is locked out for 15 minutes. Wait before trying again. If you are locked out and cannot wait, contact an IT admin to clear the lockout.</div>
+
+      <h3>Setting up 2FA on your account</h3>
+      <ol class="steps">
+        <li>Log in and navigate to <strong>2FA Setup</strong> from the Administration section of Platform Home.</li>
+        <li>Click <strong>Generate QR Code</strong>. A QR code and a text secret are displayed.</li>
+        <li>Open your authenticator app, tap <strong>+</strong> or <strong>Add account</strong>, and scan the QR code. Alternatively, enter the secret key manually.</li>
+        <li>Enter the 6-digit code currently shown in your app into the <strong>Activation Code</strong> field.</li>
+        <li>Click <strong>Activate 2FA</strong>. A confirmation message confirms 2FA is now active.</li>
+        <li>From this point, every login will require the 6-digit code from your app.</li>
+      </ol>
+
+      <div class="callout tip">Store your authenticator app backup codes or secret key in a secure password manager in case you lose access to your phone.</div>
+
+      <h3>Disabling 2FA</h3>
+      <ol class="steps">
+        <li>Go to <strong>2FA Setup</strong>.</li>
+        <li>Scroll to <strong>Disable Two-Factor Authentication</strong>.</li>
+        <li>Enter a valid current 6-digit code to confirm it is you.</li>
+        <li>Click <strong>Disable 2FA</strong>. Your account will use password-only login from the next session.</li>
+      </ol>
+
+      <h3>Admin: resetting another user&#39;s 2FA</h3>
+      <ol class="steps">
+        <li>Log in as an admin account.</li>
+        <li>Go to <strong>2FA Setup</strong> and scroll to the <strong>Admin: Reset User 2FA</strong> section.</li>
+        <li>Enter the User ID of the affected account.</li>
+        <li>Click <strong>Reset 2FA for User</strong>. Their 2FA is cleared — they can log in with password only until they set up 2FA again.</li>
+      </ol>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- ── SECURITY OPERATIONS ─────────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+
+    <div id="soc-overview" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Wazuh SOC Dashboard</h2>
+      <p>The <strong>Wazuh SOC Dashboard</strong> is a single-page application that provides complete visibility into your Wazuh SIEM environment. It connects to the Wazuh manager API through a server-side proxy with automatic authentication, so no separate login is required.</p>
+
+      <h3>Accessing the Dashboard</h3>
+      <ol class="steps">
+        <li>From the Mission Control home page, click <strong>Wazuh SOC Dashboard</strong> in the Security Operations section.</li>
+        <li>The dashboard opens as a self-contained SPA with a collapsible sidebar for navigation.</li>
+        <li>Use the <strong>Refresh</strong> button in the top bar to reload data on any page.</li>
+        <li>Use the <strong>Search</strong> box to quickly find agents by name or IP.</li>
+      </ol>
+
+      <h3>Sidebar Navigation</h3>
+      <p>The left sidebar provides links to all 14 views. Click the arrow button to collapse it for more screen space. Pages are organised into the following views:</p>
+      <table class="guide">
+        <thead><tr><th>Page</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Command Center</td><td>Executive KPI overview with charts</td></tr>
+          <tr><td>Agents</td><td>Agent inventory with filtering and drill-down</td></tr>
+          <tr><td>SCA Compliance</td><td>Security Configuration Assessment scores</td></tr>
+          <tr><td>File Integrity</td><td>File change monitoring events</td></tr>
+          <tr><td>Vulnerabilities</td><td>CVE vulnerability scanning results</td></tr>
+          <tr><td>MITRE ATT&amp;CK</td><td>Technique heatmap from Wazuh rules</td></tr>
+          <tr><td>Rules &amp; Decoders</td><td>Wazuh rule and decoder catalogue</td></tr>
+          <tr><td>Events &amp; Alerts</td><td>Real-time alert feed with severity filtering</td></tr>
+          <tr><td>Topology</td><td>Agent distribution charts (OS, version)</td></tr>
+          <tr><td>Threat Intel</td><td>AlienVault OTX integration status</td></tr>
+          <tr><td>SOC Autopilot</td><td>AI-powered case management and response</td></tr>
+          <tr><td>Manager Health</td><td>Wazuh manager daemon and cluster status</td></tr>
+          <tr><td>Groups</td><td>Agent group membership</td></tr>
+          <tr><td>Help</td><td>In-app navigation guide</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="soc-command-center" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Command Center</h2>
+      <p>The Command Center is the default landing page. It provides an at-a-glance executive summary of your entire Wazuh deployment.</p>
+
+      <h3>KPI Tiles</h3>
+      <table class="guide">
+        <thead><tr><th>Tile</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Total Agents</td><td>Number of registered Wazuh agents.</td></tr>
+          <tr><td>Active</td><td>Agents currently connected and reporting.</td></tr>
+          <tr><td>Offline</td><td>Agents not communicating — may need investigation.</td></tr>
+          <tr><td>Vulnerabilities</td><td>Total CVEs detected across all agents.</td></tr>
+          <tr><td>SCA Score</td><td>Average Security Configuration Assessment score (%). Green &ge; 80, amber &ge; 50, red &lt; 50.</td></tr>
+          <tr><td>Threat Index</td><td>Percentage of critical alerts relative to total 24-hour alerts.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Charts</h3>
+      <p>Three doughnut / bar charts are displayed:</p>
+      <ul>
+        <li><strong>Agent Status</strong> — Active / Offline / Never Connected breakdown.</li>
+        <li><strong>OS Distribution</strong> — Bar chart of agents per operating system.</li>
+        <li><strong>Alert Severity (24h)</strong> — Critical / High / Medium / Low alert breakdown over the last 24 hours.</li>
+      </ul>
+    </div>
+
+    <div id="soc-agents" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Agents &amp; Agent Detail</h2>
+      <p>The <strong>Agents</strong> page lists every registered Wazuh agent with status, OS, version and last-seen time.</p>
+
+      <h3>Agent List</h3>
+      <ol class="steps">
+        <li>Navigate to <strong>Agents</strong> in the sidebar.</li>
+        <li>Use the <strong>All / Active / Offline</strong> filter tabs to narrow the list.</li>
+        <li>Click any agent row to drill down into its detail page.</li>
+      </ol>
+      <p>Columns: ID, Name, IP, OS, Status (active/offline badge), Version, Last Seen (relative time).</p>
+
+      <h3>Agent Detail</h3>
+      <p>Clicking an agent opens a detail page with hardware/OS information and five tabs:</p>
+      <table class="guide">
+        <thead><tr><th>Tab</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td>Overview</td><td>Hostname, OS, platform, architecture, IP, manager, registration date, group membership, config status.</td></tr>
+          <tr><td>SCA</td><td>Per-agent Security Configuration Assessment policies with pass/fail counts and score.</td></tr>
+          <tr><td>FIM</td><td>Recent file integrity monitoring events for this agent (file, event type, date).</td></tr>
+          <tr><td>Vulnerabilities</td><td>CVEs affecting this agent with severity, CVSS score, package name and status.</td></tr>
+          <tr><td>Inventory</td><td>Installed packages (name, version) and open ports (IP:port, protocol, state).</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Agent Actions</h3>
+      <ul>
+        <li><strong>Restart</strong> — Sends a restart command to the selected agent.</li>
+        <li><strong>Syscheck</strong> — Triggers an on-demand file integrity scan for the agent.</li>
+      </ul>
+    </div>
+
+    <div id="soc-sca" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> SCA Compliance</h2>
+      <p>Shows Security Configuration Assessment results across all agents.</p>
+
+      <h3>What You See</h3>
+      <ul>
+        <li><strong>Average Compliance KPI</strong> — Fleet-wide mean SCA score, colour-coded (green &ge; 80%, amber &ge; 50%, red &lt; 50%).</li>
+        <li><strong>Policies KPI</strong> — Total number of evaluated SCA policies.</li>
+        <li><strong>Table</strong> — Agent ID, Policy name, Score %, Passed checks, Failed checks.</li>
+      </ul>
+      <p>Click any agent row to jump to that agent's detail page.</p>
+    </div>
+
+    <div id="soc-fim" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> File Integrity Monitoring</h2>
+      <p>Displays recent file integrity monitoring (FIM) events across all agents. FIM detects file additions, modifications and deletions on monitored paths.</p>
+      <p>Columns: Agent ID, File path, Event type (added/modified/deleted), Date.</p>
+    </div>
+
+    <div id="soc-vulnerabilities" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Vulnerabilities</h2>
+      <p>The Vulnerability Detector page aggregates CVE scan results from all agents.</p>
+
+      <h3>KPI Tiles</h3>
+      <p>Four severity counters: <strong>Critical</strong> (red), <strong>High</strong> (amber), <strong>Medium</strong> (blue), <strong>Low</strong> (grey).</p>
+
+      <h3>Vulnerability Table</h3>
+      <p>Columns: CVE identifier, Agent ID, Package name, Severity badge, CVSS score, Status, Title (truncated).</p>
+      <p>If the Vulnerability Detector module is not enabled on the Wazuh server, a message is displayed instead.</p>
+    </div>
+
+    <div id="soc-mitre" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> MITRE ATT&amp;CK</h2>
+      <p>Displays a heatmap grid of MITRE ATT&amp;CK techniques detected by Wazuh rules. Each cell represents one technique; opacity intensity corresponds to the frequency score. Hover over a cell to see the technique description.</p>
+    </div>
+
+    <div id="soc-rules" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Rules &amp; Decoders</h2>
+      <p>Browse the Wazuh rule and decoder catalogue loaded on the manager.</p>
+
+      <h3>Rules Table</h3>
+      <p>Columns: Rule ID, Level (severity 0–15), Description, Group(s). Shows the first 50 rules.</p>
+
+      <h3>Decoders Table</h3>
+      <p>Columns: Name, Parent decoder, Filename. Shows the first 50 decoders.</p>
+    </div>
+
+    <div id="soc-events" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Events &amp; Alerts</h2>
+      <p>Real-time alert feed from the Wazuh manager showing the most recent 100 security events.</p>
+
+      <h3>KPI Tiles</h3>
+      <table class="guide">
+        <thead><tr><th>Tile</th><th>Rule Level Range</th></tr></thead>
+        <tbody>
+          <tr><td>Critical</td><td>Level 12 and above</td></tr>
+          <tr><td>High</td><td>Level 7–11</td></tr>
+          <tr><td>Medium</td><td>Level 4–6</td></tr>
+          <tr><td>Low</td><td>Level 0–3</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alert Table</h3>
+      <p>Columns: Timestamp, Severity badge, Rule ID, Description, Agent name, Group(s).</p>
+      <p>Use the <strong>All / Critical / High / Medium</strong> filter tabs to focus on specific severity levels.</p>
+    </div>
+
+    <div id="soc-topology" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Topology</h2>
+      <p>Visualises the fleet composition with agent count KPIs and two interactive charts:</p>
+      <ul>
+        <li><strong>OS Distribution</strong> — Doughnut chart of agents grouped by operating system.</li>
+        <li><strong>Agent Versions</strong> — Bar chart of agents grouped by Wazuh agent version.</li>
+      </ul>
+      <p>KPI tiles show Total Agents, Active, and Offline counts.</p>
+    </div>
+
+    <div id="soc-threats" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Threat Intelligence</h2>
+      <p>Shows the status of the AlienVault OTX (Open Threat Exchange) integration.</p>
+
+      <h3>KPI Tiles</h3>
+      <p>OTX Status (Active/Inactive), Total IOCs, Malicious IPs, Malicious Domains, File Hashes.</p>
+
+      <h3>Details Panel</h3>
+      <p>Shows integration status badge, rules file size, last update timestamp, IOC count, and the daily refresh schedule (03:00 UTC). OTX indicators are converted into Wazuh rules at level 12.</p>
+    </div>
+
+    <div id="soc-autopilot" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> SOC Autopilot</h2>
+      <p>The SOC Autopilot is an AI-powered security case management system that automatically triages alerts and proposes response actions.</p>
+
+      <h3>Case List</h3>
+      <ul>
+        <li><strong>KPI tiles</strong>: Last 24h cases, Critical count, High count, Awaiting Approval, Resolved, Average Triage Time.</li>
+        <li><strong>Filter tabs</strong>: All, Pending (awaiting_approval), Open, Resolved.</li>
+        <li>Table columns: Case ID, Title, Severity, Status, Alert count, MITRE technique, Last updated.</li>
+      </ul>
+
+      <h3>Case Detail</h3>
+      <p>Click <strong>View</strong> on any case to see full details:</p>
+      <ol class="steps">
+        <li><strong>Header</strong> — Case ID, severity badge, status badge, alert count, creation date, AI confidence score, and MITRE technique mapping.</li>
+        <li><strong>Description</strong> — AI-generated summary of the security incident.</li>
+        <li><strong>Entities</strong> — Extracted indicators (IPs, hostnames, users) with type and role.</li>
+        <li><strong>Response Plan</strong> — AI-proposed actions with risk level, action type, target, and rationale.</li>
+        <li><strong>Executed Actions</strong> — Results of actions that have been run (status: Done, Failed, or Requested).</li>
+        <li><strong>Timeline</strong> — Chronological event log of case activity (triage, investigation, approval, rejection).</li>
+      </ol>
+
+      <h3>Case Actions</h3>
+      <table class="guide">
+        <thead><tr><th>Button</th><th>When Visible</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>Approve</td><td>Status = Awaiting Approval</td><td>Approves the AI-proposed response plan.</td></tr>
+          <tr><td>Reject</td><td>Status = Awaiting Approval</td><td>Rejects the proposed plan; case is archived.</td></tr>
+          <tr><td>Execute Plan</td><td>Status = Approved</td><td>Triggers execution of all proposed response actions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="soc-manager" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Manager Health</h2>
+      <p>Shows the operational status of the Wazuh manager server.</p>
+
+      <h3>Daemon Status</h3>
+      <p>Each Wazuh daemon is displayed as a KPI card showing <strong>Running</strong> (green) or <strong>Stopped</strong> (red). Typical daemons include <code>wazuh-analysisd</code>, <code>wazuh-remoted</code>, <code>wazuh-syscheckd</code>, and others.</p>
+
+      <h3>Manager Info</h3>
+      <p>Displays the manager version, hostname and type.</p>
+
+      <h3>Cluster</h3>
+      <p>Shows cluster status (enabled/disabled) and the current node name.</p>
+    </div>
+
+    <div id="soc-groups" class="section-anchor">
+      <h2><span class="badge monitor">Security</span> Groups</h2>
+      <p>Lists all Wazuh agent groups with the number of agents assigned to each group. Groups control which configuration and rules are applied to sets of agents.</p>
+    </div>
+
+    <!-- ── STATUS LABELS ── -->
+    <div id="status-labels" class="section-anchor">
+      <h2>Status Labels Reference</h2>
+      <table class="guide">
+        <thead><tr><th>Label</th><th>Context</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Critical</td><td>Audit entry</td><td>Missing device, security breach, or photos older than retention threshold</td></tr>
+          <tr><td>Warning</td><td>Audit entry</td><td>Photo count over threshold, sync not confirmed, update status requires review</td></tr>
+          <tr><td>OK</td><td>Audit entry</td><td>No issues detected</td></tr>
+          <tr><td>Ignored</td><td>Audit entry</td><td>Device excluded from compliance scoring</td></tr>
+          <tr><td>Open</td><td>Remediation / Incident</td><td>Identified, not yet actioned</td></tr>
+          <tr><td>In Progress</td><td>Remediation</td><td>Work underway</td></tr>
+          <tr><td>Resolved</td><td>Remediation / Incident</td><td>Finding corrected and documented</td></tr>
+          <tr><td>Accepted Risk</td><td>Remediation</td><td>Risk formally accepted — not corrected</td></tr>
+          <tr><td>Investigating</td><td>Incident</td><td>Incident under investigation</td></tr>
+          <tr><td>Reported</td><td>Incident</td><td>Notified to regulatory authority</td></tr>
+          <tr><td>Closed</td><td>Incident</td><td>Investigation complete, no further action</td></tr>
+          <tr><td>Compliant</td><td>PDF Report</td><td>No critical or warning findings in audit</td></tr>
+          <tr><td>Not Compliant</td><td>PDF Report</td><td>Critical or warning findings present</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── TROUBLESHOOTING ── -->
+    <div id="troubleshooting" class="section-anchor">
+      <h2>Troubleshooting</h2>
+      <table class="guide">
+        <thead><tr><th>Problem</th><th>Likely cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Buttons don't respond on a page</td><td>JavaScript syntax error on that page</td><td>Open browser console (F12) to check for errors. Report to IT admin.</td></tr>
+          <tr><td>Save failed: Internal Server Error</td><td>Missing database column or API error</td><td>Check service logs. May require a schema migration in Supabase SQL Editor.</td></tr>
+          <tr><td>PDF generation fails</td><td>WeasyPrint error or missing data</td><td>Ensure the audit batch has at least one entry. Check device-audit-api logs.</td></tr>
+          <tr><td>Site not appearing in dropdown</td><td>Site marked inactive or not yet created</td><td>Go to Site Onboarding and check the site's Active toggle.</td></tr>
+          <tr><td>Audit entries not saving</td><td>API unreachable or session timeout</td><td>Refresh the page. Check that device-audit-api service is running.</td></tr>
+          <tr><td>Governance tiles show dashes</td><td>No remediation/incident data yet</td><td>Generate remediation actions from an audit first, or log an incident.</td></tr>
+          <tr><td>SharePoint upload fails</td><td>Expired client secret or incorrect permissions</td><td>Use Test Connection in Site Onboarding to diagnose which step fails.</td></tr>
+          <tr><td>Services not reachable</td><td>Services stopped after server restart</td><td>Run: <span class="tag">sudo systemctl restart device-audit-api mission-control-ui</span></td></tr>
+          <tr><td>Locked out — too many login attempts</td><td>Brute-force protection triggered after 5 failed attempts</td><td>Wait 15 minutes for the lockout to expire, then try again. IT admins can restart mission-control-ui to clear all lockouts immediately.</td></tr>
+          <tr><td>2FA code rejected at login</td><td>Clock skew on phone or wrong account in authenticator app</td><td>Ensure your phone clock is set to automatic/network time. Confirm you are scanning the correct QR code for this platform. If still failing, ask an IT admin to reset your 2FA.</td></tr>
+          <tr><td>Lost authenticator app / new phone</td><td>TOTP secrets not backed up</td><td>Contact an IT admin to reset your 2FA via the 2FA Setup admin panel. You can then re-enrol with your new device.</td></tr>
+          <tr><td>Governance tiles show Loading indefinitely</td><td>governance-summary API not responding</td><td>Check that device-audit-api service is active. Try clicking Refresh All. If still loading, check service logs.</td></tr>
+          <tr><td>Audit Recency table is empty</td><td>No completed audits exist for any site yet</td><td>Complete at least one audit batch per site. The table is populated from audit_date records in the device_audits table.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── CHANGELOG ── -->
+    <div id="changelog" class="section-anchor">
+      <h2>Changelog</h2>
+      <p style="color:#64748b;font-size:13px;">Update this section each time features are added or changed.</p>
+
+
+      <h3>June 2026 — v1.1</h3>
+      <ul style="color:#94a3b8;font-size:14px;line-height:1.8;">
+        <li><span class="badge monitor">New</span> <strong>Wazuh SOC Dashboard</strong> — Full single-page SIEM dashboard with 14 views: Command Center, Agents, SCA, FIM, Vulnerabilities, MITRE ATT&CK, Rules &amp; Decoders, Events &amp; Alerts, Topology, Threat Intel, SOC Autopilot, Manager Health, Groups, and Help</li>
+        <li><span class="badge monitor">New</span> <strong>SOC Autopilot</strong> — AI-powered case management with automated triage, response plans, and approve/reject/execute workflow</li>
+        <li><span class="badge monitor">New</span> <strong>Threat Intelligence</strong> — AlienVault OTX integration dashboard with IOC tracking</li>
+        <li><span class="badge tools">New</span> <strong>Wazuh API Proxy</strong> — Server-side authenticated proxy to Wazuh SOC API with automatic token management</li>
+        <li><span class="badge monitor">New</span> Security Operations section added to this User Guide</li>
+      </ul>
+
+      <h3>June 2026 — v1.0</h3>
+      <ul style="color:#94a3b8;font-size:14px;line-height:1.8;">
+        <li><span class="badge tools">New</span> <strong>Two-Factor Authentication (TOTP)</strong> — QR code setup, per-user activate/disable, admin reset, brute-force lockout protection</li>
+        <li><span class="badge compliance">New</span> <strong>Remediation Tracker</strong> — auto-generate and manage audit remediation actions with priority, due date and resolution tracking</li>
+        <li><span class="badge compliance">New</span> <strong>Incident Register</strong> — log and manage ACECQA mandatory incidents with severity, mandatory-reportable flagging and regulatory notification tracking</li>
+        <li><span class="badge compliance">New</span> <strong>Site Policy Configuration</strong> — per-site photo retention thresholds and 9-item ACECQA policy checklist in Site Onboarding</li>
+        <li><span class="badge executive">New</span> <strong>Governance Overview</strong> — 11 KPI tiles for remediation priority/severity, incident severity, and policy completeness in Director View</li>
+        <li><span class="badge executive">New</span> <strong>Per-Site Policy Compliance table</strong> — shows confirmed/9, gaps, and missing policy names per site in Director View</li>
+        <li><span class="badge executive">New</span> <strong>Audit Recency table</strong> — last audit date and overdue flag per site in Director View</li>
+        <li><span class="badge executive">New</span> <strong>NQS Quality Area Mapping</strong> — findings mapped to NQS 2.2, 3.2, 4.2, 7.3 in Director View</li>
+        <li><span class="badge audit">New</span> <strong>CSV Import / Export</strong> — bulk export and upsert-import for device records (26-column CSV)</li>
+        <li><span class="badge audit">Updated</span> PDF reports include site-specific thresholds on cover page and Policy Compliance Checklist section</li>
+        <li><span class="badge audit">Updated</span> Audit classification uses per-site photo retention thresholds — no longer relies on system defaults</li>
+        <li><span class="badge audit">Updated</span> Director dashboard response time reduced from 55s to 2.4s (23&times; faster)</li>
+        <li><span class="badge tools">New</span> This User Guide</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      Mission Control Platform &bull; Internal Use Only &bull; v1.0 &bull; Updated June 2026
+    </div>
+
+  </main>
+</div>
+
+<script>
+// Sidebar active link highlight — uses window scroll (native anchor links work)
+var headings = document.querySelectorAll('.section-anchor');
+var links = document.querySelectorAll('.sidebar a');
+
+function updateActive() {
+  var scrollY = window.scrollY + 80;
+  var active = null;
+  for (var i = 0; i < headings.length; i++) {
+    if (headings[i].getBoundingClientRect().top + window.scrollY <= scrollY) {
+      active = headings[i].id;
+    }
+  }
+  for (var j = 0; j < links.length; j++) {
+    if (links[j].getAttribute('href') === '#' + active) {
+      links[j].classList.add('active');
+    } else {
+      links[j].classList.remove('active');
+    }
+  }
+}
+
+window.addEventListener('scroll', updateActive);
+updateActive();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,210 @@
+{
+  "taskId": "W6-03",
+  "title": "Incident runbook",
+  "generatedAt": "2026-06-06T08:23:03Z",
+  "purpose": "Response playbook for outage, migration, and rollback incidents during the Firebase-to-platform transition.",
+  "scope": {
+    "systems": [
+      "platform-api",
+      "migration workers",
+      "client surfaces (web-admin, portal, android, ios)",
+      "legacy Firebase dependencies"
+    ],
+    "incidentTypes": [
+      "service outage",
+      "migration data discrepancy",
+      "cutover regression requiring rollback"
+    ]
+  },
+  "severityModel": {
+    "sev1": {
+      "definition": "Critical production outage or data integrity risk affecting core request flows.",
+      "targetAckMinutes": 5,
+      "targetMitigationMinutes": 30
+    },
+    "sev2": {
+      "definition": "Major degradation with workarounds; no confirmed data loss.",
+      "targetAckMinutes": 10,
+      "targetMitigationMinutes": 60
+    },
+    "sev3": {
+      "definition": "Minor degradation or non-critical function impact.",
+      "targetAckMinutes": 30,
+      "targetMitigationMinutes": 240
+    }
+  },
+  "roles": {
+    "incidentCommander": "Coordinates triage, ownership, and decision flow.",
+    "operationsLead": "Executes mitigations, rollback toggles, and system checks.",
+    "applicationLead": "Owns app/service diagnosis and code-level remediation.",
+    "communicationsLead": "Publishes stakeholder/customer updates and status timeline.",
+    "scribe": "Captures timeline, decisions, and action items."
+  },
+  "globalResponseFlow": [
+    {
+      "step": 1,
+      "name": "Detect and classify",
+      "actions": [
+        "Validate alert signal against metrics/logs baseline.",
+        "Assign severity (SEV1/SEV2/SEV3) and incident commander.",
+        "Open incident channel and timeline record."
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Stabilize",
+      "actions": [
+        "Pause risky changes/deployments.",
+        "Apply immediate safeguards (traffic shaping, feature flag disable, queue pause).",
+        "Preserve forensic data (logs, traces, failing payload samples)."
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Diagnose and mitigate",
+      "actions": [
+        "Localize fault domain: API, client integration, data pipeline, or legacy dependency.",
+        "Execute incident-type playbook below.",
+        "Track mitigation checkpoints every 10 minutes for SEV1."
+      ]
+    },
+    {
+      "step": 4,
+      "name": "Recover and validate",
+      "actions": [
+        "Run smoke checks for login/request/note/media critical paths.",
+        "Confirm metrics return to baseline thresholds.",
+        "Document customer impact window and residual risk."
+      ]
+    },
+    {
+      "step": 5,
+      "name": "Close and follow-up",
+      "actions": [
+        "Publish final incident summary.",
+        "Create remediation tickets with owners and due dates.",
+        "Schedule post-incident review within 2 business days for SEV1/SEV2."
+      ]
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "P1",
+      "name": "Platform/API outage",
+      "triggers": [
+        "API health probe failures",
+        "5xx error-rate breach",
+        "p95 latency sustained above alert threshold"
+      ],
+      "triageChecks": [
+        "Service health endpoints and dependency reachability",
+        "Recent deploy/config changes",
+        "Database connection pool and queue backlogs"
+      ],
+      "immediateMitigation": [
+        "Route eligible traffic to fallback legacy paths using cutover flags.",
+        "Scale service replicas/workers if resource saturation detected.",
+        "Disable non-critical background workloads to preserve core request throughput."
+      ],
+      "rollbackDecisionCriteria": [
+        "SEV1 persists >15 minutes despite mitigation attempts",
+        "Core request flows still failing above error budget"
+      ],
+      "exitCriteria": [
+        "Health checks stable for 30 minutes",
+        "Error and latency metrics within baseline"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Migration discrepancy incident",
+      "triggers": [
+        "Parity check failure",
+        "Data mismatch reports between legacy and platform records",
+        "Unexpected object/media retrieval failures post-migration"
+      ],
+      "triageChecks": [
+        "Scope affected entities (customers/requests/objects)",
+        "Validate latest migration batch IDs and replay logs",
+        "Confirm schema transform/version assumptions"
+      ],
+      "immediateMitigation": [
+        "Pause migration and downstream sync jobs.",
+        "Lock affected writes if integrity risk is active.",
+        "Use last-known-good snapshot and replay candidate dry run."
+      ],
+      "containmentRules": [
+        "No irreversible data mutation until discrepancy root cause identified.",
+        "All replay operations require dual approval (operations + application lead)."
+      ],
+      "exitCriteria": [
+        "Parity checks pass on remediated scope",
+        "Replay verification report attached"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "Cutover regression with rollback",
+      "triggers": [
+        "User-facing failures immediately after enabling API cutover switch",
+        "Notification/history behavior divergence beyond acceptable threshold"
+      ],
+      "triageChecks": [
+        "Identify impacted surface (web-admin, portal, android, ios)",
+        "Correlate failure to specific feature flag/state transition",
+        "Compare control cohort versus canary behavior"
+      ],
+      "rollbackActions": [
+        "Disable impacted surface cutover flag(s) only.",
+        "Confirm traffic and behavior revert to legacy path.",
+        "Run focused smoke test for recovered path."
+      ],
+      "postRollbackActions": [
+        "Capture failing request/response exemplars.",
+        "Open defect ticket with rollback timestamp and blast radius.",
+        "Re-enter rollout at previous successful stage after fix."
+      ],
+      "exitCriteria": [
+        "Service stabilized and customer journey recovered",
+        "Rollback completion time within 15-minute objective"
+      ]
+    }
+  ],
+  "communications": {
+    "internalCadence": {
+      "sev1": "Every 15 minutes",
+      "sev2": "Every 30 minutes",
+      "sev3": "Hourly"
+    },
+    "requiredUpdates": [
+      "current impact",
+      "mitigation in progress",
+      "next checkpoint ETA",
+      "decision requests (if any)"
+    ],
+    "stakeholderChannels": [
+      "incident bridge channel",
+      "status page/internal ops bulletin",
+      "release stakeholders group"
+    ]
+  },
+  "verificationChecklist": [
+    "Critical workflows pass smoke validation",
+    "Alert storm resolved; no new high-severity alerts for 30 minutes",
+    "Data integrity/parity checks pass for affected scope",
+    "Rollback/cutover flags left in intended post-incident state"
+  ],
+  "postIncidentReviewTemplate": {
+    "fields": [
+      "Incident ID",
+      "Severity",
+      "Impact start/end",
+      "Root cause",
+      "Detection gap",
+      "What worked",
+      "What failed",
+      "Corrective actions",
+      "Owners and due dates"
+    ]
+  }
+}

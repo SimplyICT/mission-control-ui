@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "task_id": "W7-02",
+  "title": "Controlled production canary rollout plan",
+  "generated_at": "2026-06-06T23:45:00.000Z",
+  "objective": "Progressively route production traffic from Firebase to the platform API across all client surfaces with explicit abort criteria and independent per-surface rollback switches.",
+  "inputs": {
+    "feature_flag_plan": "w4-05-incremental-client-cutover-plan.json",
+    "metrics_baseline": "w6-02-metrics-alerts-baseline-latest.json",
+    "incident_runbook": "w6-03-incident-runbook.json",
+    "rollback_strategy": "w2-04-rollback-strategy.json"
+  },
+  "abort_criteria": {
+    "description": "Any single criterion triggers immediate surface rollback via feature flag. Cross-surface P0 triggers global pause.",
+    "thresholds": [
+      {
+        "metric": "API error rate (5xx)",
+        "abort_if": "> 2% over any 5-min window during canary",
+        "source": "w6-02 baseline: target < 1%"
+      },
+      {
+        "metric": "p95 latency",
+        "abort_if": "> 1500ms for any endpoint over 10-min window",
+        "source": "w6-02 baseline: target < 800ms"
+      },
+      {
+        "metric": "Uptime",
+        "abort_if": "Any /v1/health failure for > 2 consecutive minutes",
+        "source": "w6-02 baseline: target 99.9%"
+      },
+      {
+        "metric": "Critical path failure",
+        "abort_if": "Request submit/status/history failure rate > 5% for any cohort",
+        "source": "w4-05 rollback trigger"
+      },
+      {
+        "metric": "Data parity mismatch",
+        "abort_if": "Any request_status_events row count divergence from expected range",
+        "source": "w2-03 integrity check"
+      },
+      {
+        "metric": "Notification delivery",
+        "abort_if": "Push delivery failure rate > 10% over 30-min window",
+        "source": "w6-02 monitoring signal"
+      }
+    ],
+    "max_rollback_time_minutes": 15
+  },
+  "rollout_sequence": [
+    {
+      "phase": 1,
+      "name": "Internal validation (0% user traffic)",
+      "duration": "24h soak",
+      "actions": [
+        "Merge PR #8 (w7-01 migration scripts) to master",
+        "Apply all Supabase migrations to production via CI (supabase db push)",
+        "Run staging_setup.sh --seed against production-equivalent DB; all checks must pass",
+        "Run npm run uat with UAT_SETUP_DB=true against staging; 100% pass required",
+        "Run migrate_firebase_to_supabase.py --dry-run against production Firebase; validate row counts match expectations",
+        "Execute migrate_firebase_to_supabase.py against production (full run); verify W2-03 DB checks pass post-migration",
+        "Deploy platform-api to production (no traffic yet); confirm /v1/health returns 200",
+        "Run npm run smoke with SMOKE_AUTH_MODE=off against production endpoint"
+      ],
+      "exit_criteria": [
+        "All W7-01 UAT checks pass on production DB",
+        "Migration row counts match Firebase export counts (+/- 0 divergence)",
+        "Platform API /v1/health returns 200 for 24h with zero restarts"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Web-admin read-only canary (10% cohort)",
+      "duration": "24h soak minimum",
+      "feature_flags": [
+        "ff.web_admin.api_auth_v1",
+        "ff.web_admin.api_domain_v1"
+      ],
+      "traffic_strategy": "Route 10% of web-admin sessions to platform API auth and domain reads via flag rollout",
+      "actions": [
+        "Enable ff.web_admin.api_auth_v1 at 10% cohort",
+        "Enable ff.web_admin.api_domain_v1 at 10% cohort",
+        "Monitor error rate and latency continuously against abort criteria",
+        "Compare Firebase vs platform API response payload parity for customer/contractor reads",
+        "After 24h healthy soak: escalate to 50%, then 100% with 4h soak per step"
+      ],
+      "rollback": "Set ff.web_admin.api_auth_v1=false and ff.web_admin.api_domain_v1=false; traffic reverts to Firebase immediately"
+    },
+    {
+      "phase": 3,
+      "name": "Portal read canary (10% cohort)",
+      "duration": "24h soak minimum",
+      "feature_flags": [
+        "ff.portal.api_requests_v1",
+        "ff.portal.api_history_v1"
+      ],
+      "dependency": "Phase 2 stable at 100% for >= 24h",
+      "traffic_strategy": "Route 10% of portal sessions to platform API request list and history reads",
+      "actions": [
+        "Enable ff.portal.api_requests_v1 at 10% cohort",
+        "Enable ff.portal.api_history_v1 at 10% cohort",
+        "Verify request list payloads match Firebase read parity",
+        "Monitor realtime update delivery gap (Firestore vs platform); no regression allowed",
+        "After 24h healthy soak: escalate to 50% then 100% with 4h soak per step"
+      ],
+      "rollback": "Set ff.portal.api_requests_v1=false and ff.portal.api_history_v1=false"
+    },
+    {
+      "phase": 4,
+      "name": "Mobile write canary (10% cohort)",
+      "duration": "48h soak minimum",
+      "feature_flags": [
+        "ff.android.api_requests_v1",
+        "ff.ios.api_requests_v1",
+        "ff.android.api_identity_v1",
+        "ff.ios.api_identity_v1"
+      ],
+      "dependency": "Phase 3 stable at 100% for >= 24h",
+      "traffic_strategy": "Route 10% of mobile users to platform API for request creates and status updates",
+      "actions": [
+        "Enable mobile request write flags at 10% cohort for both Android and iOS",
+        "Monitor request submission success rate (must remain >= 99.5%)",
+        "Verify request_status_events written correctly for all new mobile-created requests",
+        "Verify push notifications delivered for status changes",
+        "After 48h healthy soak: escalate to 50% then 100% with 12h soak per step",
+        "On 100%: enable ff.android.api_media_v1 and ff.ios.api_media_v1 for signed media flow"
+      ],
+      "rollback": "Disable all mobile write flags; requests revert to Firebase path"
+    },
+    {
+      "phase": 5,
+      "name": "Full cutover and Firebase shadow disable",
+      "duration": "72h observation window",
+      "dependency": "Phase 4 stable at 100% for >= 48h; all surfaces stable",
+      "actions": [
+        "Enable ff.web_admin.api_activity_v1 (activity summary endpoints)",
+        "Enable ff.portal.realtime_channel_v1 (WebSocket/SSE realtime replacement)",
+        "Disable Firebase read shadow mode across all surfaces",
+        "Confirm Firebase Firestore read traffic drops to near-zero in Firebase console",
+        "Confirm platform API handles 100% of production traffic without degradation",
+        "Record cutover timestamp for deprecation window start"
+      ],
+      "exit_criteria": [
+        "All surfaces stable at 100% platform API for >= 72h",
+        "Firebase Firestore reads at 0 for >= 24h",
+        "All abort criteria metrics within healthy thresholds for >= 72h",
+        "W7-03 post-rollout verification report completed and signed off"
+      ]
+    }
+  ],
+  "monitoring_checklist": [
+    "Alert on /v1/health failure (from w6-02 alerts baseline)",
+    "Dashboard: error rate, p95 latency, active request count per endpoint",
+    "Per-surface feature flag activation state visible in monitoring",
+    "Firebase Firestore read/write counters tracked during parallel operation",
+    "Push notification delivery rate tracked during mobile cutover phases",
+    "request_status_events count vs requests count monitored for divergence"
+  ],
+  "on_call_requirements": {
+    "per_phase": "Senior engineer on-call for first 4h of each new phase activation",
+    "soak_period": "Async monitoring with automated alert coverage during soak windows",
+    "escalation": "Per W6-03 runbook: blocker > 4h notify lead, > 24h escalate to program lead"
+  }
+}

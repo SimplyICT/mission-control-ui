@@ -1,0 +1,153 @@
+{
+  "taskId": "W5-04",
+  "title": "Decommission go/no-go checklist",
+  "generatedAt": "2026-06-06T08:08:18Z",
+  "purpose": "Formal sign-off checklist prior to disabling legacy Firebase paths.",
+  "dependencyEvidence": [
+    {
+      "taskId": "W5-02",
+      "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-02-function-replacement-matrix.json",
+      "status": "review",
+      "requirement": "All production-used Firebase functions mapped to approved replacement owner and interface."
+    },
+    {
+      "taskId": "W5-03",
+      "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-03-storage-parity-report-latest.json",
+      "status": "review",
+      "requirement": "Storage/object parity checks complete, with unresolved manual checks explicitly accepted or remediated."
+    },
+    {
+      "taskId": "W4-05",
+      "artifact": "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-05-incremental-client-cutover-plan.json",
+      "status": "review",
+      "requirement": "Incremental client cutover and rollback switches defined per surface."
+    }
+  ],
+  "goNoGoPolicy": {
+    "rule": "No-Go if any P0/P1 gate is unmet; Go requires all critical gates green and all exception approvals documented.",
+    "decisionAuthorities": [
+      "Engineering lead",
+      "Platform/API owner",
+      "Client release owner",
+      "Operations/on-call lead"
+    ],
+    "decisionWindow": "Within approved maintenance window with active on-call coverage."
+  },
+  "checklist": [
+    {
+      "id": "G1",
+      "category": "Replacement coverage",
+      "criticality": "P0",
+      "check": "Every Firebase function/trigger in the replacement matrix is marked implemented or explicitly deferred with approval.",
+      "evidenceRequired": [
+        "Updated function matrix with owner + status",
+        "Linked implementation PRs/issues for each non-deferred function"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G2",
+      "category": "Client cutover readiness",
+      "criticality": "P0",
+      "check": "All client surfaces (web-admin, portal, android, ios) have validated cutover switches and rollback toggles.",
+      "evidenceRequired": [
+        "Feature-flag config snapshot",
+        "Rollback drill log for each surface"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G3",
+      "category": "Data and object parity",
+      "criticality": "P0",
+      "check": "Storage/object parity checks are complete and no unaccepted high-risk parity gaps remain.",
+      "evidenceRequired": [
+        "Latest parity report",
+        "Manual check signoff notes for previously manual-required checks"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G4",
+      "category": "Observability",
+      "criticality": "P0",
+      "check": "Dashboards and alerts cover API errors, latency, request failures, and notification delivery after cutover.",
+      "evidenceRequired": [
+        "Dashboard links/screenshots",
+        "Alert policy definitions and test trigger outputs"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G5",
+      "category": "Operational rollback",
+      "criticality": "P0",
+      "check": "Rollback procedure is tested end-to-end and target rollback time objective is met.",
+      "evidenceRequired": [
+        "Rollback rehearsal timeline",
+        "Measured recovery time <= 15 minutes"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G6",
+      "category": "Security and access",
+      "criticality": "P1",
+      "check": "Legacy service-account keys/rules identified for retirement and post-cutover key rotation queued.",
+      "evidenceRequired": [
+        "Credential inventory",
+        "Rotation/deletion change tickets"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G7",
+      "category": "Release controls",
+      "criticality": "P1",
+      "check": "Maintenance window, stakeholder comms, and freeze policy are approved.",
+      "evidenceRequired": [
+        "Change calendar entry",
+        "Stakeholder notification template and send log"
+      ],
+      "status": "pending_signoff"
+    },
+    {
+      "id": "G8",
+      "category": "Post-cutover verification",
+      "criticality": "P1",
+      "check": "Smoke tests for login/request/note/media/invoice workflows pass on migrated paths.",
+      "evidenceRequired": [
+        "Test run report with pass/fail summary",
+        "Any residual defect list and mitigation owner"
+      ],
+      "status": "pending_signoff"
+    }
+  ],
+  "signoffTemplate": {
+    "fields": [
+      "Gate ID",
+      "Approver",
+      "Timestamp",
+      "Decision (go/no-go/exception)",
+      "Evidence link",
+      "Notes"
+    ],
+    "minimumApprovalsForGo": 4
+  },
+  "noGoHandling": {
+    "immediateActions": [
+      "Abort legacy-path disablement change.",
+      "Keep all Firebase routes and toggles in current stable state.",
+      "Open incident/change record with blocking gate IDs."
+    ],
+    "reentryCriteria": [
+      "All blocking gates remediated or exception-approved.",
+      "Updated checklist re-reviewed by all decision authorities."
+    ]
+  },
+  "finalDecision": {
+    "state": "pending",
+    "goLiveAuthorized": false,
+    "authorizedBy": []
+  }
+}

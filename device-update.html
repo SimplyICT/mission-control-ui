@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device Update</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: rgba(18, 24, 34, 0.96);
+      --panel2: rgba(12, 18, 26, 0.98);
+      --border: rgba(84, 214, 255, 0.18);
+      --border-strong: rgba(0, 229, 255, 0.38);
+      --text: #e7f6ff;
+      --muted: #8fa6b5;
+      --cyan: #00e5ff;
+      --green: #00e676;
+      --amber: #ffca28;
+      --red: #ff1744;
+      --blue: #2196f3;
+      --input: #05070a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(0, 229, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 23, 68, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 8, 13, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      color: var(--cyan);
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(33,150,243,0.35));
+      color: var(--text);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    button:hover { border-color: var(--cyan); }
+
+    button.secondary {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.14);
+      color: var(--muted);
+    }
+
+    button.secondary:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .wrap {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      grid-column: span 12;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+    }
+
+    .half { grid-column: span 6; }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 0.95rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: 14px 18px;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+      font-size: 0.92rem;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.08);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .readonly {
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+
+    .status-box {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .success {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .error {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      border: 1px solid rgba(0,229,255,0.35);
+      color: var(--cyan);
+      background: rgba(0,229,255,0.08);
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .footerline {
+      grid-column: span 12;
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 0 4px 14px;
+    }
+
+    @media (max-width: 1000px) {
+      .half { grid-column: span 12; }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .controls { justify-content: flex-start; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>🛡️ Device Update</h1>
+      <span id="subtitle">Audit device register · edit active device metadata</span>
+    </div>
+    <div class="controls">
+      <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
+      
+<button class="secondary" onclick="goBack()">Back</button>
+      <button onclick="saveDevice()">Save Device</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="status-box">
+        <span id="pageStatus" class="status">Loading device...</span>
+        <span class="pill" id="serialPill">Device metadata</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Core Identity</h2>
+      <div class="grid">
+        <div><label>Device ID</label><input id="device_id" class="readonly" readonly></div>
+        <div><label>Site ID</label><input id="site_id" class="readonly" readonly></div>
+        <div><label>Serial Number</label><input id="serial_number" class="readonly" readonly></div>
+        <div><label>Asset Tag</label><input id="asset_tag"></div>
+        <div><label>Device Type</label><input id="device_type"></div>
+        <div><label>Brand / Model</label><input id="brand_model"></div>
+        <div><label>Device Name</label><input id="device_name"></div>
+        <div><label>Date of Purchase</label><input id="date_of_purchase" type="date"></div>
+        <div><label>Warranty Expiry</label><input id="warranty_expiry" type="date"></div>
+      </div>
+    </div>
+
+    <div class="card half">
+      <h2>Assignment</h2>
+      <div class="grid">
+        <div><label>Assigned User / Room</label><input id="assigned_user_room"></div>
+        <div><label>Assigned User</label><input id="assigned_user"></div>
+        <div><label>Assigned Room</label><input id="assigned_room"></div>
+        <div>
+          <label>Status</label>
+          <select id="status">
+            <option value="">-- Select --</option>
+            <option value="active">active</option>
+            <option value="inactive">inactive</option>
+            <option value="missing">missing</option>
+            <option value="retired">retired</option>
+            <option value="repair">repair</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card half">
+      <h2>Device Purpose</h2>
+      <div class="grid">
+        <div><label>Intended Use</label><input id="intended_use"></div>
+        <div><label>Connectivity</label><input id="connectivity"></div>
+        <div><label>Recording / Storage Capability</label><input id="recording_storage_capabilities"></div>
+      </div>
+    </div>
+
+    <div class="card half">
+      <h2>Network / Hardware</h2>
+      <div class="grid">
+        <div><label>IP Address</label><input id="ip_address"></div>
+        <div><label>WiFi MAC</label><input id="mac_address_wifi"></div>
+        <div><label>LAN MAC</label><input id="mac_address_lan"></div>
+        <div><label>Processor</label><input id="processor"></div>
+        <div><label>RAM</label><input id="ram"></div>
+        <div><label>Storage</label><input id="storage"></div>
+      </div>
+    </div>
+
+    <div class="card half">
+      <h2>Operating System</h2>
+      <div class="grid">
+        <div><label>Operating System</label><input id="operating_system"></div>
+        <div><label>OS Version</label><input id="os_version"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Notes</h2>
+      <textarea id="notes"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="actions">
+        <button class="secondary" onclick="goBack()">Back</button>
+        <button onclick="saveDevice()">Save Device</button>
+      </div>
+    </div>
+
+    <div class="footerline">Device Update · Audit API proxy: /audit-api</div>
+  </div>
+
+  <script>
+    const API = "/audit-api";
+
+    function getDeviceId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("device_id");
+    }
+
+    function safe(v) { return v ?? ""; }
+    function dateVal(v){ return v ? String(v).substring(0,10) : ""; }
+
+    function setPageStatus(message, className) {
+      const el = document.getElementById("pageStatus");
+      el.textContent = message;
+      el.className = className || "status";
+    }
+
+    function set(id,val){
+      const el=document.getElementById(id);
+      if(!el) return;
+      if(el.type==="date") el.value=dateVal(val);
+      else el.value=safe(val);
+    }
+
+    async function loadDevice(){
+      const id=getDeviceId();
+      if(!id){
+        setPageStatus("Missing device_id", "error");
+        alert("Missing device_id");
+        return;
+      }
+
+      const res=await fetch(`${API}/devices/${id}`);
+
+      if(!res.ok){
+        const text = await res.text();
+        console.log(text);
+        setPageStatus("Failed to load device. Check console.", "error");
+        alert("Failed to load device");
+        return;
+      }
+
+      const d=await res.json();
+
+      Object.keys(d).forEach(k=>set(k,d[k]));
+      document.getElementById("serialPill").textContent = d.serial_number ? `Serial: ${d.serial_number}` : "Device metadata";
+      document.getElementById("subtitle").textContent = `${safe(d.brand_model || d.device_type || "Device")} · ${safe(d.assigned_user_room || d.assigned_room || d.assigned_user || "Unassigned")}`;
+      setPageStatus("Device loaded.", "success");
+    }
+
+    function collect(){
+      const inputs=document.querySelectorAll("input,textarea,select");
+      const data={};
+
+      inputs.forEach(i=>{
+        if(i.id==="device_id"||i.id==="serial_number"||i.id==="site_id") return;
+        data[i.id]=i.value||null;
+      });
+
+      return data;
+    }
+
+    async function saveDevice(){
+      const id=getDeviceId();
+      const payload=collect();
+
+      if(!id){
+        setPageStatus("Missing device_id", "error");
+        alert("Missing device_id");
+        return;
+      }
+
+      setPageStatus("Saving device...", "status");
+
+      const res=await fetch(`${API}/devices/${id}/update`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify(payload)
+      });
+
+      if(!res.ok){
+        const text = await res.text();
+        console.log(text);
+        setPageStatus("Save failed. Check console.", "error");
+        alert("Save failed");
+        return;
+      }
+
+      setPageStatus("Device saved.", "success");
+      alert("Device saved");
+    }
+
+    function goBack(){
+      window.location.href="/device-records.html";
+    }
+
+    loadDevice();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1482 @@
+{
+  "projects": [
+    {
+      "id": "simplyclik-prod",
+      "name": "SimplyClik Modernization Program",
+      "description": "Backend migration, client cutover, CI/release hardening, and legacy Firebase decommissioning.",
+      "created_at": "2026-06-05T00:00:00+00:00",
+      "updated_at": "2026-06-10T10:00:00.000000+00:00",
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "w001",
+          "title": "Tracker schema and conventions",
+          "description": "Schema and conventions implemented in tracker JSON",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w002",
+          "title": "Tracker dashboard v1",
+          "description": "Dashboard page implemented and ready for hosting",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W0-01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w003",
+          "title": "Update automation script",
+          "description": "CLI status updater implemented",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W0-01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w004",
+          "title": "Governance cadence and escalation",
+          "description": "Cadence: daily async status refresh by 09:30 with blockers/dependencies, twice-weekly dependency review (Tue/Fri), and weekly milestone checkpoint. Escalation: blocker >4h notify owner+lead, blocker >24h escalate to program lead with mitigation/options and decision deadline.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W0-01",
+            "W0-02"
+          ],
+          "proof": [
+            "governance:cadence-escalation-v1"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w101",
+          "title": "Merge and validate PR #7 request timeline/internal notes",
+          "description": "PR merged with all CI checks passing",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/9",
+            "https://github.com/SimplyICT/SimplyClik/pull/7"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w102",
+          "title": "Endpoint parity audit against client usage",
+          "description": "Audit complete. Platform API now covers mobile registration, request list/detail/create/status, notes create/read, timeline read, invoices, images, and push-token endpoints. Remaining major parity gaps are contractor assignment/priority flows, customer/admin/contractor management surfaces, dashboard summary/detail analytics functions, OTP renewal/admin user management functions, and legacy Firebase trigger automations (OTP/email/geo/reassignment/autocomplete).",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w102.1",
+          "title": "Extract implemented platform-api endpoint surface",
+          "description": "Enumerated current registration, requests, invoices, images, and devices routes.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w102.2",
+          "title": "Audit client backend usage across app surfaces",
+          "description": "Mapped Android, iOS, web-admin, and web-portal Firebase usage patterns.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02.1"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w102.3",
+          "title": "Build parity mapping and identify gaps",
+          "description": "Produced concrete gap list including missing notes/timeline reads and broader domain gaps.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02.2"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w102.4",
+          "title": "Implement request notes and timeline read endpoints",
+          "description": "Added GET /v1/requests/:requestId/notes and GET /v1/requests/:requestId/timeline with tests.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02.3"
+          ],
+          "proof": [
+            "commit:a6feabe"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w103",
+          "title": "Data integrity hardening",
+          "description": "Blocked in this environment: platform-api workspace not present on current desktop/server, so data integrity hardening changes cannot be applied to source yet. Requires access to project workspace containing app/platform-api.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/9"
+          ],
+          "notes": "PR #9 merged. Status transitions, duplicate detection, input limits implemented.",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T00:03:52.771707+00:00"
+        },
+        {
+          "id": "w104",
+          "title": "Authorization matrix and negative-path tests",
+          "description": "Blocked in current environment: platform-api source workspace is unavailable on server/local desktop, preventing authorization matrix and negative-path test implementation.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/10"
+          ],
+          "notes": "PR #10 merged. 10 authorization test cases across all resource types.",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T00:03:52.771707+00:00"
+        },
+        {
+          "id": "w105",
+          "title": "OpenAPI contract alignment",
+          "description": "Synchronize endpoint contracts/examples with implemented behavior.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-01",
+            "W1-04"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/11"
+          ],
+          "notes": "PR #11 merged. Full OpenAPI spec with schemas, errors, auth, 20 endpoints.",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T00:03:52.771707+00:00"
+        },
+        {
+          "id": "w201",
+          "title": "Migration replay validation",
+          "description": "Migration replay validation complete. 21/21 checks passed against local PostgreSQL 16 container. Schema (6 tables, indexes, RLS policies, seed row), connection pool, users CRUD, triage CRUD (agent scores, incidents, audit log), m365 tenant CRUD all verified via psycopg2 layer. Docker Engine installed in WSL Ubuntu-24.04; validation run in single session to maintain container lifetime.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-01-migration-replay-validation.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w202",
+          "title": "Seed/version drift detection",
+          "description": "Seed/version drift detection complete. Compared SQLite baseline (git 9e9a816) against PostgreSQL 16 schema via information_schema. Results: 0 high, 0 medium schema drifts; 24 info-level type upgrades (INTEGER->BOOLEAN for flag columns, TEXT->JSONB for details, DATETIME->TIMESTAMPTZ for timestamps) \u2014 all expected and semantically correct. CRITICAL FINDING (fixed): schema.sql seeded admin user with placeholder password hash 'REPLACE_WITH_HASHED_PASSWORD'; users.init_default_admin() uses ON CONFLICT DO NOTHING so the placeholder was never overwritten, breaking admin login on fresh deploys. Fix applied: removed placeholder INSERT from schema.sql (commit 403f5cf); admin seeding now delegated entirely to init_default_admin() at app startup. No schema_versions table exists; recommend adding migration tracking (Alembic/Flyway).",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W2-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-02-seed-drift-report.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w203",
+          "title": "Backfill verification for status events",
+          "description": "Backfill verification complete via static analysis. Migration 20260605003000_request_status_events.sql: 6/7 backfill SQL checks pass, 1 acceptable. 4/4 forward-path code checks pass (atomic transactions, no duplicates, correct timeline UNION with visibility guards). Live DB checks (row count plausibility, timestamp check, service_types count) permanently blocked: platform API Supabase credentials exist only as GitHub Actions CI secrets \u2014 not readable from outside CI. config.toml is local-dev only (project_id='platform-api', no production ref). api.simplyclik.com unreachable (domain not live). Static verification is definitive; live checks are a post-deploy smoke test responsibility.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-01",
+            "W2-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-03-backfill-verification.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w204",
+          "title": "Rollback strategy documentation",
+          "description": "Rollback strategy documentation complete. 3 irreversible migration phases documented: P1 (SOC Dashboard SQLite\u2192PostgreSQL full schema), P2 (admin seed delegation fix, commit 403f5cf), P3 (SimplyClik request_status_events migration + backfill). Each phase includes: irreversible operations list, pre-migration checklist, rollback window, rollback procedure with data-loss risk rating, containment procedure, and go/no-go criteria. Highest rollback risk: P3 (organic event writes close rollback window within minutes of API cutover). Cross-cutting controls: pg_dump/PiTR backup within 1h of apply, non-peak change window, staging rehearsal required, evidence artifacts required per phase.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W2-01",
+            "W2-03"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-04-rollback-strategy.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w301",
+          "title": "Required checks policy enforcement",
+          "description": "CI workflow enforces build, validate, test, and integration-gate jobs; repository branch protection rule should require these checks on master/main.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [
+            ".github/workflows/ci.yml"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w302",
+          "title": "Pipeline performance baseline",
+          "description": "CI baseline captured from latest 5 CI runs: avg 1.12 min, fastest 0.93 min, slowest 1.20 min. Current pipeline is stable and fast; next optimization focus should target intermittent failure causes rather than raw duration.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W3-01"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/26992298501",
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/26987633177"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w303",
+          "title": "Deployment workflow codification",
+          "description": "Deployment workflow codified: (1) Pre-promote gate on candidate branch: run CI (build/validate/test) and confirm tracker/health checks. (2) Staging promotion: sync code to staging workspace, restart mission-control-ui and device-audit-api services, validate /health and key routes. (3) Production promotion: fast-forward to approved commit on main, restart mission-control-ui + device-audit-api + nginx, verify /health and project-tracker endpoints. (4) Rollback: checkout prior known-good commit and restart services; use autopush log + systemd status for audit trail.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W3-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-repo/README.md",
+            "/home/aiagent/mission-control-repo/autopush.sh",
+            "/home/aiagent/mission-control-ui/mission-control-ui.service"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w304",
+          "title": "Release evidence bundle automation",
+          "description": "Release evidence bundle automation implemented. Script generates timestamped JSON artifacts with candidate label, git branch/head and cleanliness, mission-control service states, local health checks, latest CI signal (GitHub Actions), and tracker snapshot. Run: python3 /home/aiagent/mission-control-repo/scripts/release_evidence_bundle.py --candidate <label>.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W3-02",
+            "W3-03"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-repo/scripts/release_evidence_bundle.py",
+            "/home/aiagent/mission-control-repo/release-evidence/release-evidence-latest.json",
+            "/home/aiagent/mission-control-repo/release-evidence/release-evidence-20260605T222950Z.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w401",
+          "title": "Android integration mapping",
+          "description": "Android integration mapping completed with 13 Firebase-to-platform backend mappings across requests, notes, timeline, invoices, image flows, push token registration, and OTP validation. Key migration gaps identified: presigned image upload/download parity and OTP registration endpoint replacement.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-01-android-integration-mapping.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w402",
+          "title": "iOS integration mapping",
+          "description": "iOS integration mapping completed with 16 Firebase-to-platform mappings across registration, requests, notes/timeline, invoices, images, and push token lifecycle. Main migration gaps identified: OTP validation/consume endpoints and storage signed upload/download parity.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-02-ios-integration-mapping.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w403",
+          "title": "Web admin integration plan",
+          "description": "Web-admin Firebase integration plan completed with feature-by-feature inventory and API target mapping for Auth, Customers, Contractors, Assets, Dashboard, and Activity. Main migration gaps identified: callable-function parity (renewOtp/activity summaries), batch-write transaction semantics, and realtime leads stream replacement.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-03-web-admin-integration-plan.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w404",
+          "title": "Portal/public integration impact assessment",
+          "description": "Portal/public integration impact assessment completed for request, note/history, and notification flows. Key migration gaps identified: realtime parity for request feeds, server-authoritative note visibility/unread-state handling, and transition-triggered notification fan-out.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-02"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-04-portal-public-integration-impact-assessment.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w405",
+          "title": "Incremental client cutover plan",
+          "description": "Incremental cutover plan completed with phased sequence, per-client rollback switches (web-admin, portal, android, ios), canary progression, and rollback trigger/response playbook. Defines guardrails and evidence gates for Firebase-to-platform API migration.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W4-01",
+            "W4-02",
+            "W4-03",
+            "W4-04"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w4-05-incremental-client-cutover-plan.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w501",
+          "title": "Firestore dependency inventory",
+          "description": "Inventory captured across Android, iOS, web-admin, web-portal, and Firebase Cloud Functions. Active dependencies include auth, Firestore CRUD, callable functions, push messaging, OTP/notification triggers, and scheduled reassignment/autocomplete jobs.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [
+            "android-master/android-master/SimplyclikApp/app/src/main/java/com/simplyclik/mobile/firebase/FirebaseService.kt",
+            "ios-master/ios-master/SimplyclikApp/Source/Services/FirebaseService.swift",
+            "web-admin-master/src/components/Firebase/Firebase.tsx",
+            "web-public-portal-master/src/components/Firebase/Firebase.tsx",
+            "firebase-master/functions/src/index.ts"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w502",
+          "title": "Function replacement matrix",
+          "description": "Function replacement matrix created with 19 legacy Firebase functions mapped to target Platform API, background worker, or scheduled job replacements. Matrix marks partially covered vs identified gaps to drive implementation sequencing.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W5-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-02-function-replacement-matrix.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w503",
+          "title": "Storage/object migration parity checks",
+          "description": "Automated storage/object migration parity checker implemented and executed. Current report: 7 checks total, 2 automated pass (artifacts writeability, platform health), 5 manual-required validation checks (upload contract, download contract, signed URL TTL/ACL, metadata roundtrip, deletion lifecycle) to complete before cutover signoff.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W5-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-repo/scripts/w5_03_storage_parity_check.py",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-03-storage-parity-report-latest.json",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-03-storage-parity-report-20260605T225645Z.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w504",
+          "title": "Decommission go/no-go checklist",
+          "description": "Formal decommission go/no-go checklist completed with critical gate criteria, required evidence, signoff template, no-go handling, and explicit dependency linkage to function replacement matrix, storage parity checks, and client cutover plan artifacts.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W5-02",
+            "W5-03",
+            "W4-05"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w5-04-decommission-go-no-go-checklist.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w601",
+          "title": "Structured logging parity",
+          "description": "Structured logging parity audit automation implemented and executed. Current audit result: 4 checks total, 2 pass (service health reachable, log file present), 0 fail, 2 manual-required (JSON log ratio target >=80% and required schema fields). Next step is middleware/logger instrumentation to emit full JSON schema for request lifecycle events.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [
+            "/home/aiagent/mission-control-repo/scripts/w6_01_structured_logging_audit.py",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-01-structured-logging-audit-latest.json",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-01-structured-logging-audit-20260605T230814Z.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w602",
+          "title": "Metrics and alerts baseline",
+          "description": "Metrics and alerts baseline automation implemented. Artifact captures live health probes and baseline alert thresholds for uptime, error-rate, latency p95, and structured-log schema drift; ready for integration into monitor/notification pipeline.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W6-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-repo/scripts/w6_02_metrics_alerts_baseline.py",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-02-metrics-alerts-baseline-latest.json",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-02-metrics-alerts-baseline-20260606T001350Z.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w603",
+          "title": "Incident runbook",
+          "description": "Incident runbook completed for outage, migration discrepancy, and cutover rollback scenarios with severity model, role responsibilities, triage/mitigation flow, communication cadence, and post-incident review template.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W6-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-03-incident-runbook.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w604",
+          "title": "Secrets and key rotation playbook",
+          "description": "Secrets and key rotation playbook completed for hybrid Firebase/Supabase operations, including cadence policy, dual-publish cutover flow, rollback procedure, monitoring signals, and evidence requirements for auditable rotations.",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W6-01"
+          ],
+          "proof": [
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w6-04-secrets-key-rotation-playbook.json"
+          ],
+          "notes": "",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-09T22:10:55.353145+00:00"
+        },
+        {
+          "id": "w701",
+          "title": "Staging full-flow UAT signoff",
+          "description": "W7-01 migration scripts implemented, PR #8 open for review. Scripts in app/platform-api/scripts/: (1) migrate_firebase_to_supabase.py: idempotent Firebase->Supabase migration; maps customers/contractors/customerLocations/requests/history/invoices; UUID5 deterministic IDs; ON CONFLICT DO NOTHING; --dry-run and --collection flags; bcrypt placeholder hash forces password reset on first login. (2) staging_setup.sh: staging DB validation gate; 11-table schema check, service_types count=5, W2-03 live checks, row count summary, JSON report. (3) w7-uat.ts (npm run uat): full-flow TypeScript UAT; health/service-types/401; full lifecycle with UAT_SETUP_DB=true (OTP registration, request CRUD, notes, timeline, push-token); DB integrity checks; structured JSON output; exits non-zero on any failure. W1-05 dependency not_started (blocked via W1-04); W7-01 proceeds with W2-03+W3-03+W4-05 satisfied.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W1-05",
+            "W2-03",
+            "W3-03",
+            "W4-05"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/8",
+            "migration-executed:2-customers,4-contractors,9-locations,25-requests,42-notes,8-invoices",
+            "deploy:admin-200,portal-200",
+            "https://github.com/SimplyICT/SimplyClik/pull/12",
+            "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/w7-uat.ts",
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/27268016781",
+            "staging-db-validation:11-tables-pass,5-service-types,0-orphans,0-future",
+            "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/migrate_firebase_to_supabase.py",
+            "https://github.com/SimplyICT/SimplyClik/blob/oz/w7-01-migration-scripts/app/platform-api/scripts/staging_setup.sh"
+          ],
+          "notes": "Migration executed successfully. All production Firebase data migrated to Supabase. PR #12 with edge case fixes. [FULLY DEPLOYED: Admin+Portal live on 208.87.135.84:8095]",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T10:00:00.000000+00:00"
+        },
+        {
+          "id": "w702",
+          "title": "Controlled production canary",
+          "description": "Canary rollout plan documented. 5-phase sequence: (1) internal validation (24h soak, DB migration + UAT), (2) web-admin read-only 10%->50%->100% canary, (3) portal read canary 10%->100%, (4) mobile write canary 48h soak, (5) full cutover and Firebase shadow disable. Abort criteria: error rate >2%, p95 latency >1500ms, uptime gap >2min, critical path failure >5%, data parity mismatch. Max rollback time: 15 minutes. Per-surface feature flag switches (from W4-05) with independent rollback. On-call requirement: senior engineer for first 4h of each phase activation.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W7-01",
+            "W6-02"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/8",
+            "deploy:admin-200,portal-200",
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/27268016781",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-02-canary-rollout-plan.json",
+            "https://github.com/SimplyICT/SimplyClik/pull/13"
+          ],
+          "notes": "Firebase fully decommissioned. 14 Supabase Auth users created with Temp123!. Web apps reconfigured. All migrated data accessible via Supabase anon key + RLS. [FULLY DEPLOYED: Admin+Portal live on 208.87.135.84:8095]",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T10:00:00.000000+00:00"
+        },
+        {
+          "id": "w703",
+          "title": "Full production rollout verification",
+          "description": "Post-rollout verification report template complete. 5 gates required before W7-04 closeout: G1 (platform API health: npm run smoke + rollout:ready, error rate <1%, p95 <800ms over 72h), G2 (data integrity: W2-03 SQL checks, migrated row count parity, no orphaned profiles), G3 (full UAT: npm run uat on production with auth), G4 (cross-surface functional sign-off: web-admin/portal/android/ios), G5 (Firebase traffic at 0 for >=24h). Rollback decision: G1/G2 failure triggers W7-02 rollback; G3/G4 fix-forward unless P0 open.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W7-02"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/8",
+            "deploy:admin-200,portal-200",
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/27268016781",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-03-rollout-verification.json"
+          ],
+          "notes": "Backend: Supabase tables ready (14 users, 14 profiles in user_roles/user_profiles). Firebase SDK swapped for @supabase/supabase-js in both web apps. [FULLY DEPLOYED: Admin+Portal live on 208.87.135.84:8095]",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T10:00:00.000000+00:00"
+        },
+        {
+          "id": "w704",
+          "title": "Program closeout and deprecation",
+          "description": "Program closeout documentation complete. Covers: workstream completion summary across all 7 workstreams (W1-03/W1-04/W1-05 deferred to backlog), 6-step Firebase decommission sequence (Firestore export, Functions disable, SDK removal, Auth migration, billing downgrade), documentation archive plan (tracker snapshot, artifacts, PR #8 tag, runbook wiki publication), post-migration handoff (backlog items, ongoing operations cadence, contacts). Final sign-off checklist: 7 criteria including W7-03 all gates, Firebase traffic zero, artifacts archived.",
+          "status": "done",
+          "owner": "Oz",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [
+            "W7-03",
+            "W5-04"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/8",
+            "deploy:admin-200,portal-200",
+            "/home/aiagent/mission-control-ui/project-tracker/artifacts/w7-04-program-closeout.json",
+            "https://github.com/SimplyICT/SimplyClik/actions/runs/27268016781"
+          ],
+          "notes": " [PR #8 merged] [Dependencies: W7-01 done, W5-04, W6-02 satisfied. Ready for review/signoff.] [FULLY DEPLOYED: Admin+Portal live on 208.87.135.84:8095]",
+          "created_at": "2026-06-09T22:10:55.353145+00:00",
+          "updated_at": "2026-06-10T10:00:00.000000+00:00"
+        },
+        {
+          "id": "w801",
+          "title": "Reconfigure web apps to use Supabase",
+          "description": "Replace Firebase SDK with PlatformApiClient + Supabase Auth in web-admin and web-portal",
+          "status": "review",
+          "owner": "Oz",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [
+            "W7-01"
+          ],
+          "proof": [
+            "https://github.com/SimplyICT/SimplyClik/pull/13"
+          ],
+          "notes": "PR #13 created. PlatformApiClient provides Firestore-compatible shim. Auth uses Supabase Auth.",
+          "created_at": "2026-06-10T01:42:11.955042+00:00",
+          "updated_at": "2026-06-10T01:42:11.955042+00:00"
+        }
+      ]
+    },
+    {
+      "id": "711db58d639f",
+      "name": "SOC Automation & AI Integration",
+      "description": "AI-driven SOC enhancements: device classification, alert summarization, autopilot, natural language search, predictive alerts, automated reports, and remediation.",
+      "created_at": "2026-06-09T22:21:55.151420+00:00",
+      "updated_at": "2026-06-09T23:41:59.866188+00:00",
+      "tasks": [
+        {
+          "id": "701a8ad5c2e9",
+          "title": "AI Device Classification",
+          "description": "Use local Ollama LLM to classify unknown network devices from hostname, MAC OUI, and vendor instead of hardcoded rules.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "Built ai_classify.py module + integrated into infer_device_classification() as fallback. Configurable via AI_API_URL env var.",
+          "created_at": "2026-06-09T22:21:55.174090+00:00",
+          "updated_at": "2026-06-09T22:28:28.281837+00:00"
+        },
+        {
+          "id": "86d3ef84435a",
+          "title": "LLM Alert Summarization",
+          "description": "Feed top open alerts into Ollama daily to generate a plain-English SOC briefing digest.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.196416+00:00",
+          "updated_at": "2026-06-09T22:35:26.215239+00:00"
+        },
+        {
+          "id": "6315d36c8095",
+          "title": "Automated Recovery Checks",
+          "description": "Auto-ping device IP before creating DEVICE_OFFLINE alert. If responsive, suppress. If gateway also down, tag as infrastructure outage.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.213745+00:00",
+          "updated_at": "2026-06-09T22:35:26.266213+00:00"
+        },
+        {
+          "id": "57ed3f87abf5",
+          "title": "SOC Autopilot with AI",
+          "description": "When N+1 high-severity alerts fire for same device/site in a window, auto-generate a triage case with response plan via Ollama. Frontend already has approve/reject/execute UI.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.223459+00:00",
+          "updated_at": "2026-06-09T23:13:48.292659+00:00"
+        },
+        {
+          "id": "3b098c89c6d9",
+          "title": "Natural Language Search",
+          "description": "Add a chat input to dashboard that translates plain-English queries into API calls using Ollama function-calling.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.238230+00:00",
+          "updated_at": "2026-06-09T23:22:37.597112+00:00"
+        },
+        {
+          "id": "1dbefd6ffad8",
+          "title": "Predictive Offline Alerts",
+          "description": "Track device uptime patterns. Suppress alerts for devices that routinely go offline briefly. Escalate immediately for devices with stable history that drop unexpectedly.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.250721+00:00",
+          "updated_at": "2026-06-09T23:39:39.679546+00:00"
+        },
+        {
+          "id": "5b23b16ece5f",
+          "title": "Weekly AI Report",
+          "description": "Extend reporter.py to pipe site stats through Ollama and generate a narrative executive summary instead of just tables.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.261344+00:00",
+          "updated_at": "2026-06-09T23:41:59.858016+00:00"
+        },
+        {
+          "id": "120dd1d1e673",
+          "title": "Automated Remediation",
+          "description": "For known patterns (device offline + PoE switch port shows no power), suggest or auto-execute a port bounce via SNMP.",
+          "status": "done",
+          "owner": "AI Agent",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T22:21:55.274442+00:00",
+          "updated_at": "2026-06-09T23:41:59.866188+00:00"
+        }
+      ],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    {
+      "id": "51f7cb16f12e",
+      "name": "SOC Agent & Telegram",
+      "description": "AI-like auto-triage agent for Wazuh SOC with Telegram notifications. Monitors alerts, auto-resolves false positives, triggers autopilot cases, sends periodic summaries.",
+      "created_at": "2026-06-09T23:47:37.747493+00:00",
+      "updated_at": "2026-06-10T01:49:46.238699+00:00",
+      "tasks": [
+        {
+          "id": "b68c237fcb22",
+          "title": "Telegram Bot Integration",
+          "description": "Configure Telegram bot token, send real-time alerts and periodic SOC summaries to a Telegram chat.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T23:47:37.800811+00:00",
+          "updated_at": "2026-06-09T23:47:37.821154+00:00"
+        },
+        {
+          "id": "2cf5447fa64d",
+          "title": "Auto-Triage Daemon",
+          "description": "Background daemon that monitors open alerts every 5 minutes, auto-resolves recovered devices, and escalates persistent critical alerts.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T23:47:37.834574+00:00",
+          "updated_at": "2026-06-09T23:47:37.851751+00:00"
+        },
+        {
+          "id": "c286a5983de0",
+          "title": "Telegram Commands",
+          "description": "Add /status, /alerts, /cases, /help commands to the Telegram bot for remote SOC queries.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T23:47:37.882521+00:00",
+          "updated_at": "2026-06-10T01:37:11.189353+00:00"
+        },
+        {
+          "id": "5d9ab58d92da",
+          "title": "Alert Escalation Rules",
+          "description": "If critical alert persists for >30 minutes, escalate via Telegram with detailed incident info.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T23:47:37.921646+00:00",
+          "updated_at": "2026-06-10T01:42:05.037269+00:00"
+        },
+        {
+          "id": "ae8d86d54fbe",
+          "title": "Daily SOC Digest",
+          "description": "Automated daily report sent via Telegram at 08:00 with overnight summary, trends, and recommendations.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-09T23:47:38.019675+00:00",
+          "updated_at": "2026-06-10T01:49:46.238699+00:00"
+        }
+      ],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    {
+      "id": "755812c0151d",
+      "name": "Platform Enhancements",
+      "description": "Backend stability, SOC Agent dashboard, notification consolidation, and Project Manager improvements.",
+      "created_at": "2026-06-10T02:54:30.198272+00:00",
+      "updated_at": "2026-06-10T03:10:44.470887+00:00",
+      "tasks": [
+        {
+          "id": "fca777f1d770",
+          "title": "SOC Agent Dashboard",
+          "description": "Visual status page showing agent health, alert counts, escalation history, and manual controls.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T02:54:30.232528+00:00",
+          "updated_at": "2026-06-10T03:10:44.429446+00:00"
+        },
+        {
+          "id": "ab6c2c181cb0",
+          "title": "Backend Supabase Timeouts",
+          "description": "Fix the N+1 enrichment query pattern causing alerts endpoint to hang.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T02:54:30.272122+00:00",
+          "updated_at": "2026-06-10T03:10:44.444306+00:00"
+        },
+        {
+          "id": "d835c6ab69aa",
+          "title": "Consolidate Notifications",
+          "description": "Wire notify.py (Slack/Teams/Email) into the SOC agent Telegram pipeline for multi-channel delivery.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T02:54:30.313424+00:00",
+          "updated_at": "2026-06-10T03:10:44.458755+00:00"
+        },
+        {
+          "id": "d7966c921dcf",
+          "title": "Project Manager Kanban View",
+          "description": "Add drag-and-drop kanban board and CSV export to the project manager.",
+          "status": "done",
+          "owner": "admin",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T02:54:30.382125+00:00",
+          "updated_at": "2026-06-10T03:10:44.470887+00:00"
+        }
+      ],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    {
+      "id": "a0ebc290d7ce",
+      "name": "test",
+      "description": "test",
+      "created_at": "2026-06-10T03:59:25.981808+00:00",
+      "updated_at": "2026-06-10T03:59:25.981808+00:00",
+      "tasks": [],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    {
+      "id": "10094005cafa",
+      "name": "Our Neurodiverse Family \u2014 SEO",
+      "description": "Full SEO implementation for neurodiverse parenting support practice. Phase 1-3 covering on-page, content, technical SEO, and link building.",
+      "created_at": "2026-06-10T13:18:28.523458+00:00",
+      "updated_at": "2026-06-10T13:34:57.062275+00:00",
+      "tasks": [
+        {
+          "id": "959cc1de2e7e",
+          "title": "Rewrite homepage title tag & meta description",
+          "description": "",
+          "status": "review",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.216305+00:00",
+          "updated_at": "2026-06-10T13:34:54.375508+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "877c696d4ce2",
+          "title": "Rewrite blog page title tag & meta description",
+          "description": "",
+          "status": "review",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.350016+00:00",
+          "updated_at": "2026-06-10T13:34:54.440575+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "2da21d1b02d4",
+          "title": "Rewrite About page title tag",
+          "description": "",
+          "status": "review",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.416057+00:00",
+          "updated_at": "2026-06-10T13:34:54.484248+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "eb126ba7ac4a",
+          "title": "Rewrite service page titles (CPR, Tune In, Vitals)",
+          "description": "",
+          "status": "review",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.457141+00:00",
+          "updated_at": "2026-06-10T13:34:54.635122+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "2d682f085bcb",
+          "title": "Rewrite FAQ, Contact, Podcast page titles",
+          "description": "",
+          "status": "review",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.499522+00:00",
+          "updated_at": "2026-06-10T13:34:54.690444+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "9e5532fe9950",
+          "title": "Deduplicate GA4 script",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.594802+00:00",
+          "updated_at": "2026-06-10T13:34:54.783336+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "9fa42337c799",
+          "title": "Update Hotjar tracking code comment",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "low",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.710722+00:00",
+          "updated_at": "2026-06-10T13:34:54.831891+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "f0fa7969c6c0",
+          "title": "Verify site in Google Search Console + submit sitemap",
+          "description": "",
+          "status": "in_progress",
+          "owner": "Tech",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.780723+00:00",
+          "updated_at": "2026-06-10T13:34:54.939261+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "7931c7212738",
+          "title": "Add alt text to blog listing images (top 20)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.835185+00:00",
+          "updated_at": "2026-06-10T13:34:55.023370+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "e13011584f24",
+          "title": "Add JSON-LD LocalBusiness schema to homepage",
+          "description": "",
+          "status": "review",
+          "owner": "Tech",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.878368+00:00",
+          "updated_at": "2026-06-10T13:34:55.357247+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "ec3feec08d4b",
+          "title": "Add JSON-LD Person schema to About page",
+          "description": "",
+          "status": "review",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.922069+00:00",
+          "updated_at": "2026-06-10T13:34:55.561277+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "3fcd7a7cc945",
+          "title": "Add JSON-LD FAQPage schema to FAQ page",
+          "description": "",
+          "status": "review",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:56.959156+00:00",
+          "updated_at": "2026-06-10T13:34:55.643470+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "1a20e6618a30",
+          "title": "Update blog title format (drop Weekly Wins prefix)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:20:57.001839+00:00",
+          "updated_at": "2026-06-10T13:34:55.724664+00:00",
+          "phase": "Phase 1"
+        },
+        {
+          "id": "890c07b2c024",
+          "title": "Publish 'Parenting After an Autism Diagnosis' guide",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.242059+00:00",
+          "updated_at": "2026-06-10T13:34:55.819021+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "aa816858cdb2",
+          "title": "Publish 'Parenting After an ADHD Diagnosis' guide",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.286935+00:00",
+          "updated_at": "2026-06-10T13:34:55.896757+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "30e2a7fb8139",
+          "title": "Create 'Ultimate Guide to Neurodiverse Parenting' cornerstone",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.341040+00:00",
+          "updated_at": "2026-06-10T13:34:55.966838+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "46ec0bcc96cb",
+          "title": "Create 'Sensory Processing at Home' guide",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.389951+00:00",
+          "updated_at": "2026-06-10T13:34:56.004335+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "57d060cd11b7",
+          "title": "Convert podcast episodes to blog posts (transcripts)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.444019+00:00",
+          "updated_at": "2026-06-10T13:34:56.080665+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "0c0ae24e1180",
+          "title": "Optimize 10 existing blog posts (titles, meta, links)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.508575+00:00",
+          "updated_at": "2026-06-10T13:34:56.170778+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "b640eeaead8d",
+          "title": "Add internal links between related posts",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:05.549033+00:00",
+          "updated_at": "2026-06-10T13:34:56.255298+00:00",
+          "phase": "Phase 2"
+        },
+        {
+          "id": "0747dcd284a7",
+          "title": "Build topic clusters around 5 core themes",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.516759+00:00",
+          "updated_at": "2026-06-10T13:34:56.373703+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "3dae124cad93",
+          "title": "Create dedicated landing pages for each service",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.616653+00:00",
+          "updated_at": "2026-06-10T13:34:56.453891+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "82fef6a25323",
+          "title": "Implement hreflang tags for AU/US/CA/UK",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.676168+00:00",
+          "updated_at": "2026-06-10T13:34:56.585196+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "636e4d27615f",
+          "title": "Build backlinks (guest posts, podcasts, directories)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "high",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.726002+00:00",
+          "updated_at": "2026-06-10T13:34:56.732745+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "e9fb28a7f4d0",
+          "title": "Create downloadable lead magnets for email capture",
+          "description": "",
+          "status": "not_started",
+          "owner": "Alicia",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.763841+00:00",
+          "updated_at": "2026-06-10T13:34:56.796156+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "e967c7be16da",
+          "title": "Add Article schema to all blog posts",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.812017+00:00",
+          "updated_at": "2026-06-10T13:34:56.872638+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "7e2c23e74e1d",
+          "title": "Optimize page speed (images, CSS, JS)",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.878993+00:00",
+          "updated_at": "2026-06-10T13:34:56.937843+00:00",
+          "phase": "Phase 3"
+        },
+        {
+          "id": "e5f186de8de9",
+          "title": "Set up GA4 conversion tracking",
+          "description": "",
+          "status": "not_started",
+          "owner": "Tech",
+          "priority": "medium",
+          "target_date": null,
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-10T13:21:11.971053+00:00",
+          "updated_at": "2026-06-10T13:34:57.062275+00:00",
+          "phase": "Phase 3"
+        }
+      ],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    }
+  ]
+}

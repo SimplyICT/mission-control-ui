@@ -1,0 +1,182 @@
+{
+  "schema_version": "1.0",
+  "task_id": "W2-04",
+  "title": "Rollback strategy documentation",
+  "generated_at": "2026-06-06T23:00:00.000Z",
+  "scope": "Rollback and containment procedures for each irreversible migration phase identified during W2-01 through W2-03 execution.",
+  "phases": [
+    {
+      "phase_id": "P1",
+      "name": "SOC Dashboard: SQLite-to-PostgreSQL full schema deployment",
+      "migration_refs": [
+        "wazuh-dashboard/supabase/schema.sql",
+        "wazuh-dashboard/supabase/migrations/ (all files)"
+      ],
+      "irreversible_operations": [
+        "Column type promotions: INTEGER\u2192BOOLEAN (flag columns), TEXT\u2192JSONB (details/metadata), DATETIME\u2192TIMESTAMPTZ",
+        "NOT NULL and CHECK constraints added; no implicit cast back to SQLite equivalents",
+        "RLS policies and row-level ownership enforce access model that cannot be trivially reverted without schema migration",
+        "If SQLite file is deleted/overwritten: source data gone"
+      ],
+      "pre_migration_checklist": [
+        "Full SQLite database backup: cp /opt/soc/soc.db /opt/soc/soc.db.bak-$(date +%Y%m%dT%H%M%S)",
+        "Confirm Docker/PostgreSQL container healthy: docker ps | grep postgres",
+        "Run migration replay validation (W2-01): 21/21 checks must pass",
+        "Confirm app version pinned to known-good commit; store commit SHA",
+        "Record pre-migration row counts: users, agents, incidents, triage_rules, m365_tenants, audit_log",
+        "Take pg_dump baseline immediately after schema apply and before any app writes"
+      ],
+      "rollback_window": "Zero-downtime rollback possible only BEFORE first production write to PostgreSQL (i.e. within the deploy changeover window, typically <15 min). After first production write, data diverges.",
+      "rollback_procedure": {
+        "trigger": "Health check failure, query errors, or P1 incident within first 15 minutes of cutover",
+        "steps": [
+          "1. Stop app process: systemctl stop soc-dashboard (or equivalent)",
+          "2. Revert app to prior known-good commit: git checkout <pre-migration-sha>",
+          "3. Point DATABASE_URL env var back to SQLite connection string (or revert .env)",
+          "4. Restart app: systemctl start soc-dashboard",
+          "5. Validate: curl /health returns 200; key routes respond",
+          "6. Preserve PostgreSQL container (do NOT destroy) for post-incident forensics",
+          "7. Raise incident per W6-03 runbook; notify program lead"
+        ],
+        "data_loss_risk": "None \u2014 SQLite backup preserved and PostgreSQL writes not yet committed to production data flow"
+      },
+      "containment_procedure": {
+        "trigger": "Rollback window expired; data already written to PostgreSQL in production",
+        "steps": [
+          "1. DO NOT attempt live rollback \u2014 data divergence would cause inconsistency",
+          "2. Activate read-only mode: block write endpoints via feature flag or nginx rewrite",
+          "3. Take immediate pg_dump: pg_dump $DATABASE_URL > /opt/soc/emergency-$(date +%Y%m%dT%H%M%S).sql",
+          "4. Identify diverging rows via audit_log timestamps (all writes post-cutover)",
+          "5. For minor schema issues: apply forward-fix migration and redeploy",
+          "6. For major data corruption: restore from pre-migration pg_dump baseline; replay audit_log events if possible",
+          "7. Coordinate with program lead before any destructive action"
+        ],
+        "data_loss_risk": "Medium \u2014 writes made between cutover and containment action may require manual reconciliation against SQLite backup"
+      },
+      "go_no_go_criteria": [
+        "W2-01 migration replay: 21/21 checks passing (REQUIRED)",
+        "W2-02 seed drift: 0 high/medium drifts (REQUIRED)",
+        "SQLite backup verified readable and row counts match expectations",
+        "pg_dump baseline taken and stored off-host",
+        "On-call engineer available for 1-hour cutover window",
+        "Rollback runbook rehearsed (dry-run) in staging first"
+      ]
+    },
+    {
+      "phase_id": "P2",
+      "name": "SOC Dashboard: Admin seed delegation fix (commit 403f5cf)",
+      "migration_refs": [
+        "wazuh-dashboard/supabase/schema.sql (commit 403f5cf \u2014 removed placeholder admin INSERT)",
+        "wazuh-dashboard/supabase/users.py:init_default_admin()"
+      ],
+      "irreversible_operations": [
+        "Removed INSERT for admin user with placeholder 'REPLACE_WITH_HASHED_PASSWORD' from schema.sql",
+        "Fresh deploys now rely entirely on init_default_admin() at app startup to seed admin",
+        "Existing deployments: admin row already in DB \u2014 no data loss, but password hash is REPLACE_WITH_HASHED_PASSWORD if inserted before fix"
+      ],
+      "pre_migration_checklist": [
+        "Verify admin user row in production DB: SELECT id, username, password_hash FROM users WHERE role='admin'",
+        "If password_hash = 'REPLACE_WITH_HASHED_PASSWORD': admin login is broken \u2014 fix is urgent",
+        "If admin row absent: init_default_admin() will create correct row on next restart",
+        "Confirm ADMIN_PASSWORD env var is set in production .env before restart"
+      ],
+      "rollback_window": "N/A \u2014 this fix is safe; the only rollback scenario is reverting to broken placeholder behavior (not recommended)",
+      "rollback_procedure": {
+        "trigger": "init_default_admin() fails to create admin row on fresh deploy",
+        "steps": [
+          "1. Check app startup logs for init_default_admin() errors",
+          "2. If function errors: run manually via python3 -c \"from supabase.users import init_default_admin; init_default_admin()\"",
+          "3. If env var missing: set ADMIN_PASSWORD in .env and restart",
+          "4. Verify: SELECT id FROM users WHERE role='admin' returns a row"
+        ],
+        "data_loss_risk": "None"
+      },
+      "containment_procedure": {
+        "trigger": "Admin cannot log in post-deploy",
+        "steps": [
+          "1. Connect directly to PostgreSQL: psql $DATABASE_URL",
+          "2. Check current admin row: SELECT username, password_hash FROM users WHERE role='admin';",
+          "3. If hash is placeholder: UPDATE users SET password_hash = '<bcrypt-hash-of-admin-pw>' WHERE role='admin';",
+          "4. Alternatively: DELETE FROM users WHERE role='admin'; and restart app to let init_default_admin() recreate",
+          "5. Confirm login works before closing incident"
+        ],
+        "data_loss_risk": "None"
+      },
+      "go_no_go_criteria": [
+        "ADMIN_PASSWORD env var set in production environment",
+        "init_default_admin() tested on fresh schema in W2-01 replay (confirmed passing)",
+        "No admin row with placeholder hash exists in production DB before this deploy"
+      ]
+    },
+    {
+      "phase_id": "P3",
+      "name": "SimplyClik Platform API: request_status_events migration + backfill",
+      "migration_refs": [
+        "app/platform-api/supabase/migrations/20260605003000_request_status_events.sql"
+      ],
+      "irreversible_operations": [
+        "CREATE TABLE request_status_events with FK to requests \u2014 table exists post-migration",
+        "INSERT backfill: one 'submitted' event per existing request row (WHERE NOT EXISTS guard makes it idempotent, but once run in prod, data exists)",
+        "Code changes to POST /requests and PATCH /requests/:requestId/status emit events atomically \u2014 after cutover, every state change writes an event; rollback would leave orphaned events",
+        "Timeline endpoint (GET /requests/:id/timeline) now returns events \u2014 clients depending on this shape cannot easily revert"
+      ],
+      "pre_migration_checklist": [
+        "Verify requests table row count: SELECT count(*) FROM requests;",
+        "Dry-run backfill with COUNT: SELECT count(*) FROM requests WHERE NOT EXISTS (SELECT 1 FROM request_status_events WHERE request_id=requests.id);",
+        "Confirm index on request_status_events(request_id) is present in migration",
+        "Take Supabase point-in-time backup via dashboard before applying migration",
+        "Confirm migration is idempotent: second run of backfill INSERT must produce 0 rows inserted",
+        "Review API version strategy: if clients are on old contract during migration window, events emit but clients ignore \u2014 safe"
+      ],
+      "rollback_window": "Rollback possible BEFORE first organic event write (i.e. before any POST /requests or PATCH status call hits the new code path in production). After organic events exist, dropping the table loses legitimate data.",
+      "rollback_procedure": {
+        "trigger": "Migration failure, FK violation, or query performance degradation immediately after apply",
+        "steps": [
+          "1. Apply down-migration: DROP TABLE IF EXISTS request_status_events CASCADE;",
+          "   (safe only if no organic events written yet \u2014 check: SELECT count(*) FROM request_status_events;)",
+          "2. Revert platform-api code to commit prior to PR #7 merge",
+          "3. Redeploy platform-api (zero-downtime via rolling restart in CI/CD)",
+          "4. Verify: GET /v1/requests/:id/timeline returns 404 or empty (old behavior)",
+          "5. Notify via incident runbook (W6-03)"
+        ],
+        "data_loss_risk": "Low if caught before organic events \u2014 only backfilled data (reconstructible) is lost. High if organic events exist."
+      },
+      "containment_procedure": {
+        "trigger": "Organic events already written; table cannot be dropped without data loss",
+        "steps": [
+          "1. Do NOT drop request_status_events \u2014 preserve all data",
+          "2. If issue is performance: add missing index; do not roll back table",
+          "3. If issue is data integrity (wrong backfill, future-timestamp events): run targeted DELETE on known-bad rows only",
+          "   DELETE FROM request_status_events WHERE changed_at > now(); -- future timestamps",
+          "   DELETE FROM request_status_events WHERE created_by_profile_id IS NULL AND changed_at < '2026-06-05'; -- orphaned backfill rows if needed",
+          "4. If issue is FK constraint failure: identify orphaned request_id values and reconcile",
+          "5. For timeline query bugs: apply forward-fix in a new migration; do not modify existing backfill data",
+          "6. Take pg_dump snapshot before any DELETE operations"
+        ],
+        "data_loss_risk": "Low to Medium \u2014 targeted remediation avoids full rollback; legitimate event history preserved"
+      },
+      "go_no_go_criteria": [
+        "W2-03 static verification: 6/7 backfill SQL checks pass (REQUIRED)",
+        "Migration idempotency confirmed: re-run produces 0 new inserts",
+        "Backfill dry-run count matches requests table count",
+        "Supabase point-in-time backup taken within 1 hour of migration apply",
+        "Platform-api CI passing on migration branch (build + test + integration-gate)",
+        "Rollback down-migration script tested in staging: table drops cleanly with CASCADE"
+      ]
+    }
+  ],
+  "cross_cutting_controls": {
+    "backup_policy": "pg_dump or Supabase PiTR snapshot taken within 1 hour before every schema-altering migration",
+    "migration_sequencing": "All migrations applied in order: P1 (SOC schema) \u2192 P2 (admin fix restart) \u2192 P3 (platform API events). No concurrent schema changes.",
+    "change_window": "Non-peak hours (22:00\u201305:00 local time). Cutover engineer on-call for minimum 1 hour post-apply.",
+    "communication": "Slack/Teams alert to program lead and on-call 30 min before cutover; rollback decision authority delegated to on-call after 15 min window",
+    "evidence_requirement": "Each phase must produce: pre-migration row counts, migration apply log, post-migration validation query results. Store in artifacts/.",
+    "staging_requirement": "All phases must be rehearsed in staging environment before production apply."
+  },
+  "summary": {
+    "phases_documented": 3,
+    "irreversible_phase_count": 3,
+    "highest_rollback_risk": "P3 - request_status_events backfill (organic event writes close rollback window within minutes of API cutover)",
+    "recommended_sequence": "Stage P1+P2 together (same service restart); P3 independently with separate change window"
+  }
+}

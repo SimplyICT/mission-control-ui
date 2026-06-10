@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — Agent Status</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar-left .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .topbar-left .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .topbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #f8fafc;
+      font-size: 18px;
+    }
+
+    /* KPI strip */
+    .kpi-strip {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .kpi-box {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px 24px;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .kpi-value.green { color: #22c55e; }
+    .kpi-value.red { color: #ef4444; }
+    .kpi-value.amber { color: #f59e0b; }
+
+    /* Agent table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 2px solid #334155;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #1e293b;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #1e293b;
+    }
+
+    /* Status indicator */
+    .status-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .status-dot.online {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e88;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef444488;
+    }
+
+    .status-dot.stale {
+      background: #f59e0b;
+      box-shadow: 0 0 6px #f59e0b88;
+    }
+
+    .status-text {
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .status-text.online { color: #22c55e; }
+    .status-text.offline { color: #ef4444; }
+    .status-text.stale { color: #f59e0b; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .pill-green { background: #16a34a22; color: #22c55e; border: 1px solid #22c55e44; }
+    .pill-red { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+    .pill-amber { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b44; }
+
+    .meta-text {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .ago {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-left: 6px;
+    }
+
+    button {
+      background: #2563eb;
+      color: #f8fafc;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    button:hover { background: #1d4ed8; }
+
+    .btn-home {
+      background: #334155;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-home:hover { background: #475569; }
+
+    .last-refresh {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .no-agents {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+      font-size: 15px;
+    }
+
+    /* Pulse animation for online dots */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-dot.online {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="title">Agent Status Monitor</div>
+    <div class="subtitle">Remote probe agents connected to Mission Control</div>
+  </div>
+  <div class="topbar-right">
+    <a href="/index-platform.html" class="btn-home" style="color:#f8fafc;padding:8px 18px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Home</a>
+    <button onclick="loadAgents()">Refresh</button>
+    <span class="last-refresh" id="lastRefresh"></span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="kpi-strip" id="kpis">
+    <div class="kpi-box"><div class="kpi-label">Total Agents</div><div class="kpi-value" id="kpiTotal">-</div></div>
+    <div class="kpi-box"><div class="kpi-label">Online</div><div class="kpi-value green" id="kpiOnline">-</div></div>
+    <div class="kpi-box"><div class="kpi-label">Offline</div><div class="kpi-value red" id="kpiOffline">-</div></div>
+    <div class="kpi-box"><div class="kpi-label">Stale (>5 min)</div><div class="kpi-value amber" id="kpiStale">-</div></div>
+    <div class="kpi-box"><div class="kpi-label">Sites Covered</div><div class="kpi-value" id="kpiSites">-</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Probe Agents</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Agent Name</th>
+          <th>Site</th>
+          <th>Hostname</th>
+          <th>LAN IP</th>
+          <th>WAN IP</th>
+          <th>OS</th>
+          <th>Version</th>
+          <th>Subnet</th>
+          <th>Last Heartbeat</th>
+          <th>Last Seen</th>
+        </tr>
+      </thead>
+      <tbody id="agentTable">
+        <tr><td colspan="11" class="no-agents">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API = "/monitoring-api";
+
+function safe(v) { return v ?? ""; }
+
+function esc(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function timeAgo(isoStr) {
+  if (!isoStr) return "Never";
+  const then = new Date(isoStr);
+  const now = new Date();
+  const diffMs = now - then;
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ${diffMin % 60}m ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ${diffHr % 24}h ago`;
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return "Never";
+  const d = new Date(isoStr);
+  return d.toLocaleString("en-AU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false });
+}
+
+function agentStatus(agent) {
+  const hb = agent.last_heartbeat_at || agent.last_seen_at;
+  if (!hb) return "offline";
+
+  const diffMs = Date.now() - new Date(hb).getTime();
+  const diffMin = diffMs / 60000;
+
+  if (diffMin <= 2) return "online";
+  if (diffMin <= 5) return "stale";
+  return "offline";
+}
+
+function statusHtml(status) {
+  const label = status === "stale" ? "Stale" : status === "online" ? "Online" : "Offline";
+  return `<span class="status-dot ${status}"></span><span class="status-text ${status}">${label}</span>`;
+}
+
+async function loadAgents() {
+  try {
+    const res = await fetch(`${API}/api/v1/dashboard/all-sites`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const sites = data.sites || [];
+    let allAgents = [];
+
+    // Collect agents from each site's summary endpoint
+    for (const s of sites) {
+      const siteId = s.site.id;
+      const siteName = s.site.site_name;
+
+      if (s.agent_counts.total === 0) continue;
+
+      try {
+        const sRes = await fetch(`${API}/api/v1/dashboard/summary?site_code=${encodeURIComponent(s.site.site_code)}`);
+        if (!sRes.ok) continue;
+        const sData = await sRes.json();
+        const agents = sData.agents || [];
+        agents.forEach(a => { a._site_name = siteName; });
+        allAgents = allAgents.concat(agents);
+      } catch (e) {
+        console.warn(`Failed to fetch agents for ${siteName}:`, e);
+      }
+    }
+
+    // Also handle sites with 0 agents — show them with no agent row
+    const sitesWithAgents = new Set(allAgents.map(a => a._site_name));
+    const sitesWithoutAgents = sites.filter(s => !sitesWithAgents.has(s.site.site_name) && s.site.site_code !== "DEFAULT");
+
+    // Update KPIs
+    let online = 0, offline = 0, stale = 0;
+    allAgents.forEach(a => {
+      const st = agentStatus(a);
+      if (st === "online") online++;
+      else if (st === "stale") stale++;
+      else offline++;
+    });
+
+    document.getElementById("kpiTotal").textContent = allAgents.length;
+    document.getElementById("kpiOnline").textContent = online;
+    document.getElementById("kpiOffline").textContent = offline;
+    document.getElementById("kpiStale").textContent = stale;
+    document.getElementById("kpiSites").textContent = sitesWithAgents.size;
+
+    // Build table
+    const tbody = document.getElementById("agentTable");
+    tbody.innerHTML = "";
+
+    if (allAgents.length === 0 && sitesWithoutAgents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="11" class="no-agents">No agents registered.</td></tr>';
+      return;
+    }
+
+    // Sort: online first, then stale, then offline
+    allAgents.sort((a, b) => {
+      const order = { online: 0, stale: 1, offline: 2 };
+      return (order[agentStatus(a)] ?? 3) - (order[agentStatus(b)] ?? 3);
+    });
+
+    for (const a of allAgents) {
+      const st = agentStatus(a);
+      const hb = a.last_heartbeat_at;
+      const ls = a.last_seen_at;
+      const meta = a.metadata || {};
+      const subnet = meta.scan_subnet || "";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${statusHtml(st)}</td>
+        <td><strong>${esc(a.agent_name || a.agent_key)}</strong></td>
+        <td>${esc(a._site_name)}</td>
+        <td>${esc(a.hostname)}</td>
+        <td>${esc(a.lan_ip)}</td>
+        <td>${esc(a.wan_ip)}</td>
+        <td><span class="meta-text">${esc(a.os_name)} ${esc(a.os_version)}</span></td>
+        <td><span class="pill pill-green">${esc(a.agent_version)}</span></td>
+        <td>${esc(subnet)}</td>
+        <td>${formatDate(hb)}<br><span class="ago">${timeAgo(hb)}</span></td>
+        <td>${formatDate(ls)}<br><span class="ago">${timeAgo(ls)}</span></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    // Show sites with no agents
+    for (const s of sitesWithoutAgents) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${statusHtml("offline")}</td>
+        <td colspan="2"><em style="color:#64748b;">No agent deployed</em> — ${esc(s.site.site_name)}</td>
+        <td colspan="8" class="meta-text">Site registered but no probe agent has connected.</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    document.getElementById("lastRefresh").textContent = `Updated ${new Date().toLocaleTimeString()}`;
+
+  } catch (err) {
+    console.error("Failed to load agents:", err);
+    document.getElementById("agentTable").innerHTML =
+      `<tr><td colspan="11" class="no-agents" style="color:#ef4444;">Failed to load agent data: ${esc(err.message)}</td></tr>`;
+  }
+}
+
+// Auto-refresh every 30 seconds
+loadAgents();
+setInterval(loadAgents, 30000);
+</script>
+
+</body>
+</html>

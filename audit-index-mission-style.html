@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Audit Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      padding: 18px 28px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e293b, #111827);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 30px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px 0;
+      font-size: 34px;
+      color: #f8fafc;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-width: 800px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #3b82f6;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 20px;
+      color: #f8fafc;
+    }
+
+    .card p {
+      color: #94a3b8;
+      min-height: 48px;
+      line-height: 1.5;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Mission Control Audit Center</div>
+    <div class="subtitle">Audit Operations & Device Compliance</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>Audit Management</h1>
+    <p>
+      Manage device records, execute audits, review compliance reports,
+      monitor active devices and maintain operational audit history
+      from a unified Mission Control styled interface.
+    </p>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Device Records</h2>
+      <p>View, edit and create managed devices across all audit-enabled sites.</p>
+      <button onclick="goRecords()">Open Device Records</button>
+    </div>
+
+    <div class="card">
+      <h2>Run Audit</h2>
+      <p>Launch and complete operational device audits for individual sites.</p>
+      <button onclick="goAudit()">Run Device Audit</button>
+    </div>
+
+    <div class="card">
+      <h2>Audit Reports</h2>
+      <p>Review generated audit reports, findings and compliance outcomes.</p>
+      <button onclick="goReports()">Open Reports</button>
+    </div>
+
+    <div class="card">
+      <h2>Audit Cleanup</h2>
+      <p>Manage historic audits, remove test data and maintain clean datasets.</p>
+      <button onclick="goCleanup()">Open Cleanup</button>
+    </div>
+
+    <div class="card">
+      <h2>Mission Control</h2>
+      <p>Return to the primary Mission Control dashboard and monitoring systems.</p>
+      <button onclick="goMain()">Back to Mission Control</button>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Mission Control Audit Platform
+  </div>
+
+</div>
+
+<script>
+function goRecords() {
+  window.location.href = "/device-records.html";
+}
+
+function goAudit() {
+  window.location.href = "/device-audit.html";
+}
+
+function goReports() {
+  window.location.href = "/audit-reports.html";
+}
+
+function goCleanup() {
+  window.location.href = "/audit-cleanup.html";
+}
+
+function goMain() {
+  window.location.href = "/";
+}
+</script>
+
+</body>
+</html>

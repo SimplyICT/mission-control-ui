@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Audit Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#0f172a;
+      color:#e2e8f0;
+    }
+    .topbar{
+      background:#111827;
+      border-bottom:1px solid #1e293b;
+      padding:18px 28px;
+    }
+    .title{
+      font-size:24px;
+      font-weight:bold;
+      color:#f8fafc;
+    }
+    .subtitle{
+      font-size:13px;
+      color:#94a3b8;
+      margin-top:4px;
+    }
+    .container{
+      max-width:1600px;
+      margin:auto;
+      padding:24px;
+    }
+    .card{
+      background:#111827;
+      border:1px solid #1e293b;
+      border-radius:16px;
+      padding:22px;
+      margin-bottom:22px;
+    }
+    button{
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:#2563eb;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;
+      margin-right:8px;
+    }
+    button:hover{
+      background:#1d4ed8;
+    }
+    .critical{color:#fca5a5;font-weight:bold;}
+    .warning{color:#fcd34d;font-weight:bold;}
+    .ok{color:#86efac;font-weight:bold;}
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+      gap:14px;
+    }
+
+    .tile{
+      background:#0f172a;
+      border:1px solid #334155;
+      border-radius:14px;
+      padding:18px;
+      font-weight:bold;
+    }
+
+    .tile span{
+      display:block;
+      font-size:28px;
+      margin-top:8px;
+    }
+
+    table{
+      width:max-content;
+      min-width:100%;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      border:1px solid #334155;
+      padding:8px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    th{
+      background:#1e293b;
+      color:#f8fafc;
+    }
+
+    .row-critical{
+      background:rgba(220,38,38,0.12);
+    }
+
+    .row-warning{
+      background:rgba(245,158,11,0.12);
+    }
+
+    .table-wrap{
+      overflow-x:auto;
+    }
+
+    .muted{
+      color:#94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title">Mission Control Audit Report</div>
+  <div class="subtitle">Detailed Compliance Findings & Audit Evidence</div>
+</div>
+
+<div class="container">
+
+<div class="card">
+  <button onclick="goReports()">Back to Reports</button>
+  <button onclick="window.print()">Print / Save PDF</button>
+  <p id="status">Loading audit report...</p>
+</div>
+
+<div id="content"></div>
+
+</div>
+
+<script>
+const API = "/audit-api";
+
+function safe(v){
+  return v ?? "";
+}
+
+function goReports(){
+  window.location.href="/audit-reports.html";
+}
+
+function getId(){
+  const p = new URLSearchParams(window.location.search);
+
+  return (
+    p.get("id") ||
+    p.get("audit_batch_id")
+  );
+}
+
+function rowClass(status){
+  if(status==="critical") return "row-critical";
+  if(status==="warning") return "row-warning";
+  return "";
+}
+
+function statusClass(status){
+  if(status==="Critical") return "critical";
+  if(status==="Warning") return "warning";
+  return "ok";
+}
+
+async function loadReport(){
+
+  const id = getId();
+
+  if(!id){
+    document.getElementById("status").textContent =
+      "Missing audit report id.";
+    return;
+  }
+
+  const res = await fetch(`${API}/audit-report/${id}`);
+
+  if(!res.ok){
+    document.getElementById("status").textContent =
+      "Could not load audit report.";
+    return;
+  }
+
+  const report = await res.json();
+
+  let rowsHtml = "";
+
+  (report.rows || []).forEach(r => {
+
+    rowsHtml += `
+      <tr class="${rowClass(r.status)}">
+        <td>${safe(r.serial_number)}</td>
+        <td>${safe(r.device_name)}</td>
+        <td>${safe(r.assigned_user_room)}</td>
+        <td>${safe(r.status)}</td>
+        <td>${(r.reasons || []).join(", ")}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("content").innerHTML = `
+
+    <div class="card">
+      <h2>${safe(report.site_name)}</h2>
+
+      <p><b>Date:</b> ${safe(report.audit_date)}</p>
+
+      <p class="${statusClass(report.overall_status)}">
+        <b>Status:</b> ${safe(report.overall_status)}
+      </p>
+
+      <p class="muted">
+        <b>Batch:</b> ${safe(report.audit_batch_id)}
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Summary</h2>
+
+      <div class="summary">
+        <div class="tile">Total Devices<span>${safe(report.summary?.total_devices)}</span></div>
+        <div class="tile">Critical<span>${safe(report.summary?.critical)}</span></div>
+        <div class="tile">Warnings<span>${safe(report.summary?.warnings)}</span></div>
+        <div class="tile">OK<span>${safe(report.summary?.ok)}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Critical Issues</h2>
+
+      ${
+        (report.critical_incidents || []).length === 0
+        ? "<p>None</p>"
+        : report.critical_incidents.map(r =>
+            `<p><b>${safe(r.serial_number)}</b> - ${safe(r.device_name)} (${safe(r.assigned_user_room)})<br>${(r.reasons || []).join(", ")}</p>`
+          ).join("")
+      }
+    </div>
+
+    <div class="card">
+      <h2>Warnings</h2>
+
+      ${
+        (report.warnings || []).length === 0
+        ? "<p>None</p>"
+        : report.warnings.map(r =>
+            `<p><b>${safe(r.serial_number)}</b> - ${safe(r.device_name)} (${safe(r.assigned_user_room)})<br>${(r.reasons || []).join(", ")}</p>`
+          ).join("")
+      }
+    </div>
+
+    <div class="card">
+      <h2>Recommendations</h2>
+
+      ${
+        (report.recommendations || []).map(r =>
+          `<p>• ${safe(r)}</p>`
+        ).join("")
+      }
+    </div>
+
+    <div class="card">
+      <h2>Full Audit Register</h2>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Serial</th>
+              <th>Device</th>
+              <th>Room/User</th>
+              <th>Status</th>
+              <th>Reasons</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById("status").textContent =
+    "Audit report loaded.";
+}
+
+loadReport();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Incident Register - Mission Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .topbar { background: #111827; padding: 18px 28px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .topbar .title { font-size: 24px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+    .container { max-width: 1400px; margin: 24px auto; padding: 0 20px; }
+    .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 14px 0; font-size: 18px; color: #f8fafc; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .controls select, .controls button { padding: 9px 14px; border-radius: 8px; font-size: 13px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; outline: none; }
+    .controls select { min-width: 200px; }
+    .controls button { cursor: pointer; font-weight: bold; border: none; }
+    .btn-blue { background: #2563eb; color: #fff; }
+    .btn-blue:hover { background: #1d4ed8; }
+    .btn-green { background: #16a34a; color: #fff; }
+    .btn-green:hover { background: #15803d; }
+    .btn-red { background: #dc2626; color: #fff; }
+    .btn-red:hover { background: #b91c1c; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .stat { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat .val { font-size: 28px; font-weight: bold; color: #f8fafc; }
+    .stat .lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat.alert .val { color: #f87171; }
+    .stat.warn .val { color: #fbbf24; }
+    .stat.ok .val { color: #4ade80; }
+    .stat.info .val { color: #60a5fa; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 10px; border: 1px solid #1e293b; text-align: left; }
+    th { background: #1e293b; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    tr:nth-child(even) { background: rgba(15,23,42,0.4); }
+    .severity-critical { color: #f87171; font-weight: bold; }
+    .severity-high { color: #fbbf24; font-weight: bold; }
+    .severity-medium { color: #60a5fa; }
+    .severity-low { color: #94a3b8; }
+    .mandatory-flag { background: #7f1d1d; color: #fca5a5; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .children-flag { background: #78350f; color: #fde68a; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .inline-select { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 4px 6px; font-size: 12px; cursor: pointer; }
+    .status-msg { margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 13px; display: none; }
+    .status-msg.success { display: block; background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .status-msg.error { display: block; background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .empty { text-align: center; color: #64748b; padding: 30px; font-size: 14px; }
+    .table-wrap { overflow-x: auto; }
+    .desc-cell { max-width: 280px; white-space: normal; line-height: 1.4; }
+    .form-panel { display: none; margin-bottom: 16px; padding: 18px; background: #1e293b; border-radius: 10px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .form-grid label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 3px; }
+    .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 13px; font-family: inherit; outline: none; }
+    .form-grid textarea { min-height: 60px; resize: vertical; }
+    .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #3b82f6; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .toggle-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .mandatory-banner { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; color: #fca5a5; font-size: 12px; line-height: 1.5; }
+    .mandatory-banner strong { color: #fff; }
+    .type-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
+    .type-privacy_breach { background: #7f1d1d; color: #fca5a5; }
+    .type-data_exposure { background: #78350f; color: #fde68a; }
+    .type-missing_device_with_data { background: #581c87; color: #d8b4fe; }
+    .type-unauthorized_access { background: #1e3a5f; color: #93c5fd; }
+    .type-photo_policy_violation { background: #064e3b; color: #6ee7b7; }
+    .type-credential_compromise { background: #3b0764; color: #e9d5ff; }
+    .type-other { background: #1e293b; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Incident Register</div>
+    <div class="subtitle">Log, track and manage security and privacy incidents</div>
+  </div>
+  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="controls">
+      <select id="siteSelect" onchange="onSiteChange()">
+        <option value="">-- Select a site --</option>
+      </select>
+      <select id="statusFilter" onchange="loadIncidents()">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="investigating">Investigating</option>
+        <option value="reported">Reported</option>
+        <option value="resolved">Resolved</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select id="severityFilter" onchange="loadIncidents()">
+        <option value="">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button class="btn-red" onclick="showCreateForm()">+ Log Incident</button>
+    </div>
+
+    <div class="form-panel" id="createPanel">
+      <h2 style="margin-bottom:12px;">Log New Incident</h2>
+      <div class="mandatory-banner">
+        <strong>Mandatory Reporting:</strong> If this incident involves a breach of child safety, privacy, or data protection obligations,
+        it may require notification to the state/territory regulatory authority, OAIC (Notifiable Data Breaches scheme), or law enforcement.
+        Mark the "Mandatory Reportable" flag below if applicable.
+      </div>
+      <div class="form-grid">
+        <div><label>Incident Date *</label><input type="date" id="newDate"></div>
+        <div><label>Reported By</label><input type="text" id="newReportedBy" placeholder="Name of person reporting"></div>
+        <div><label>Incident Type *</label><select id="newType"><option value="privacy_breach">Privacy Breach</option><option value="data_exposure">Data Exposure</option><option value="missing_device_with_data">Missing Device with Data</option><option value="unauthorized_access">Unauthorized Access</option><option value="photo_policy_violation">Photo Policy Violation</option><option value="credential_compromise">Credential Compromise</option><option value="other">Other</option></select></div>
+        <div><label>Severity</label><select id="newSeverity"><option value="medium">Medium</option><option value="critical">Critical</option><option value="high">High</option><option value="low">Low</option></select></div>
+        <div style="grid-column: 1 / -1;"><label>Description *</label><textarea id="newDesc" placeholder="Describe the incident in detail..."></textarea></div>
+        <div><label>Children Affected?</label><div class="toggle-row"><input type="checkbox" id="newChildren"> <span style="font-size:12px;color:#94a3b8;">Yes, children may be affected</span></div></div>
+        <div><label>Affected Count</label><input type="number" id="newCount" placeholder="Number of children (approx)" min="0"></div>
+        <div><label>Mandatory Reportable?</label><div class="toggle-row"><input type="checkbox" id="newMandatory"> <span style="font-size:12px;color:#fca5a5;">This incident requires mandatory reporting</span></div></div>
+        <div><label>Reported To</label><input type="text" id="newReportedTo" placeholder="e.g. State regulator, OAIC, Police"></div>
+        <div style="grid-column: 1 / -1;"><label>Response Actions</label><textarea id="newResponse" placeholder="Actions taken or planned..."></textarea></div>
+        <div><label>Linked Device Serial</label><input type="text" id="newSerial" placeholder="Optional"></div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:10px;">
+        <button class="btn-green" onclick="createIncident()">Log Incident</button>
+        <button style="background:#334155; color:#94a3b8; padding:9px 14px; border-radius:8px; border:none; cursor:pointer;" onclick="hideCreateForm()">Cancel</button>
+      </div>
+      <div class="status-msg" id="createStatus"></div>
+    </div>
+
+    <div id="summaryCards" class="stats-grid"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Severity</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Flags</th>
+            <th>Reported By</th>
+            <th>Status</th>
+            <th>Response</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="incidentsTable">
+          <tr><td colspan="9" class="empty">Select a site to view incidents.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var API = '/audit-api';
+var currentSiteId = null;
+
+function loadSites() {
+  return fetch(API + '/sites')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var sel = document.getElementById('siteSelect');
+      sel.innerHTML = '<option value="">-- Select a site --</option>';
+      (Array.isArray(data) ? data : []).forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.site_id;
+        opt.textContent = s.site_name;
+        sel.appendChild(opt);
+      });
+    });
+}
+
+function onSiteChange() {
+  currentSiteId = document.getElementById('siteSelect').value;
+  if (!currentSiteId) {
+    document.getElementById('incidentsTable').innerHTML = '<tr><td colspan="9" class="empty">Select a site to view incidents.</td></tr>';
+    document.getElementById('summaryCards').innerHTML = '';
+    return;
+  }
+  loadIncidents();
+  loadSummary();
+}
+
+function loadSummary() {
+  if (!currentSiteId) return;
+  fetch(API + '/incident-summary?site_id=' + currentSiteId)
+    .then(function(r) { return r.json(); })
+    .then(function(s) {
+      var html = '';
+      html += '<div class="stat alert"><div class="val">' + (s.open || 0) + '</div><div class="lbl">Open</div></div>';
+      html += '<div class="stat warn"><div class="val">' + (s.investigating || 0) + '</div><div class="lbl">Investigating</div></div>';
+      html += '<div class="stat info"><div class="val">' + (s.reported || 0) + '</div><div class="lbl">Reported</div></div>';
+      html += '<div class="stat ok"><div class="val">' + (s.resolved + s.closed || 0) + '</div><div class="lbl">Resolved</div></div>';
+      html += '<div class="stat alert"><div class="val">' + (s.mandatory_reportable || 0) + '</div><div class="lbl">Mandatory Report</div></div>';
+      html += '<div class="stat warn"><div class="val">' + (s.children_affected || 0) + '</div><div class="lbl">Children Affected</div></div>';
+      html += '<div class="stat"><div class="val">' + (s.total || 0) + '</div><div class="lbl">Total</div></div>';
+      document.getElementById('summaryCards').innerHTML = html;
+    });
+}
+
+function loadIncidents() {
+  if (!currentSiteId) return;
+  var url = API + '/incidents?site_id=' + currentSiteId;
+  var status = document.getElementById('statusFilter').value;
+  var severity = document.getElementById('severityFilter').value;
+  if (status) url += '&status=' + status;
+  if (severity) url += '&severity=' + severity;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(incidents) {
+      var tbody = document.getElementById('incidentsTable');
+      if (!incidents.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty">No incidents recorded for this site.</td></tr>';
+        return;
+      }
+      var html = '';
+      incidents.forEach(function(i) {
+        var sClass = 'severity-' + (i.severity || 'medium');
+        var tClass = 'type-' + (i.incident_type || 'other');
+        var flags = '';
+        if (i.mandatory_reportable) flags += '<span class="mandatory-flag">Mandatory</span> ';
+        if (i.children_affected) flags += '<span class="children-flag">Children: ' + (i.affected_count || '?') + '</span> ';
+        if (!flags) flags = '-';
+
+        html += '<tr>';
+        html += '<td>' + esc(i.incident_date || '-') + '</td>';
+        html += '<td class="' + sClass + '">' + (i.severity || 'medium').toUpperCase() + '</td>';
+        html += '<td><span class="type-badge ' + tClass + '">' + (i.incident_type || 'other').replace(/_/g, ' ') + '</span></td>';
+        html += '<td class="desc-cell">' + esc(i.description || '') + '</td>';
+        html += '<td>' + flags + '</td>';
+        html += '<td>' + esc(i.reported_by || '-') + '</td>';
+        html += '<td><select class="inline-select" onchange="updateIncidentStatus(\'' + i.incident_id + '\', this.value)">';
+        ['open', 'investigating', 'reported', 'resolved', 'closed'].forEach(function(s) {
+          html += '<option value="' + s + '"' + (i.status === s ? ' selected' : '') + '>' + s + '</option>';
+        });
+        html += '</select></td>';
+        html += '<td class="desc-cell">' + esc(i.response_actions || '-') + '</td>';
+        html += '<td><button class="btn-red" style="padding:4px 10px;font-size:12px;" onclick="deleteIncident(\'' + i.incident_id + '\')" title="Delete incident">&#128465;</button></td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+    });
+}
+
+function updateIncidentStatus(incidentId, newStatus) {
+  fetch(API + '/incidents/' + incidentId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadSummary(); });
+}
+
+function showCreateForm() {
+  if (!currentSiteId) { alert('Select a site first.'); return; }
+  document.getElementById('createPanel').style.display = 'block';
+  document.getElementById('newDate').value = new Date().toISOString().slice(0, 10);
+  clearStatus('createStatus');
+}
+
+function hideCreateForm() {
+  document.getElementById('createPanel').style.display = 'none';
+}
+
+function createIncident() {
+  var desc = document.getElementById('newDesc').value.trim();
+  if (!desc) { showMsg('createStatus', 'error', 'Description is required.'); return; }
+
+  var payload = {
+    site_id: currentSiteId,
+    incident_date: document.getElementById('newDate').value || null,
+    reported_by: document.getElementById('newReportedBy').value.trim() || null,
+    incident_type: document.getElementById('newType').value,
+    severity: document.getElementById('newSeverity').value,
+    description: desc,
+    children_affected: document.getElementById('newChildren').checked,
+    affected_count: parseInt(document.getElementById('newCount').value) || null,
+    mandatory_reportable: document.getElementById('newMandatory').checked,
+    reported_to: document.getElementById('newReportedTo').value.trim() || null,
+    response_actions: document.getElementById('newResponse').value.trim() || null,
+    linked_device_serial: document.getElementById('newSerial').value.trim() || null,
+    status: 'open'
+  };
+
+  fetch(API + '/incidents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.incident_id) {
+        showMsg('createStatus', 'success', 'Incident logged.');
+        loadIncidents();
+        loadSummary();
+        setTimeout(hideCreateForm, 1500);
+      } else {
+        showMsg('createStatus', 'error', data.detail || 'Create failed.');
+      }
+    })
+    .catch(function(e) {
+      showMsg('createStatus', 'error', 'Failed: ' + e.message);
+    });
+}
+
+function esc(v) {
+  var d = document.createElement('div');
+  d.textContent = v;
+  return d.innerHTML;
+}
+
+function showMsg(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg ' + type;
+  el.textContent = msg;
+}
+
+function clearStatus(id) {
+  var el = document.getElementById(id);
+  el.className = 'status-msg';
+  el.textContent = '';
+}
+
+loadSites();
+
+function deleteIncident(incidentId) {
+  if (!confirm('Delete this incident? This cannot be undone.')) return;
+  fetch(API + '/incidents/' + incidentId, { method: 'DELETE' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Delete failed');
+      loadIncidents();
+      loadSummary();
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+</script>
+
+</body>
+</html>
