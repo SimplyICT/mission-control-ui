@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .status-dot.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .status-dot.amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+
+    .status-label {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e293b, #111827);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      color: #f8fafc;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-width: 850px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #f8fafc;
+      margin: 28px 0 14px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .section-desc {
+      color: #94a3b8;
+      font-size: 13px;
+      margin: -8px 0 16px 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #3b82f6;
+    }
+
+    .card h3 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      color: #f8fafc;
+    }
+
+    .card p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .card .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.monitoring { background: #1e3a5f; color: #60a5fa; }
+    .badge.audit { background: #3b1f2b; color: #f472b6; }
+    .badge.executive { background: #1a2e1a; color: #4ade80; }
+    .badge.tools { background: #2d2305; color: #fbbf24; }
+    .badge.legacy { background: #1e293b; color: #64748b; }
+    .badge.compliance { background: #1a2e2e; color: #2dd4bf; }
+
+    .footer {
+      text-align: center;
+      color: #475569;
+      font-size: 12px;
+      padding: 28px 0;
+      border-top: 1px solid #1e293b;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Mission Control Platform</div>
+    <div class="subtitle">Network Monitoring &bull; Device Auditing &bull; Compliance Reporting</div>
+  </div>
+  <div class="status-row">
+    <span class="status-dot green" id="apiDot"></span>
+    <span class="status-label" id="apiStatus">Checking...</span>
+    <a href="/logout" style="margin-left:16px;background:#1e293b;color:#94a3b8;border:1px solid #334155;padding:7px 14px;border-radius:8px;font-size:13px;text-decoration:none;">Sign Out</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>Welcome to Mission Control</h1>
+    <p>Unified platform for network device monitoring, site probe management, device auditing, compliance reporting and executive dashboards. Select a module below to get started.</p>
+  </div>
+
+  <!-- ── NETWORK MONITORING ───────────────────────────────────── -->
+  <h2 class="section-title">Network Monitoring</h2>
+  <p class="section-desc">Real-time device monitoring, alerts and site health from probe agents.</p>
+  <div class="grid">
+    <a class="card" href="/agent-status.html">      <span class="badge monitoring">Live</span>      <h3>Agent Status Monitor</h3>      <p>Remote probe agent connection status, heartbeats, and site coverage.</p>    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_live_dashboard_v2.html">
+      <span class="badge monitoring">Live</span>
+      <h3>Live Dashboard</h3>
+      <p>Real-time device status, latency and network health for a selected site.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_all_sites_dashboard_v1.html">
+      <span class="badge monitoring">Live</span>
+      <h3>All Sites Overview</h3>
+      <p>Bird's-eye view of all monitored sites with device counts and health status.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_alert_intelligence_v1.html">
+      <span class="badge monitoring">Alerts</span>
+      <h3>Alert Intelligence</h3>
+      <p>Categorised alert feed — active problems, recovered, new devices, suppressed.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_alerts_v1.html">
+      <span class="badge monitoring">Alerts</span>
+      <h3>Alert Management</h3>
+      <p>View, acknowledge, resolve and suppress alerts across all sites.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_device_admin_v1.html">
+      <span class="badge monitoring">Admin</span>
+      <h3>Device Admin</h3>
+      <p>Manage device names, types, criticality and expected-online settings.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_classification_workbench_v25_4.html">
+      <span class="badge monitoring">Admin</span>
+      <h3>Classification Workbench</h3>
+      <p>Classify and label network devices with suggested types and criticality.</p>
+    </a>
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_audit_monitor_links_v1.html">
+      <span class="badge monitoring">Bridge</span>
+      <h3>Audit-Monitoring Links</h3>
+      <p>Link network-discovered devices to audit asset records for cross-referencing.</p>
+    </a>
+
+  </div>
+
+  <!-- ── EXECUTIVE DASHBOARDS ─────────────────────────────────── -->
+  <h2 class="section-title">Executive Dashboards</h2>
+  <p class="section-desc">High-level operational intelligence and compliance scoring.</p>
+  <div class="grid">
+
+    <a class="card" href="http://208.87.135.84:8097/mission_control_executive_dashboard_v24_1.html">
+      <span class="badge executive">Executive</span>
+      <h3>Executive Availability Dashboard</h3>
+      <p>Fleet availability, risk scoring, critical device status and infrastructure summary.</p>
+    </a>
+
+    <a class="card" href="/director-view.html">
+      <span class="badge executive">Executive</span>
+      <h3>Director View</h3>
+      <p>Compliance overview — site risk labels, audit scores and report status.</p>
+    </a>
+
+  </div>
+
+  <!-- ── DEVICE AUDITING ──────────────────────────────────────── -->
+  <h2 class="section-title">Device Auditing</h2>
+  <p class="section-desc">Site device audits, compliance checks, photo retention and reporting.</p>
+  <div class="grid">
+
+    <a class="card" href="/audit-index.html">
+      <span class="badge audit">Audit</span>
+      <h3>Audit Center</h3>
+      <p>Start audits, select sites, and manage audit batches.</p>
+    </a>
+
+    <a class="card" href="/device-records.html">
+      <span class="badge audit">Devices</span>
+      <h3>Device Records</h3>
+      <p>Master device register — manage devices, assignments and metadata per site.</p>
+    </a>
+
+    <a class="card" href="/audit-reports.html">
+      <span class="badge audit">Reports</span>
+      <h3>Audit Reports</h3>
+      <p>Generate, view and export PDF audit compliance reports.</p>
+    </a>
+
+    <a class="card" href="/audit-cleanup.html">
+      <span class="badge audit">Cleanup</span>
+      <h3>Audit Cleanup</h3>
+      <p>Delete old audit batches and orphaned report files.</p>
+    </a>
+
+    <a class="card" href="/device-audit.html">
+      <span class="badge audit">Audit</span>
+      <h3>Device Audit Form</h3>
+      <p>Per-device audit entry — security, photos, sync, issues and notes.</p>
+    </a>
+
+  </div>
+
+
+  <!-- ── COMPLIANCE ───────────────────────────────────── -->
+  <h2 class="section-title">Compliance</h2>
+  <p class="section-desc">ACECQA remediation tracking, incident register and policy management.</p>
+  <div class="grid">
+
+    <a class="card" href="/remediation.html">
+      <span class="badge compliance">Compliance</span>
+      <h3>Remediation Tracker</h3>
+      <p>Track and manage audit remediation actions, priorities, due dates and resolution status.</p>
+    </a>
+
+    <a class="card" href="/incident-register.html">
+      <span class="badge compliance">Compliance</span>
+      <h3>Incident Register</h3>
+      <p>Log, track and report ACECQA mandatory incidents including severity, affected children and notifications.</p>
+    </a>
+
+  </div>
+
+  <!-- ── ADMINISTRATION ───────────────────────────────────────── -->
+  <h2 class="section-title">Administration</h2>
+  <p class="section-desc">Client onboarding, site configuration and integrations.</p>
+  <div class="grid">
+
+
+    <a class="card" href="/project-manager.html">
+      <span class="badge tools">Projects</span>
+      <h3>Project Manager</h3>
+      <p>Multi-project task tracker with status workflow, priority, owner assignment and progress dashboards.</p>
+    </a>
+
+    <a class="card" href="/project_tracker.html">
+      <span class="badge tools">SEO</span>
+      <h3>SEO Project Tracker</h3>
+      <p>Our Neurodiverse Family — SEO implementation dashboard. Track Phase 1-3 tasks, keyword targets, and technical checklist.</p>
+    </a>
+
+    <a class="card" href="/alerts.html">
+      <span class="badge tools">SOC</span>
+      <h3>Alert Browser</h3>
+      <p>Search, filter, acknowledge, resolve, and export all alerts. Full alert management with metrics.</p>
+    </a>
+
+    <a class="card" href="/soc-agent-dashboard.html">
+      <span class="badge tools">SOC</span>
+      <h3>SOC Agent</h3>
+      <p>Auto-triage daemon, Telegram bot, alert escalation, daily digest. Status and manual controls.</p>
+    </a>
+
+    <a class="card" href="/user-guide.html">
+      <span class="badge tools">Docs</span>
+      <h3>User Guide</h3>
+      <p>Platform how-to, workflows, status labels, troubleshooting and changelog. Living document.</p>
+    </a>
+
+    <a class="card" href="/site-onboarding.html">
+      <span class="badge tools">Admin</span>
+      <h3>Site Onboarding</h3>
+      <p>Configure client sites, contact details, SharePoint integration and view audit history.</p>
+    </a>
+
+    <a class="card" href="/admin-users.html">
+      <span class="badge tools">Admin</span>
+      <h3>User Management</h3>
+      <p>Create and manage platform users, roles and page-level access permissions.</p>
+    </a>
+
+    <a class="card" href="/2fa-setup.html">
+      <span class="badge tools">Security</span>
+      <h3>Two-Factor Authentication</h3>
+      <p>Enable or manage TOTP 2FA for your account. Adds an extra layer of login security.</p>
+    </a>
+
+  </div>
+
+
+  <!-- ── SECURITY OPERATIONS ───────────────────────────────────── -->
+  <h2 class="section-title">Security Operations</h2>
+  <p class="section-desc">Wazuh SIEM monitoring, threat detection and automated incident response.</p>
+  <div class="grid">
+
+    <a class="card" href="/wazuh-soc.html">
+      <span class="badge monitor">Security</span>
+      <h3>Wazuh SOC Dashboard</h3>
+      <p>Full Wazuh SIEM dashboard — agents, alerts, vulnerabilities, MITRE, SOC Autopilot and more.</p>
+    </a>
+
+    <a class="card" href="/wazuh-alerts.html">
+      <span class="badge monitor">Alerts</span>
+      <h3>Events &amp; Alerts</h3>
+      <p>Real-time SIEM alert feed with severity filtering and rule details.</p>
+    </a>
+
+
+
+
+
+  </div>
+
+
+
+  <div class="footer">
+    Mission Control Platform &bull; Network Monitoring &bull; Device Auditing &bull; Compliance
+  </div>
+
+</div>
+
+<script>
+async function checkServices() {
+  const dot = document.getElementById('apiDot');
+  const label = document.getElementById('apiStatus');
+  let ok = 0;
+  let total = 3;
+
+  try {
+    const r = await fetch('/api/services-health', {signal: AbortSignal.timeout(8000)});
+    if (r.ok) { const d = await r.json(); ok = d.ok; total = d.total; }
+  } catch(e) {}
+
+  if (ok === total) {
+    dot.className = 'status-dot green';
+    label.textContent = 'All services online';
+  } else if (ok > 0) {
+    dot.className = 'status-dot amber';
+    label.textContent = ok + '/' + total + ' services online';
+  } else {
+    dot.className = 'status-dot red';
+    label.textContent = 'Services unreachable';
+  }
+}
+
+checkServices();
+setInterval(checkServices, 30000);
+</script>
+
+</body>
+</html>

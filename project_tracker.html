@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control — SEO Project Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--blue:#3b82f6;--purple:#a855f7}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #2d2d3d;background:var(--panel);position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:18px;font-weight:600}
+.topbar span{color:var(--muted);font-size:13px}
+.wrap{max-width:1300px;margin:0 auto;padding:24px}
+.btn{background:var(--card);color:var(--text);border:1px solid #2d2d3d;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--hover);border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-sm{padding:4px 10px;font-size:12px}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#1c2333,#0d1117);border:1px solid #2d2d3d;border-radius:14px;padding:28px;margin-bottom:24px}
+.hero h2{font-size:22px;margin-bottom:6px}
+.hero p{color:var(--muted);font-size:13px;line-height:1.5;max-width:700px}
+.hero .meta-row{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap}
+.hero .meta-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+
+/* Phase sections */
+.phase{margin-bottom:28px}
+.phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.phase-header h3{font-size:16px;font-weight:600}
+.phase-header .phase-meta{font-size:12px;color:var(--muted);display:flex;gap:14px;align-items:center}
+.progress-ring{width:36px;height:36px;border-radius:50%;background:conic-gradient(var(--accent) var(--pct,0%), #0b1220 var(--pct,0%));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text)}
+.progress-ring span{background:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* Tasks */
+.task-list{display:flex;flex-direction:column;gap:4px}
+.task-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card);border:1px solid #2d2d3d;border-radius:8px;transition:border-color .15s;font-size:13px}
+.task-row:hover{border-color:var(--accent)}
+.task-row .ck{width:16px;height:16px;border-radius:4px;border:2px solid var(--muted);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);background:transparent;transition:all .15s}
+.task-row .ck.done{background:var(--green);border-color:var(--green)}
+.task-row .ck.in_progress{background:var(--amber);border-color:var(--amber)}
+.task-row .ck.review{background:var(--blue);border-color:var(--blue)}
+.task-row .title{flex:1}
+.task-row .title.done{text-decoration:line-through;color:var(--muted)}
+.task-tag{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;flex-shrink:0}
+.tag-high{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-medium{background:rgba(245,158,11,.15);color:var(--amber)}
+.tag-low{background:rgba(100,116,139,.15);color:var(--muted)}
+.tag-Alicia{background:rgba(168,85,247,.12);color:var(--purple)}
+.tag-Tech{background:rgba(59,130,246,.12);color:var(--blue)}
+.task-owner{font-size:11px;color:var(--muted);min-width:50px;text-align:right}
+
+/* Stats grid */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid #2d2d3d;border-radius:10px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:700}
+.stat-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.stat-card .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Keyword table */
+.keyword-section{margin-top:28px}
+.keyword-section h3{font-size:16px;font-weight:600;margin-bottom:12px}
+.kw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.kw-card{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.kw-card .kw{font-weight:600;font-size:13px}
+.kw-card .kw-priority{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600}
+.kw-critical{background:rgba(239,68,68,.15);color:var(--red)}
+.kw-high{background:rgba(245,158,11,.15);color:var(--amber)}
+.kw-medium{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* Checklist section */
+.checklist-section{margin-top:28px}
+.checklist-section h3{font-size:16px;font-weight:600;margin-bottom:12px}
+.checklist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--card);border:1px solid #2d2d3d;border-radius:6px;font-size:12px}
+.check-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--green)}
+.dot-amber{background:var(--amber)}
+.dot-red{background:var(--red)}
+
+/* Tags */
+.section-tag{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.tag-phase1{background:rgba(59,130,246,.15);color:var(--blue)}
+.tag-phase2{background:rgba(168,85,247,.15);color:var(--purple)}
+.tag-phase3{background:rgba(245,158,11,.15);color:var(--amber)}
+
+/* Footer */
+.footer{text-align:center;color:#475569;font-size:12px;padding:28px 0;border-top:1px solid #1e293b;margin-top:28px}
+
+/* Loading */
+.loading{text-align:center;padding:60px;color:var(--muted)}
+
+@media(max-width:700px){
+  .wrap{padding:16px}
+  .hero{padding:18px}
+  .hero .meta-row{flex-direction:column;gap:8px}
+  .task-row{flex-wrap:wrap}
+  .task-owner{min-width:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>SEO Project Tracker</h1>
+    <span>Our Neurodiverse Family — <span id="progressLabel">Loading...</span></span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a class="btn btn-sm" href="/index-platform.html">&#9664; Home</a>
+    <a class="btn btn-sm" href="/project-manager.html">Project Manager</a>
+    <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
+  </div>
+</div>
+
+<div class="wrap" id="app">
+  <div class="loading">Loading project data...</div>
+</div>
+
+<div class="footer">
+  Mission Control Platform &bull; SEO Project Tracker &bull; Our Neurodiverse Family
+</div>
+
+<script>
+const PROJECT_ID = "10094005cafa";
+
+function $(id){return document.getElementById(id)}
+function esc(v){var d=document.createElement('div');d.textContent=v;return d.innerHTML}
+
+const KEYWORDS = [
+  {kw:"Neurodiverse parenting support", priority:"high"},
+  {kw:"Parenting autistic child", priority:"high"},
+  {kw:"Parenting ADHD child", priority:"high"},
+  {kw:"Family coach neurodiversity", priority:"medium"},
+  {kw:"Help with sensory challenges", priority:"high"},
+  {kw:"Parenting after autism diagnosis", priority:"critical"},
+  {kw:"Parenting after ADHD diagnosis", priority:"critical"},
+  {kw:"How to support neurodivergent child", priority:"high"},
+];
+
+const TECH_CHECKLIST = [
+  {label:"SSL/HTTPS", status:"done"},
+  {label:"robots.txt", status:"done"},
+  {label:"Sitemap.xml (73 URLs)", status:"done"},
+  {label:"Google Analytics GA4", status:"amber"},
+  {label:"Google Search Console", status:"amber"}, 
+  {label:"Google Tag Manager", status:"red"},
+  {label:"Structured Data (JSON-LD)", status:"amber"},
+  {label:"Page Titles Optimized", status:"amber"},
+  {label:"Meta Descriptions Optimized", status:"amber"},
+  {label:"Image Alt Text", status:"amber"},
+  {label:"Hreflang Tags", status:"red"},
+  {label:"Mobile Responsive", status:"done"},
+];
+
+function render(){
+  fetch("/api/projects/"+PROJECT_ID)
+    .then(function(r){return r.json()})
+    .then(function(p){
+      var tasks = p.tasks || [];
+      
+      // Stats
+      var total = tasks.length;
+      var done = tasks.filter(function(t){return t.status==="done"}).length;
+      var inProgress = tasks.filter(function(t){return t.status==="in_progress"}).length;
+      var review = tasks.filter(function(t){return t.status==="review"}).length;
+      var pct = total ? Math.round(done/total*100) : 0;
+      $("progressLabel").textContent = done+"/"+total+" complete ("+pct+"%)";
+
+      var phases = {
+        "Phase 1": tasks.filter(function(t){return t.phase==="Phase 1" || (!t.phase && t.title.includes("Rewrite") || t.title.includes("Deduplicate") || t.title.includes("Hotjar") || t.title.includes("Verify") || t.title.includes("Alt text") || t.title.includes("JSON-LD") || t.title.includes("blog title"));}),
+        "Phase 2": tasks.filter(function(t){return t.phase==="Phase 2" || (!t.phase && (t.title.includes("Publish") || t.title.includes("Ultimate Guide") || t.title.includes("Sensory") || t.title.includes("Convert podcast") || t.title.includes("Optimize 10") || t.title.includes("internal links")));}),
+        "Phase 3": tasks.filter(function(t){return t.phase==="Phase 3" || (!t.phase && (t.title.includes("topic clusters") || t.title.includes("landing pages") || t.title.includes("hreflang") || t.title.includes("backlinks") || t.title.includes("lead magnets") || t.title.includes("Article schema") || t.title.includes("page speed") || t.title.includes("conversion tracking")));})
+      };
+
+      var h = '';
+
+      // Hero
+      h += '<div class="hero">';
+      h += '<h2>Our Neurodiverse Family — SEO</h2>';
+      h += '<p>Full SEO implementation for a neurodiverse parenting support practice. Three phases covering on-page optimization, content strategy, technical SEO, and link building across AU, US, CA, and UK markets.</p>';
+      h += '<div class="meta-row">';
+      h += '<span class="meta-item">&#128203; '+total+' tasks</span>';
+      h += '<span class="meta-item">&#9989; '+done+' done</span>';
+      h += '<span class="meta-item">&#9881; '+inProgress+' in progress</span>';
+      h += '<span class="meta-item">&#128196; '+review+' in review</span>';
+      h += '<span class="meta-item">&#127760; Client: Our Neurodiverse Family (Alison)</span>';
+      h += '</div></div>';
+
+      // Stats
+      h += '<div class="stats">';
+      h += '<div class="stat-card"><div class="num" style="color:var(--green)">'+done+'</div><div class="lbl">Done</div></div>';
+      h += '<div class="stat-card"><div class="num" style="color:var(--amber)">'+inProgress+'</div><div class="lbl">In Progress</div></div>';
+      h += '<div class="stat-card"><div class="num" style="color:var(--blue)">'+review+'</div><div class="lbl">In Review</div></div>';
+      h += '<div class="stat-card"><div class="num" style="color:var(--muted)">'+(total-done-inProgress-review)+'</div><div class="lbl">Not Started</div></div>';
+      h += '<div class="stat-card"><div class="num" style="color:'+(pct>=100?'var(--green)':'var(--accent)')+'">'+pct+'%</div><div class="lbl">Overall Progress</div></div>';
+      h += '</div>';
+
+      // Phases
+      var phaseOrder = ["Phase 1","Phase 2","Phase 3"];
+      var phaseLabels = ["Quick Wins (Week 1)","Content Build (Weeks 2-4)","Strategic (Months 1-3)"];
+      var phaseTags = ["tag-phase1","tag-phase2","tag-phase3"];
+      
+      for(var pi=0; pi<phaseOrder.length; pi++){
+        var pname = phaseOrder[pi];
+        var ptasks = phases[pname] || [];
+        var pDone = ptasks.filter(function(t){return t.status==="done"}).length;
+        var pTotal = ptasks.length;
+        var pPct = pTotal ? Math.round(pDone/pTotal*100) : 0;
+
+        h += '<div class="phase">';
+        h += '<div class="phase-header">';
+        h += '<div><span class="section-tag '+phaseTags[pi]+'">'+pname+'</span>';
+        h += '<h3>'+phaseLabels[pi]+'</h3></div>';
+        h += '<div class="phase-meta">';
+        h += '<span>'+pDone+'/'+pTotal+' done</span>';
+        h += '<div class="progress-ring" style="--pct:'+pPct+'%"><span>'+pPct+'%</span></div>';
+        h += '</div></div>';
+
+        h += '<div class="task-list">';
+        for(var ti=0; ti<ptasks.length; ti++){
+          var t = ptasks[ti];
+          var cls = t.status;
+          var prio = t.priority || "medium";
+          var owner = t.owner || "";
+          h += '<div class="task-row">';
+          h += '<div class="ck '+cls+'">'+(cls==="done"?"✓":"")+'</div>';
+          h += '<div class="title '+(cls==="done"?"done":"")+'">'+esc(t.title)+'</div>';
+          h += '<span class="task-tag tag-'+prio+'">'+prio+'</span>';
+          if(owner) h += '<span class="task-tag tag-'+owner+'">'+esc(owner)+'</span>';
+          h += '</div>';
+        }
+        h += '</div></div>';
+      }
+
+      // Keywords
+      h += '<div class="keyword-section"><h3>&#128270; Target Keywords</h3><div class="kw-grid">';
+      for(var ki=0; ki<KEYWORDS.length; ki++){
+        var kw = KEYWORDS[ki];
+        h += '<div class="kw-card"><span class="kw">'+esc(kw.kw)+'</span><span class="kw-priority kw-'+kw.priority+'">'+kw.priority+'</span></div>';
+      }
+      h += '</div></div>';
+
+      // Technical checklist
+      h += '<div class="checklist-section"><h3>&#128295; Technical SEO Checklist</h3><div class="checklist-grid">';
+      for(var ci=0; ci<TECH_CHECKLIST.length; ci++){
+        var item = TECH_CHECKLIST[ci];
+        h += '<div class="check-item"><span class="dot dot-'+item.status+'"></span>'+esc(item.label)+'</div>';
+      }
+      h += '</div></div>';
+
+      $("app").innerHTML = h;
+    })
+    .catch(function(e){
+      $("app").innerHTML = '<div class="hero"><h2>Error Loading Project</h2><p>'+esc(e.message)+'</p><p style="margin-top:10px"><a class="btn" href="/project-manager.html">Go to Project Manager</a></p></div>';
+    });
+}
+
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>
