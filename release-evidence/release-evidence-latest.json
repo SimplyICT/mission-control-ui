@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-06-05T22:29:50.230606+00:00",
+  "candidate": "RC-W3-04",
+  "repo": {
+    "path": "/home/aiagent/mission-control-repo",
+    "branch": "main",
+    "head": "e590e11f5cb7c41887905e97e414037be0a937d0",
+    "clean_worktree": false,
+    "status_porcelain": "?? scripts/"
+  },
+  "services": [
+    {
+      "service": "mission-control-ui",
+      "active": true,
+      "state": "active",
+      "diagnostic": ""
+    },
+    {
+      "service": "device-audit-api",
+      "active": true,
+      "state": "active",
+      "diagnostic": ""
+    },
+    {
+      "service": "nginx",
+      "active": true,
+      "state": "active",
+      "diagnostic": ""
+    }
+  ],
+  "health_checks": [
+    {
+      "url": "http://127.0.0.1:8095/health",
+      "healthy": true,
+      "response": "{\"status\":\"ok\"}",
+      "error": ""
+    },
+    {
+      "url": "http://127.0.0.1:8096/",
+      "healthy": true,
+      "response": "{\"status\":\"ok\"}",
+      "error": ""
+    }
+  ],
+  "tracker": {
+    "exists": true,
+    "path": "/home/aiagent/mission-control-ui/project-tracker/tasks.json",
+    "meta_last_updated": "2026-06-05T21:53:10.000Z",
+    "task_count": 38,
+    "status_counts": {
+      "review": 9,
+      "done": 5,
+      "not_started": 23,
+      "blocked": 1
+    }
+  },
+  "ci_latest": {
+    "available": true,
+    "id": 26992298501,
+    "head_branch": "main",
+    "conclusion": "success",
+    "html_url": "https://github.com/SimplyICT/SimplyClik/actions/runs/26992298501",
+    "updated_at": "2026-06-05T02:50:08Z"
+  }
+}

@@ -3,10 +3,9 @@
 <head>
   <title>Mission Control — SOC Autopilot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    *{box-sizing:border-box}
+  <style>*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
     body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0}
-    .topbar{background:#111827;border-bottom:1px solid #1e293b;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
     .topbar-left .title{font-size:24px;font-weight:bold;color:#f8fafc}
     .topbar-left .subtitle{font-size:13px;color:#94a3b8;margin-top:4px}
     .topbar-right{display:flex;gap:10px;align-items:center}
@@ -53,18 +52,45 @@
     .timeline{max-height:300px;overflow-y:auto}
     .empty{text-align:center;padding:20px;color:#64748b;font-size:13px}
     @media(max-width:900px){.kpi-strip{flex-direction:column}.cols-2{grid-template-columns:1fr}}
-  </style>
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+</style>
 </head>
 <body>
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="title">SOC Autopilot</div>
-      <div class="subtitle">AI-powered security case management &amp; automated response</div>
+    <div class="brand">
+      <h1>🤖 
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>      <div class="subtitle">AI-powered security case management &amp; automated response</div>
     </div>
     <div class="topbar-right">
       <button class="btn" onclick="loadCases()">↻ Refresh</button>
       <a href="/wazuh-dashboard.html" class="btn">← Security Center</a>
-      <a href="/index-platform.html" class="btn">← Platform</a>
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
     </div>
   </div>
   <div class="container" id="mainContent">

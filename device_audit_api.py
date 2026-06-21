@@ -206,6 +206,7 @@ def clean_entry_payload(payload):
 def clean_device_payload(payload):
     allowed = {
         "asset_tag",
+        "serial_number",
         "device_type",
         "brand_model",
         "device_name",
@@ -1194,6 +1195,76 @@ def get_audit_batches(site_id: Optional[str] = Query(default=None)):
     return q.execute().data or []
 
 
+@app.get("/audit-batches/resume/{site_id}")
+def get_resume_audits(site_id: str):
+    batches = (
+        supabase.table("device_audits")
+        .select("*")
+        .eq("site_id", site_id)
+        .eq("status", "in_progress")
+        .order("audit_date", desc=True)
+        .execute()
+        .data
+        or []
+    )
+    if not batches:
+        return []
+
+    batch_ids = [b["audit_batch_id"] for b in batches]
+    entries = (
+        supabase.table("audit_entries")
+        .select("audit_batch_id", count="exact")
+        .in_("audit_batch_id", batch_ids)
+        .execute()
+    )
+    counts = {}
+    for e in (entries.data or []):
+        bid = e.get("audit_batch_id")
+        counts[bid] = counts.get(bid, 0) + 1
+
+    for b in batches:
+        b["entry_count"] = counts.get(b["audit_batch_id"], 0)
+    return batches
+
+
+@app.get("/audit-batch/{audit_batch_id}")
+def get_single_audit_batch(audit_batch_id: str):
+    return get_audit_batch(audit_batch_id)
+
+
+@app.post("/audits/{audit_batch_id}/finalize")
+def finalize_audit(audit_batch_id: str):
+    result = (
+        supabase.table("device_audits")
+        .update({"status": "finalized"})
+        .eq("audit_batch_id", audit_batch_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Audit batch not found")
+
+    # Auto-generate remediation actions from current findings
+    try:
+        generate_remediation_actions(audit_batch_id)
+    except Exception as e:
+        logger.warning(f"Failed to auto-generate remediation actions: {e}")
+
+    return {"success": True, "status": "finalized", "audit_batch_id": audit_batch_id}
+
+
+@app.post("/audits/{audit_batch_id}/reopen")
+def reopen_audit(audit_batch_id: str):
+    result = (
+        supabase.table("device_audits")
+        .update({"status": "in_progress"})
+        .eq("audit_batch_id", audit_batch_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Audit batch not found")
+    return {"success": True, "status": "in_progress", "audit_batch_id": audit_batch_id}
+
+
 @app.get("/devices")
 def get_devices(site_id: Optional[str] = Query(default=None), active: Optional[str] = Query(default=None)):
     q = supabase.table("devices").select("*")
@@ -1320,7 +1391,10 @@ def create_device(payload: Dict[str, Any]):
     site_name = (payload.get("site_name") or "").strip()
     if site_name:
         data["site_name"] = site_name
-    r = supabase.table("devices").insert(data).execute()
+    try:
+        r = supabase.table("devices").insert(data).execute()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Device creation failed: {exc}")
     if not r.data:
         raise HTTPException(status_code=500, detail="Failed to create device")
     return {"success": True, "device": r.data[0]}
@@ -1369,6 +1443,7 @@ def start_audit(req: AuditStartRequest):
         "audit_date": date.today().isoformat(),
         "audit_type": "Device Audit",
         "report_generated": False,
+        "status": "in_progress",
     }
 
     audit = supabase.table("device_audits").insert(audit_payload).execute()
@@ -2202,6 +2277,133 @@ def generate_remediation_actions(audit_batch_id: str):
         "actions_created": created_count,
         "actions_skipped_duplicate": len(active_rows) - created_count,
     }
+
+
+@app.get("/audit-findings/{audit_batch_id}")
+def get_audit_findings(audit_batch_id: str):
+    """Return all audit entries with computed findings and linked remediation actions."""
+    batch = get_audit_batch(audit_batch_id)
+    rows = get_entries_for_batch(audit_batch_id)
+
+    # Fetch remediation actions for this batch
+    actions = (
+        supabase.table("remediation_actions")
+        .select("*")
+        .eq("audit_batch_id", audit_batch_id)
+        .order("created_at", desc=True)
+        .execute()
+        .data or []
+    )
+
+    # Index actions by device_serial + finding_type for quick lookup
+    action_map = {}
+    for a in actions:
+        key = (a.get("device_serial"), a.get("finding_type"))
+        if key not in action_map:
+            action_map[key] = []
+        action_map[key].append(a)
+
+    findings = []
+    for row in rows:
+        serial = row.get("serial_number")
+        entry_status = row.get("status", "ok")
+        reasons = row.get("reasons", [])
+
+        # Determine finding types from current entry state
+        entry_findings = []
+
+        if is_missing(row):
+            entry_findings.append({
+                "finding_type": "missing_device",
+                "severity": "critical",
+                "description": f"Device is missing from audit",
+            })
+
+        if has_credential_issue(row):
+            notes = normalize_text(row.get("breach_notes") or row.get("notes"))
+            entry_findings.append({
+                "finding_type": "credential",
+                "severity": "critical",
+                "description": f"Credential/PIN issue detected. {notes}".strip(),
+            })
+
+        if is_photo_action(row):
+            pc = photo_count(row)
+            pd = row.get("photos_date")
+            entry_findings.append({
+                "finding_type": "photo_retention",
+                "severity": "high",
+                "description": f"{pc} photos, date {format_report_value(pd)}. Requires review.",
+            })
+
+        if has_hardware_issue(row) and not any(f["finding_type"] == "missing_device" for f in entry_findings):
+            notes = normalize_text(row.get("breach_notes") or row.get("notes"))
+            entry_findings.append({
+                "finding_type": "hardware",
+                "severity": "high",
+                "description": f"Hardware/OS issue detected. {notes}".strip(),
+            })
+
+        # Attach remediation actions if they exist
+        for finding in entry_findings:
+            ft = finding["finding_type"]
+            matched_actions = action_map.get((serial, ft), [])
+            finding["actions"] = matched_actions
+            if matched_actions:
+                finding["remediation_status"] = matched_actions[-1].get("status", "open")
+                finding["resolved_date"] = matched_actions[-1].get("resolved_date")
+                finding["resolution_notes"] = matched_actions[-1].get("resolution_notes")
+            else:
+                finding["remediation_status"] = None
+
+        if entry_findings:
+            findings.append({
+                "serial_number": serial,
+                "device_name": device_label(row),
+                "device_type": row.get("device_type"),
+                "room": room_name(row),
+                "device_id": row.get("device_id"),
+                "current_status": entry_status,
+                "current_reasons": reasons,
+                "findings": entry_findings,
+            })
+
+    # Also include any remediation actions that exist but no longer have matching findings
+    # (i.e., issues that were already fixed in entries but actions haven't been resolved)
+    fixed_findings = []
+    for a in actions:
+        serial = a.get("device_serial")
+        ft = a.get("finding_type")
+        still_open = any(
+            f["serial_number"] == serial and any(
+                fa["finding_type"] == ft for fa in f["findings"]
+            )
+            for f in findings
+        )
+        if not still_open and a.get("status") in ("open", "in_progress"):
+            fixed_findings.append({
+                "finding_type": ft,
+                "severity": a.get("priority"),
+                "description": a.get("description", ""),
+                "remediation_status": a.get("status"),
+                "actions": [a],
+            })
+            fixed_findings[-1]["serial_number"] = serial
+            fixed_findings[-1]["device_name"] = ""
+            fixed_findings[-1]["current_status"] = "ok"
+            fixed_findings[-1]["current_reasons"] = ["OK"]
+
+    return {
+        "audit_batch_id": audit_batch_id,
+        "site_name": batch.get("site_name"),
+        "status": batch.get("status"),
+        "findings": findings,
+        "fixed_findings": fixed_findings,
+        "actions_total": len(actions),
+        "actions_open": sum(1 for a in actions if a.get("status") in ("open", "in_progress")),
+        "actions_resolved": sum(1 for a in actions if a.get("status") in ("resolved", "closed", "accepted_risk")),
+    }
+
 
 @app.get("/governance-summary")
 def governance_summary():

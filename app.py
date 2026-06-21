@@ -41,7 +41,7 @@ _COOKIE_MAX_AGE = 86400 * 7  # 7 days
 _serializer     = URLSafeTimedSerializer(_SESSION_SECRET or "insecure-no-secret-set")
 _USERS_FILE     = BASE_DIR / "users.json"
 
-_PUBLIC_PATHS = {"/health", "/login", "/logout", "/2fa-verify"}
+_PUBLIC_PATHS = {"/health", "/login", "/logout", "/2fa-verify", "/api/services-health", "/agent/install", "/help.html", "/devdocs.html"}
 
 # ── TOTP 2FA helpers ──────────────────────────────────────────────────────────
 _2FA_PENDING_COOKIE  = "mc_2fa_pending"
@@ -126,6 +126,8 @@ ALL_PAGES = [
     {"path": "/incident-register.html",        "label": "Incident Register",      "section": "Compliance"},
     {"path": "/site-onboarding.html",          "label": "Site Onboarding",        "section": "Administration"},
     {"path": "/admin-users.html",              "label": "User Management",        "section": "Administration"},
+    {"path": "/help.html",                    "label": "? Help",                 "section": "Administration"},
+    {"path": "/devdocs.html",                 "label": "DevDocs",                "section": "Administration"},
     {"path": "/user-guide.html",               "label": "User Guide",             "section": "Administration"},
     {"path": "/agent-status.html",            "label": "Agent Status Monitor",   "section": "Network Monitoring"},
     {"path": "/project_tracker.html",         "label": "SEO Project Tracker",    "section": "Projects"},
@@ -273,6 +275,9 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     # Allow SimplyClik web app paths without mission-control auth
     if path.startswith("/admin") or path.startswith("/portal") or path.startswith("/static"):
+        return await call_next(request)
+    # Allow monitoring API access without auth (backend handles auth via API key)
+    if path.startswith("/monitoring-api/"):
         return await call_next(request)
     user = _get_authenticated_user(request)
     if not user:
@@ -469,12 +474,146 @@ def admin_users():
 def health():
     return {"status": "ok"}
 
+@app.get("/agent/install", response_class=HTMLResponse)
+def agent_install_page():
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install Mission Control Agent</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,system-ui,sans-serif; background:#f5f5f7; color:#1d1d1f; line-height:1.6; }
+  .container { max-width:680px; margin:60px auto; padding:0 24px; }
+  h1 { font-size:1.8rem; font-weight:700; margin-bottom:4px; }
+  .subtitle { color:#6e6e73; font-size:1rem; margin-bottom:28px; }
+  .card { background:#fff; border-radius:14px; padding:28px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+  .btn { display:inline-block; padding:12px 28px; border-radius:10px; font-size:0.95rem; font-weight:600;
+         text-decoration:none; cursor:pointer; border:none; }
+  .btn-primary { background:#0071e3; color:#fff; }
+  .btn-primary:hover { background:#0077ed; }
+  .btn-secondary { background:#e8e8ed; color:#1d1d1f; }
+  .btn-secondary:hover { background:#d2d2d7; }
+  label { display:block; font-weight:600; margin-bottom:4px; font-size:0.85rem; color:#1d1d1f; }
+  input { width:100%; padding:10px 14px; border:1px solid #d2d2d7; border-radius:8px; font-size:0.9rem; margin-bottom:14px; }
+  input:focus { outline:none; border-color:#0071e3; box-shadow:0 0 0 3px rgba(0,113,227,0.15); }
+  .form-row { display:flex; gap:14px; }
+  .form-row .field { flex:1; }
+  pre { background:#1d1d1f; color:#f5f5f7; padding:18px; border-radius:10px; overflow-x:auto; font-size:0.8rem; margin:14px 0; white-space:pre-wrap; word-break:break-all; }
+  .copy-msg { color:#30b94e; font-size:0.85rem; margin-top:6px; display:none; }
+  .steps { counter-reset:step; margin-top:6px; }
+  .step { margin-bottom:8px; padding-left:30px; position:relative; font-size:0.9rem; color:#515154; }
+  .step::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:0;
+          width:22px; height:22px; background:#0071e3; color:#fff; border-radius:50%; text-align:center;
+          font-size:0.75rem; font-weight:600; line-height:22px; }
+  .inline-code { background:#f5f5f7; padding:1px 6px; border-radius:4px; font-size:0.85rem; font-family:monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Install Mission Control Agent</h1>
+  <p class="subtitle">Windows installer for site probe NUCs</p>
+
+  <div class="card">
+    <h2 style="margin-bottom:14px;">1. Enter Site Details</h2>
+    <div class="field">
+      <label>API Key</label>
+      <input id="apiKey" type="password" placeholder="e.g. mission-test-key-123" />
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Site ID</label>
+        <input id="siteId" placeholder="e.g. site-benowa-elc" />
+      </div>
+      <div class="field">
+        <label>Site Name</label>
+        <input id="siteName" placeholder="e.g. Benowa ELC" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Agent ID</label>
+        <input id="agentId" placeholder="e.g. probe-benowa-nuc" />
+      </div>
+      <div class="field">
+        <label>Subnet</label>
+        <input id="subnet" value="192.168.1.0/24" />
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="generateCmd()" style="margin-top:4px;">Generate Command</button>
+  </div>
+
+  <div class="card" id="cmdCard" style="display:none;">
+    <h2 style="margin-bottom:10px;">2. Run This Command</h2>
+    <p style="font-size:0.85rem; color:#6e6e73; margin-bottom:8px;">Open <strong>PowerShell as Administrator</strong> and paste:</p>
+    <pre id="cmdOutput"></pre>
+    <button class="btn btn-secondary" onclick="copyCmd()" style="font-size:0.85rem; padding:8px 16px;">Copy Command</button>
+    <span class="copy-msg" id="copyMsg">Copied!</span>
+  </div>
+
+  <div class="card" style="color:#6e6e73; font-size:0.85rem;">
+    <p style="margin-bottom:10px;">Alternatively, <a href="/monitoring-api/agent/install.ps1" download>download install.ps1</a> manually and run it from your Downloads folder in admin PowerShell.</p>
+    <h2 style="margin-bottom:10px; color:#1d1d1f;">What it does</h2>
+    <div class="steps">
+      <div class="step">Downloads NSSM (service wrapper) if needed</div>
+      <div class="step">Downloads and extracts the probe agent package</div>
+      <div class="step">Creates Python virtualenv and installs requests</div>
+      <div class="step">Registers as Windows service (auto-start on boot)</div>
+      <div class="step">Logs at <span class="inline-code">C:\\Program Files\\Mission Probe\\logs\\</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function generateCmd() {
+  var apiKey = document.getElementById('apiKey').value.trim();
+  var siteId = document.getElementById('siteId').value.trim();
+  var siteName = document.getElementById('siteName').value.trim();
+  var agentId = document.getElementById('agentId').value.trim();
+  var subnet = document.getElementById('subnet').value.trim();
+
+  if (!apiKey || !siteId || !siteName || !agentId) {
+    alert('Please fill in all fields.');
+    return;
+  }
+
+  var q = String.fromCharCode(39);
+  var dq = String.fromCharCode(34);
+  var cmd = "powershell -ExecutionPolicy Bypass -Command " + dq +
+    "Invoke-WebRequest -Uri " + q + "https://audit.simplyict.com.au/monitoring-api/agent/install.ps1" + q +
+    " -OutFile " + dq + "$env:TEMP\\\\install-mp.ps1" + dq + "; " +
+    "& " + dq + "$env:TEMP\\\\install-mp.ps1" + dq +
+    " -ApiKey " + q + apiKey + q +
+    " -SiteId " + q + siteId + q +
+    " -SiteName " + q + siteName + q +
+    " -AgentId " + q + agentId + q +
+    " -Subnet " + q + subnet + q +
+    " -ApiBase " + q + "https://audit.simplyict.com.au/monitoring-api" + q +
+    dq;
+
+  document.getElementById('cmdOutput').textContent = cmd;
+  document.getElementById('cmdCard').style.display = 'block';
+  document.getElementById('copyMsg').style.display = 'none';
+}
+
+function copyCmd() {
+  var cmd = document.getElementById('cmdOutput').textContent;
+  navigator.clipboard.writeText(cmd).then(function() {
+    document.getElementById('copyMsg').style.display = 'inline';
+  });
+}
+</script>
+</body>
+</html>"""
+    return HTMLResponse(content=html, status_code=200)
+
+
 @app.get("/api/services-health")
 def services_health():
     import urllib.request as ureq
     checks = [
         ("Network Monitor",    "http://127.0.0.1:8000/health"),
-        ("Mission Control UI", "http://127.0.0.1:8095/health"),
         ("Device Audit API",   "http://127.0.0.1:8096/"),
     ]
     results = []
@@ -488,7 +627,9 @@ def services_health():
         if alive:
             ok_count += 1
         results.append({"name": name, "ok": alive})
-    return {"ok": ok_count, "total": len(checks), "services": results}
+    results.append({"name": "Mission Control UI", "ok": True})
+    ok_count += 1
+    return {"ok": ok_count, "total": len(checks) + 1, "services": results}
 
 
 
@@ -538,6 +679,11 @@ def audit_reports():
     return read_html("audit-reports.html")
 
 
+@app.get("/audit-remediation.html", response_class=HTMLResponse)
+def audit_remediation():
+    return read_html("audit-remediation.html")
+
+
 @app.get("/active-device-register.html", response_class=HTMLResponse)
 def active_device_register():
     return read_html("active-device-register.html")
@@ -567,6 +713,14 @@ def site_onboarding():
 @app.get("/user-guide.html", response_class=HTMLResponse)
 def user_guide():
     return read_html("user-guide.html")
+
+@app.get("/help.html", response_class=HTMLResponse)
+def help_page():
+    return read_html("help.html")
+
+@app.get("/devdocs.html", response_class=HTMLResponse)
+def devdocs():
+    return read_html("devdocs.html")
 
 @app.get("/agent-status.html", response_class=HTMLResponse)
 def agent_status():
@@ -1869,96 +2023,4 @@ def project_tracker_tasks_json():
     if not tracker_file.exists():
         return JSONResponse({"error": "tracker_not_found"}, status_code=404)
     return Response(content=tracker_file.read_text(encoding="utf-8"), media_type="application/json")
-
-# ── SimplyClik Web App Routes ──────────────────────────────────────────────────
-import os as _os
-
-_SIMPLYCLIK_ADMIN_DIR = _os.environ.get("SIMPLYCLIK_ADMIN_DIR", "/home/aiagent/simplyclik-admin")
-_SIMPLYCLIK_PORTAL_DIR = _os.environ.get("SIMPLYCLIK_PORTAL_DIR", "/home/aiagent/simplyclik-portal")
-
-
-def _serve_simplyclik_app(app_dir: str, subpath: str):
-    """Serve a React SPA build directory with fallback to index.html.
-    subpath is the path AFTER the prefix (e.g., for /admin/js/main.js, subpath='js/main.js')
-    """
-    if not subpath or subpath == "":
-        subpath = "index.html"
-    
-    full_path = Path(app_dir) / subpath
-    
-    # If file exists and is not a directory, serve it
-    if full_path.exists() and full_path.is_file():
-        content = full_path.read_bytes()
-        ext = full_path.suffix.lower()
-        media_type = {
-            ".html": "text/html", ".js": "application/javascript",
-            ".css": "text/css", ".json": "application/json",
-            ".png": "image/png", ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg", ".gif": "image/gif",
-            ".svg": "image/svg+xml", ".ico": "image/x-icon",
-            ".woff": "font/woff", ".woff2": "font/woff2",
-            ".map": "application/json",
-        }.get(ext, "application/octet-stream")
-        return Response(content=content, media_type=media_type)
-    
-    # SPA fallback: serve index.html for all non-file routes
-    index_path = Path(app_dir) / "index.html"
-    if index_path.exists():
-        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
-    
-    return HTMLResponse(
-        content=f"<h1>App not deployed</h1><p>Build directory not found at {app_dir}</p>",
-        status_code=404,
-    )
-
-
-@app.get("/admin/{path:path}")
-def simplyclik_admin(path: str):
-    return _serve_simplyclik_app(_SIMPLYCLIK_ADMIN_DIR, path)
-
-
-@app.get("/admin")
-def simplyclik_admin_root():
-    return _serve_simplyclik_app(_SIMPLYCLIK_ADMIN_DIR, "")
-
-
-@app.get("/portal/{path:path}")
-def simplyclik_portal(path: str):
-    return _serve_simplyclik_app(_SIMPLYCLIK_PORTAL_DIR, path)
-
-
-@app.get("/portal")
-def simplyclik_portal_root():
-    return _serve_simplyclik_app(_SIMPLYCLIK_PORTAL_DIR, "")
-
-
-# Catch-all for static assets from React builds
-# Both apps reference /static/... but are served at /admin/ and /portal/
-@app.get("/static/{path:path}")
-def simplyclik_static(path: str):
-    admin_path = Path(_SIMPLYCLIK_ADMIN_DIR) / "static" / path
-    if admin_path.exists() and admin_path.is_file():
-        ext = admin_path.suffix.lower()
-        media_type = {
-            ".js": "application/javascript", ".css": "text/css",
-            ".json": "application/json", ".png": "image/png",
-            ".jpg": "image/jpeg", ".svg": "image/svg+xml",
-            ".woff": "font/woff", ".woff2": "font/woff2",
-            ".map": "application/json",
-        }.get(ext, "application/octet-stream")
-        return Response(content=admin_path.read_bytes(), media_type=media_type)
-
-    portal_path = Path(_SIMPLYCLIK_PORTAL_DIR) / "static" / path
-    if portal_path.exists() and portal_path.is_file():
-        ext = portal_path.suffix.lower()
-        media_type = {
-            ".js": "application/javascript", ".css": "text/css",
-            ".json": "application/json", ".png": "image/png",
-            ".jpg": "image/jpeg", ".svg": "image/svg+xml",
-            ".woff": "font/woff", ".woff2": "font/woff2",
-            ".map": "application/json",
-        }.get(ext, "application/octet-stream")
-        return Response(content=portal_path.read_bytes(), media_type=media_type)
-
-    return HTMLResponse(content="<h1>Static file not found</h1>", status_code=404)
 

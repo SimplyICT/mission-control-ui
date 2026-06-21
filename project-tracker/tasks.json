@@ -2,7 +2,7 @@
   "meta": {
     "project_name": "SimplyClik + Our Neurodiverse Family",
     "description": "SimplyClik modernization program and Our Neurodiverse Family SEO engagement.",
-    "last_updated": "2026-06-10T07:00:00.000Z",
+    "last_updated": "2026-06-16T14:11:37.714Z",
     "status_values": [
       "not_started",
       "in_progress",
@@ -234,7 +234,7 @@
       "proof": [
         "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-02-seed-drift-report.json"
       ],
-      "notes": "Seed/version drift detection complete. Compared SQLite baseline (git 9e9a816) against PostgreSQL 16 schema via information_schema. Results: 0 high, 0 medium schema drifts; 24 info-level type upgrades (INTEGER->BOOLEAN for flag columns, TEXT->JSONB for details, DATETIME->TIMESTAMPTZ for timestamps) \u2014 all expected and semantically correct. CRITICAL FINDING (fixed): schema.sql seeded admin user with placeholder password hash 'REPLACE_WITH_HASHED_PASSWORD'; users.init_default_admin() uses ON CONFLICT DO NOTHING so the placeholder was never overwritten, breaking admin login on fresh deploys. Fix applied: removed placeholder INSERT from schema.sql (commit 403f5cf); admin seeding now delegated entirely to init_default_admin() at app startup. No schema_versions table exists; recommend adding migration tracking (Alembic/Flyway).",
+      "notes": "Seed/version drift detection complete. Compared SQLite baseline (git 9e9a816) against PostgreSQL 16 schema via information_schema. Results: 0 high, 0 medium schema drifts; 24 info-level type upgrades (INTEGER->BOOLEAN for flag columns, TEXT->JSONB for details, DATETIME->TIMESTAMPTZ for timestamps) — all expected and semantically correct. CRITICAL FINDING (fixed): schema.sql seeded admin user with placeholder password hash 'REPLACE_WITH_HASHED_PASSWORD'; users.init_default_admin() uses ON CONFLICT DO NOTHING so the placeholder was never overwritten, breaking admin login on fresh deploys. Fix applied: removed placeholder INSERT from schema.sql (commit 403f5cf); admin seeding now delegated entirely to init_default_admin() at app startup. No schema_versions table exists; recommend adding migration tracking (Alembic/Flyway).",
       "last_updated": "2026-06-06T21:52:17.000Z"
     },
     {
@@ -251,7 +251,7 @@
       "proof": [
         "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-03-backfill-verification.json"
       ],
-      "notes": "Backfill verification complete via static analysis. Migration 20260605003000_request_status_events.sql: 6/7 backfill SQL checks pass, 1 acceptable. 4/4 forward-path code checks pass (atomic transactions, no duplicates, correct timeline UNION with visibility guards). Live DB checks (row count plausibility, timestamp check, service_types count) permanently blocked: platform API Supabase credentials exist only as GitHub Actions CI secrets \u2014 not readable from outside CI. config.toml is local-dev only (project_id='platform-api', no production ref). api.simplyclik.com unreachable (domain not live). Static verification is definitive; live checks are a post-deploy smoke test responsibility.",
+      "notes": "Backfill verification complete via static analysis. Migration 20260605003000_request_status_events.sql: 6/7 backfill SQL checks pass, 1 acceptable. 4/4 forward-path code checks pass (atomic transactions, no duplicates, correct timeline UNION with visibility guards). Live DB checks (row count plausibility, timestamp check, service_types count) permanently blocked: platform API Supabase credentials exist only as GitHub Actions CI secrets — not readable from outside CI. config.toml is local-dev only (project_id='platform-api', no production ref). api.simplyclik.com unreachable (domain not live). Static verification is definitive; live checks are a post-deploy smoke test responsibility.",
       "last_updated": "2026-06-06T23:00:00.000Z"
     },
     {
@@ -268,7 +268,7 @@
       "proof": [
         "/home/aiagent/mission-control-ui/project-tracker/artifacts/w2-04-rollback-strategy.json"
       ],
-      "notes": "Rollback strategy documentation complete. 3 irreversible migration phases documented: P1 (SOC Dashboard SQLite\u2192PostgreSQL full schema), P2 (admin seed delegation fix, commit 403f5cf), P3 (SimplyClik request_status_events migration + backfill). Each phase includes: irreversible operations list, pre-migration checklist, rollback window, rollback procedure with data-loss risk rating, containment procedure, and go/no-go criteria. Highest rollback risk: P3 (organic event writes close rollback window within minutes of API cutover). Cross-cutting controls: pg_dump/PiTR backup within 1h of apply, non-peak change window, staging rehearsal required, evidence artifacts required per phase.",
+      "notes": "Rollback strategy documentation complete. 3 irreversible migration phases documented: P1 (SOC Dashboard SQLite→PostgreSQL full schema), P2 (admin seed delegation fix, commit 403f5cf), P3 (SimplyClik request_status_events migration + backfill). Each phase includes: irreversible operations list, pre-migration checklist, rollback window, rollback procedure with data-loss risk rating, containment procedure, and go/no-go criteria. Highest rollback risk: P3 (organic event writes close rollback window within minutes of API cutover). Cross-cutting controls: pg_dump/PiTR backup within 1h of apply, non-peak change window, staging rehearsal required, evidence artifacts required per phase.",
       "last_updated": "2026-06-06T23:00:00.000Z"
     },
     {
@@ -701,7 +701,7 @@
       "dependencies": [],
       "target_date": "2026-06-13",
       "proof": [],
-      "notes": "GA4 script for G-KLLHCXM158 loads twice in <head> \u2014 inflates pageview counts. Remove duplicate via Kajabi 'Header hook' settings.",
+      "notes": "GA4 script for G-KLLHCXM158 loads twice in <head> — inflates pageview counts. Remove duplicate via Kajabi 'Header hook' settings.",
       "last_updated": "2026-06-10T06:00:00.000Z"
     },
     {
@@ -797,7 +797,7 @@
       "dependencies": [],
       "target_date": "2026-07-04",
       "proof": [],
-      "notes": "Enables rich snippet FAQ display in SERPs \u2014 high CTR impact. Map each existing FAQ question/answer into JSON-LD FAQPage schema.",
+      "notes": "Enables rich snippet FAQ display in SERPs — high CTR impact. Map each existing FAQ question/answer into JSON-LD FAQPage schema.",
       "last_updated": "2026-06-10T06:00:00.000Z"
     },
     {
@@ -909,6 +909,174 @@
       "proof": [],
       "notes": "Run Lighthouse audit. Actions: convert hero images to WebP, lazy-load below-fold images, minimize render-blocking CSS/JS, leverage browser caching. Kajabi platform limits some optimizations but improve what's possible.",
       "last_updated": "2026-06-10T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P1-01",
+      "workstream": "MCS Phase 1: Surface Existing Data",
+      "title": "Device detail drill-down page",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": "2026-06-18",
+      "proof": [
+        "mission_control_device_detail_v1.html"
+      ],
+      "notes": "Created mission_control_device_detail_v1.html — full device profile, observations (100), alerts (50). Device names linked from Live Dashboard v1/v2, Exec Dashboard",
+      "last_updated": "2026-06-16T14:11:36.832Z"
+    },
+    {
+      "id": "MCS-P1-02",
+      "workstream": "MCS Phase 1: Surface Existing Data",
+      "title": "Render latency data on device rows across dashboards",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": "2026-06-18",
+      "proof": [
+        "mission_control_live_dashboard_v2.html"
+      ],
+      "notes": "latency-pill CSS + last_latency_ms column added to Live Dashboard v1/v2 device tables. High-latency flagged amber/red",
+      "last_updated": "2026-06-16T14:11:37.128Z"
+    },
+    {
+      "id": "MCS-P1-03",
+      "workstream": "MCS Phase 1: Surface Existing Data",
+      "title": "Observation timeline on Executive Dashboard",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": "2026-06-18",
+      "proof": [
+        "mission_control_executive_dashboard_v24_1.html"
+      ],
+      "notes": "Recent Activity section added to Executive Dashboard v24.1 — shows OFFLINE/DEGRADED events from last 24h derived from device timestamps",
+      "last_updated": "2026-06-16T14:11:37.264Z"
+    },
+    {
+      "id": "MCS-P1-04",
+      "workstream": "MCS Phase 1: Surface Existing Data",
+      "title": "CSV export for probe device data",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": "2026-06-18",
+      "proof": [
+        "backend_api.py"
+      ],
+      "notes": "New GET /api/v1/devices/export/csv endpoint + Download CSV button on Device Admin page",
+      "last_updated": "2026-06-16T14:11:37.458Z"
+    },
+    {
+      "id": "MCS-P1-05",
+      "workstream": "MCS Phase 1: Surface Existing Data",
+      "title": "Show device metadata/tags in admin views",
+      "status": "done",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": "2026-06-18",
+      "proof": [
+        "mission_control_device_admin_v1.html"
+      ],
+      "notes": "Tags column added to Device Admin table. device-tag pills rendered for each device's tags array",
+      "last_updated": "2026-06-16T14:11:37.714Z"
+    },
+    {
+      "id": "MCS-P2-01",
+      "workstream": "MCS Phase 2: Analytics & Trends",
+      "title": "Device availability charts (24h/7d/30d)",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Per-device and per-site availability % with configurable time range selector",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P2-02",
+      "workstream": "MCS Phase 2: Analytics & Trends",
+      "title": "Latency trend sparklines per device",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Inline sparkline on device rows showing latency trend from last N observations",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P2-03",
+      "workstream": "MCS Phase 2: Analytics & Trends",
+      "title": "Device state-change activity feed",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Reverse-chronological feed of state changes: offline→online, new device detected, status transitions",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P2-04",
+      "workstream": "MCS Phase 2: Analytics & Trends",
+      "title": "Per-device timeline view",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [
+        "MCS-P1-01"
+      ],
+      "target_date": null,
+      "proof": [],
+      "notes": "Extend device detail page with full timeline: observations, status changes, alerts overlaid on same time axis",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P3-01",
+      "workstream": "MCS Phase 3: Advanced",
+      "title": "Real-time device events via SSE",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Push device state change events through SSE stream instead of all-polling",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P3-02",
+      "workstream": "MCS Phase 3: Advanced",
+      "title": "Scheduled PDF uptime reports per site",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Monthly/quarterly PDF report with device availability %, offline events, latency trends per site",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P3-03",
+      "workstream": "MCS Phase 3: Advanced",
+      "title": "Audit cross-reference probe data with compliance",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Link device uptime/availability data to ACECQA compliance evidence — network reliability as evidence artifact",
+      "last_updated": "2026-06-16T06:00:00.000Z"
+    },
+    {
+      "id": "MCS-P3-04",
+      "workstream": "MCS Phase 3: Advanced",
+      "title": "Device connectivity topology view",
+      "status": "not_started",
+      "owner": "Oz",
+      "dependencies": [],
+      "target_date": null,
+      "proof": [],
+      "notes": "Visual map of device relationships on the network — gateway, switches, connected endpoints",
+      "last_updated": "2026-06-16T06:00:00.000Z"
     }
   ]
 }

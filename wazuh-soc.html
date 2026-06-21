@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg-primary:#0d1117;--bg-secondary:#161b22;--bg-card:#1c2333;--bg-hover:#252d3f;--text-primary:#e6edf3;--text-secondary:#8b949e;--accent:#00b4d8;--accent-hover:#0096b4;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--sidebar-width:220px;--sidebar-collapsed:56px;--topbar-height:56px;--radius:8px;--radius-sm:4px}
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);font-size:14px}
 #app{display:flex;height:100vh;overflow:hidden}
 .sidebar{width:var(--sidebar-width);min-width:var(--sidebar-width);background:var(--bg-secondary);border-right:1px solid #2d2d3d;display:flex;flex-direction:column;transition:width .2s,min-width .2s;overflow:hidden;z-index:100}
@@ -31,7 +31,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ro
 .platform-link{display:flex;align-items:center;gap:6px;width:100%;margin:8px 12px;color:var(--text-secondary);font-size:13px;background:none;border:none;cursor:pointer;text-decoration:none}
 .platform-link:hover{color:var(--accent)}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{height:var(--topbar-height);min-height:var(--topbar-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg-secondary);border-bottom:1px solid #2d2d3d;gap:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
 .topbar-left h1{font-size:18px;font-weight:600;white-space:nowrap}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .search-box input{background:var(--bg-primary);border:1px solid #2d2d3d;color:var(--text-primary);padding:6px 12px;border-radius:var(--radius);width:220px;font-size:13px}
@@ -112,6 +112,26 @@ select.input{cursor:pointer}
 .help-list li{padding:6px 0 6px 20px;color:var(--text-secondary);line-height:1.6;position:relative;font-size:13px}
 .help-list li::before{content:"\25B8";position:absolute;left:0;color:var(--accent)}
 @media(max-width:768px){.cols-2,.cols-3{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.sidebar{width:var(--sidebar-collapsed);min-width:var(--sidebar-collapsed)}.sidebar .logo-text,.sidebar .nav-label{display:none}}
+
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
 </style>
 </head>
 <body>
@@ -138,19 +158,24 @@ select.input{cursor:pointer}
       <a href="#/help" class="nav-item" data-page="help" title="Help"><span class="nav-icon">&#10068;</span><span class="nav-label">Help</span></a>
     </nav>
     <div class="sidebar-footer">
-      <a href="/index-platform.html" class="platform-link">&#10149; Mission Control</a>
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
       <div class="nl-toggle" onclick="toggleNL()">&#128269; Ask</div>
     </div>
   </aside>
   <main id="main" class="main">
-    <header class="topbar">
-      <div class="topbar-left"><h1 id="pageTitle">Command Center</h1></div>
-      <div class="topbar-right">
-        <div class="search-box"><input type="text" id="globalSearch" placeholder="Search agents..." /></div>
-        <button id="refreshBtn" class="btn btn-sm" title="Refresh">&#8634;</button>
-        <span id="lastUpdated" class="last-updated"></span>
-      </div>
-    </header>
+    <div class="topbar">
+    <div class="brand">
+      <h1>🖥️ Command Center
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>
     <div id="content" class="content"></div>
   </main>
   <div id="nlPanel" class="nl-panel">

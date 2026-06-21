@@ -1,264 +1,194 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mission Control — Project Tracker</title>
-    <style>
-      :root {
-        --bg: #0f172a;
-        --panel: #111827;
-        --text: #e5e7eb;
-        --muted: #94a3b8;
-        --done: #22c55e;
-        --progress: #38bdf8;
-        --review: #f59e0b;
-        --blocked: #ef4444;
-        --pending: #64748b;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-      .wrap {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 24px;
-      }
-      h1 { margin: 0 0 8px; }
-      .sub { color: var(--muted); margin-bottom: 20px; }
-      .stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-        margin-bottom: 20px;
-      }
-      .card {
-        background: var(--panel);
-        border: 1px solid #1f2937;
-        border-radius: 10px;
-        padding: 12px;
-      }
-      .num { font-size: 24px; font-weight: 700; }
-      .label { color: var(--muted); font-size: 12px; text-transform: uppercase; }
-      .phase {
-        margin-bottom: 18px;
-        background: var(--panel);
-        border: 1px solid #1f2937;
-        border-radius: 10px;
-        overflow: hidden;
-      }
-      .phase-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 14px;
-        border-bottom: 1px solid #1f2937;
-      }
-      .phase-progress {
-        width: 220px;
-        height: 10px;
-        border-radius: 999px;
-        background: #0b1220;
-        overflow: hidden;
-      }
-      .phase-progress > span {
-        display: block;
-        height: 100%;
-        background: var(--progress);
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      th, td {
-        padding: 10px 14px;
-        border-bottom: 1px solid #1f2937;
-        text-align: left;
-        vertical-align: top;
-        font-size: 13px;
-      }
-      th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
-      .status-pill {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-      .done { background: rgba(34,197,94,.2); color: var(--done); }
-      .in_progress { background: rgba(56,189,248,.2); color: var(--progress); }
-      .review { background: rgba(245,158,11,.2); color: var(--review); }
-      .blocked { background: rgba(239,68,68,.2); color: var(--blocked); }
-      .not_started { background: rgba(100,116,139,.2); color: var(--pending); }
-      a { color: #7dd3fc; text-decoration: none; }
-      .footer {
-        color: var(--muted);
-        margin-top: 14px;
-        font-size: 12px;
-      }
-      .child-row td:first-child {
-        padding-left: 28px;
-      }
-      .child-id::before {
-        content: "↳ ";
-        color: var(--muted);
-      }
-      .muted {
-        color: var(--muted);
-      }
-      .error {
-        background: rgba(239,68,68,.15);
-        border: 1px solid rgba(239,68,68,.4);
-        color: #fecaca;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <h1>Mission Control Project Tracker</h1>
-      <div class="sub" id="meta">Loading tracker...</div>
-      <div class="sub" id="refresh-meta">Auto-refresh: waiting for first sync...</div>
-      <div id="error"></div>
-      <section class="stats" id="stats"></section>
-      <section id="phases"></section>
-      <div class="footer">Tracker source: <code>project-tracker/tasks.json</code></div>
-    </div>
-    <script>
-      const REFRESH_INTERVAL_MS = 15000;
-      let isRefreshing = false;
-      const taskSort = (a, b) => {
-        if (a.id < b.id) return -1;
-        if (a.id > b.id) return 1;
-        return 0;
-      };
-      const pretty = (value) => value.replaceAll("_", " ");
-      const toProofHtml = (proof) => {
-        if (proof.startsWith("http://") || proof.startsWith("https://")) {
-          return `<a href="${proof}" target="_blank" rel="noreferrer">proof</a>`;
-        }
-        return `<span class="muted">${proof}</span>`;
-      };
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Control — Project Tracker</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--blue:#3b82f6}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #2d2d3d;background:var(--panel);position:sticky;top:0;z-index:10}
+    .topbar h1{font-size:18px;font-weight:600}.topbar span{color:var(--muted);font-size:13px}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .btn{background:var(--card);color:var(--text);border:1px solid #2d2d3d;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+    .btn:hover{background:var(--hover);border-color:var(--accent)}
+    .btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+    .btn-primary:hover{background:#0096b4}
+    .btn-sm{padding:4px 10px;font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+    .card{background:var(--card);border:1px solid #2d2d3d;border-radius:10px;padding:20px;cursor:pointer;transition:border-color .15s}
+    .card:hover{border-color:var(--accent)}
+    .card h3{font-size:16px;margin-bottom:4px}.card p{color:var(--muted);font-size:13px;margin-bottom:12px;line-height:1.4}
+    .stat-row{display:flex;gap:16px;margin-bottom:12px;font-size:12px;color:var(--muted)}
+    .stat-row span{display:flex;align-items:center;gap:4px}
+    .bar{height:6px;border-radius:999px;background:#0b1220;overflow:hidden;margin-bottom:8px}
+    .bar-fill{height:100%;border-radius:999px;background:var(--accent);transition:width .3s}
+    .bar-fill.done{background:var(--green)}
+    .meta{color:var(--muted);font-size:11px}
+    .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:16px;text-decoration:none}
+    .back:hover{color:var(--text)}
+    .detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+    .detail-header h2{font-size:22px}.detail-header p{color:var(--muted);font-size:13px;margin-top:2px}
+    .filter-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+    .filter-tab{background:var(--bg);border:1px solid #2d2d3d;border-radius:999px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;font-weight:600}
+    .filter-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(0,180,216,.08)}
+    .table-container{overflow-x:auto;border-radius:8px;border:1px solid #2d2d3d}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{text-align:left;padding:10px 12px;border-bottom:1px solid #2d2d3d;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+    td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+    tr:hover td{background:var(--hover)!important}
+    .status{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700}
+    .status-not_started{background:rgba(100,116,139,.15);color:#94a3b8}
+    .status-in_progress{background:rgba(56,189,248,.12);color:#38bdf8}
+    .status-blocked{background:rgba(239,68,68,.12);color:#ef4444}
+    .status-review{background:rgba(245,158,11,.12);color:#f59e0b}
+    .status-done{background:rgba(34,197,94,.12);color:#22c55e}
+    .priority-box{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+    .priority-high{background:rgba(239,68,68,.12);color:#ef4444}
+    .priority-medium{background:rgba(245,158,11,.12);color:#f59e0b}
+    .priority-low{background:rgba(100,116,139,.12);color:#94a3b8}
+    select.task-status{background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:4px;padding:3px 6px;font-size:12px;cursor:pointer;outline:none}
+    select.task-status:focus{border-color:var(--accent)}
+    .inline-add{display:flex;gap:8px;padding:12px;align-items:center;flex-wrap:wrap}
+    .inline-add input{flex:1;min-width:200px;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:8px 12px;font-size:13px;outline:none}
+    .inline-add input:focus{border-color:var(--accent)}
+    .empty{text-align:center;padding:40px;color:var(--muted)}
+    .footer{text-align:center;color:#475569;font-size:12px;padding:28px 0;border-top:1px solid #1e293b;margin-top:28px}
+    .error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fecaca;border-radius:8px;padding:12px;margin-bottom:12px}
+    a{color:#7dd3fc;text-decoration:none}
+    a:hover{text-decoration:underline}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.detail-header{flex-direction:column}}
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+</style>
+</head>
+<body>
 
-      function renderStats(tasks) {
-        const total = tasks.length;
-        const byStatus = Object.fromEntries(["done", "in_progress", "review", "blocked", "not_started"].map((k) => [k, 0]));
-        for (const task of tasks) byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
-        const completedPct = total ? Math.round((byStatus.done / total) * 100) : 0;
-        const cards = [
-          ["Total items", total],
-          ["Done", byStatus.done],
-          ["In progress", byStatus.in_progress],
-          ["In review", byStatus.review],
-          ["Blocked", byStatus.blocked],
-          ["Completion", `${completedPct}%`]
-        ];
-        document.getElementById("stats").innerHTML = cards.map(([label, value]) => `
-          <article class="card">
-            <div class="num">${value}</div>
-            <div class="label">${label}</div>
-          </article>
-        `).join("");
-      }
+<div class="topbar">
+  <div><h1>Project Tracker</h1><span id="meta">Loading...</span>  <div style="display:flex;gap:6px;align-items:center">
+    <a class="nav-btn" href="/help.html">? Help</a>
+    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+  </div></div>
+  <div class="topbar-actions" style="display:flex;gap:8px">
+    <a class="btn btn-sm" href="/project-manager.html">Project Manager</a>
+    <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+    <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
+  </div>
+</div>
 
-      function buildRows(task, childMap, depth = 0) {
-        const children = (childMap.get(task.id) || []).sort(taskSort);
-        const proofs = (task.proof || []).map((p) => `<div>${toProofHtml(p)}</div>`).join("");
-        const rowClass = depth > 0 ? "child-row" : "";
-        const idClass = depth > 0 ? "child-id" : "";
-        const row = `
-          <tr class="${rowClass}">
-            <td><strong class="${idClass}">${task.id}</strong></td>
-            <td>${task.title}<div style="color:#94a3b8;margin-top:4px;">${task.notes || ""}</div></td>
-            <td><span class="status-pill ${task.status}">${pretty(task.status)}</span></td>
-            <td>${(task.dependencies || []).join(", ") || "-"}</td>
-            <td>${task.owner || "-"}</td>
-            <td>${proofs || "-"}</td>
-          </tr>
-        `;
-        return row + children.map((child) => buildRows(child, childMap, depth + 1)).join("");
-      }
+<div class="wrap" id="content"><div class="empty">Loading tracker data...</div></div>
+<div class="footer">Tracker source: <code>project-tracker/tasks.json</code></div>
 
-      function renderPhases(tasks) {
-        const grouped = tasks.reduce((acc, task) => {
-          acc[task.workstream] = acc[task.workstream] || [];
-          acc[task.workstream].push(task);
-          return acc;
-        }, {});
+<script>
+var currentWorkstream = null;
+var currentFilter = "all";
 
-        const phaseHtml = Object.entries(grouped).map(([phase, phaseTasks]) => {
-          const parents = phaseTasks.filter((t) => !t.parent_id).sort(taskSort);
-          const childMap = new Map();
-          for (const task of phaseTasks) {
-            if (!task.parent_id) continue;
-            if (!childMap.has(task.parent_id)) childMap.set(task.parent_id, []);
-            childMap.get(task.parent_id).push(task);
-          }
-          const done = phaseTasks.filter((t) => t.status === "done").length;
-          const pct = phaseTasks.length ? Math.round((done / phaseTasks.length) * 100) : 0;
-          const rows = parents.map((task) => buildRows(task, childMap)).join("");
+function $(id){return document.getElementById(id)}
+function esc(v){var d=document.createElement("div");d.textContent=v;return d.innerHTML}
+function pretty(v){return String(v).replace(/_/g," ")}
 
-          return `
-            <section class="phase">
-              <header class="phase-head">
-                <div><strong>${phase}</strong> (${done}/${phaseTasks.length})</div>
-                <div class="phase-progress"><span style="width:${pct}%"></span></div>
-              </header>
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Task</th><th>Status</th><th>Dependencies</th><th>Owner</th><th>Proof</th>
-                  </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </section>
-          `;
-        }).join("");
+function fetchTracker(){return fetch("/project-tracker/tasks.json",{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});}
 
-        document.getElementById("phases").innerHTML = phaseHtml;
-      }
+function loadList(){
+  currentWorkstream=null;currentFilter="all";
+  $("meta").textContent="All Workstreams";
+  fetchTracker().then(function(d){
+    var tasks=d.tasks||[];
+    $("meta").textContent=(d.meta?d.meta.project_name:"Project Tracker")+" • "+tasks.length+" tasks"+(d.meta?" • "+d.meta.last_updated:"");
+    var grouped={};
+    tasks.forEach(function(t){
+      var ws=t.workstream||"Unassigned";
+      if(!grouped[ws])grouped[ws]=[];
+      grouped[ws].push(t);
+    });
+    var wsNames=Object.keys(grouped).sort();
+    var h='<div class="grid">';
+    wsNames.forEach(function(ws){
+      var ptasks=grouped[ws];
+      var total=ptasks.length;
+      var done=ptasks.filter(function(t){return t.status==="done"}).length;
+      var progress=total?Math.round(done/total*100):0;
+      var barClass=progress>=100?"done":"";
+      h+='<div class="card" onclick="loadWorkstream(\''+esc(ws)+'\')"><h3>'+esc(ws)+'</h3><p>'+total+' tasks</p>'
+        +'<div class="stat-row"><span>&#128203; '+total+' tasks</span><span>&#9989; '+done+' done</span></div>'
+        +'<div class="bar"><div class="bar-fill '+barClass+'" style="width:'+progress+'%"></div></div>'
+        +'<div class="meta">'+Math.round(progress)+'% complete</div></div>';
+    });
+    h+='</div>';
+    $("content").innerHTML=h;
+  }).catch(function(e){$("content").innerHTML='<div class="error">Failed to load tracker: '+esc(e.message)+'</div>'});
+}
 
-      async function loadTracker() {
-        if (isRefreshing) return;
-        isRefreshing = true;
-        try {
-          const candidateUrls = ["../tasks.json", "/project-tracker/tasks.json"];
-          let response = null;
-          for (const url of candidateUrls) {
-            const attempt = await fetch(url, { cache: "no-store" });
-            if (attempt.ok) {
-              response = attempt;
-              break;
-            }
-          }
-          if (!response) throw new Error("Failed to load tracker JSON from known paths");
-          const data = await response.json();
-          const tasks = (data.tasks || []).map((task) => ({
-            ...task,
-            parent_id: task.parent_id || null
-          }));
-          document.getElementById("meta").textContent = `${data.meta.project_name} • last updated ${data.meta.last_updated}`;
-          document.getElementById("refresh-meta").textContent = `Auto-refresh every ${Math.round(REFRESH_INTERVAL_MS / 1000)}s • last sync ${new Date().toLocaleTimeString()}`;
-          document.getElementById("error").innerHTML = "";
-          renderStats(tasks);
-          renderPhases(tasks);
-        } catch (error) {
-          document.getElementById("error").innerHTML = `<div class="error">${error.message}. Serve this folder over HTTP (not file://) so the page can fetch <code>tasks.json</code>.</div>`;
-        } finally {
-          isRefreshing = false;
-        }
-      }
+function loadWorkstream(ws){
+  currentWorkstream=ws;currentFilter="all";
+  $("meta").textContent=ws;
+  fetchTracker().then(function(d){
+    var allTasks=d.tasks||[];
+    var tasks=allTasks.filter(function(t){return(t.workstream||"Unassigned")===ws});
+    var total=tasks.length;
+    var done=tasks.filter(function(t){return t.status==="done"}).length;
+    var progress=total?Math.round(done/total*100):0;
+    var barClass=progress>=100?"done":"";
 
-      loadTracker();
-      setInterval(loadTracker, REFRESH_INTERVAL_MS);
-    </script>
-  </body>
+    var h='<a class="back" onclick="loadList()">&#9664; All Workstreams</a>'
+      +'<div class="detail-header"><div><h2>'+esc(ws)+'</h2><p>'+total+' tasks</p></div>'
+      +'<div style="text-align:right;min-width:120px"><div style="font-size:24px;font-weight:700">'+progress+'%</div><div style="color:var(--muted);font-size:12px">'+done+'/'+total+' done</div>'
+      +'<div class="bar" style="width:100%;margin-top:6px"><div class="bar-fill '+barClass+'" style="width:'+progress+'%"></div></div></div></div>';
+
+    var statuses=[{k:"all",l:"All ("+total+")"},{k:"not_started",l:"To Do"},{k:"in_progress",l:"In Progress"},{k:"blocked",l:"Blocked"},{k:"review",l:"Review"},{k:"done",l:"Done"}];
+    h+='<div class="filter-tabs">';
+    statuses.forEach(function(s){
+      var count=tasks.filter(function(t){return s.k==="all"||t.status===s.k}).length;
+      h+='<span class="filter-tab '+(currentFilter===s.k?"active":"")+'" onclick="filterTasks(\''+s.k+'\')">'+s.l+' ('+count+')</span>';
+    });
+    h+='</div>';
+
+    var filtered=tasks;
+    if(currentFilter!=="all")filtered=tasks.filter(function(t){return t.status===currentFilter});
+    // Sort: parent tasks first, then by id
+    var parents=filtered.filter(function(t){return !t.parent_id});
+    var childMap={};
+    filtered.forEach(function(t){
+      if(!t.parent_id)return;
+      if(!childMap[t.parent_id])childMap[t.parent_id]=[];
+      childMap[t.parent_id].push(t);
+    });
+    parents.sort(function(a,b){return a.id<b.id?-1:a.id>b.id?1:0});
+    Object.keys(childMap).forEach(function(pid){childMap[pid].sort(function(a,b){return a.id<b.id?-1:a.id>b.id?1:0})});
+
+    h+='<div class="table-container"><table><thead><tr><th style="width:36px"></th><th>Task</th><th>Status</th><th>Priority</th><th>Owner</th><th>ID</th><th>Proof</th></tr></thead><tbody>';
+    parents.forEach(function(task){
+      h+=taskRow(task,false);
+      (childMap[task.id]||[]).forEach(function(child){h+=taskRow(child,true);});
+    });
+    if(!parents.length)h+='<tr><td colspan="7" class="empty" style="padding:20px;text-align:center;color:var(--muted)">No tasks match this filter.</td></tr>';
+    h+='</tbody></table></div>';
+    $("content").innerHTML=h;
+  }).catch(function(e){$("content").innerHTML='<div class="error">Failed to load workstream: '+esc(e.message)+'</div>'});
+}
+
+function taskRow(task,isChild){
+  var indent=isChild?' style="padding-left:28px"':'';
+  var idPrefix=isChild?'↳ ':'';
+  var proofs=(task.proof||[]).map(function(p){
+    if(p.startsWith("http://")||p.startsWith("https://"))return'<a href="'+esc(p)+'" target="_blank" rel="noreferrer">proof</a>';
+    return'<span class="muted">'+esc(p)+'</span>';
+  }).join(", ");
+  return'<tr'+indent+'><td></td>'
+    +'<td><strong>'+esc(task.title)+'</strong>'+(task.notes?'<div style="color:var(--muted);font-size:12px;margin-top:2px">'+esc(task.notes)+'</div>':'')+'</td>'
+    +'<td><span class="status status-'+task.status+'">'+pretty(task.status)+'</span></td>'
+    +'<td><span class="priority-box priority-'+(task.priority||"medium")+'">'+esc(task.priority||"medium")+'</span></td>'
+    +'<td style="color:var(--muted)">'+esc(task.owner||"-")+'</td>'
+    +'<td style="color:var(--muted);font-size:12px">'+idPrefix+esc(task.id)+'</td>'
+    +'<td style="font-size:12px">'+proofs+'</td></tr>';
+}
+
+function filterTasks(status){currentFilter=status;loadWorkstream(currentWorkstream)}
+
+loadList();
+setInterval(loadList,30000);
+</script>
+</body>
 </html>

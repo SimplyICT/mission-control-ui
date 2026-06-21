@@ -3,8 +3,7 @@
 <head>
   <title>Mission Control Device Audit</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    * { box-sizing: border-box; }
+  <style>* { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -182,14 +181,54 @@
       margin-top: 18px;
       font-size: 13px;
     }
-  </style>
+    .resume-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #111827; border: 1px solid #334155; border-radius: 8px;
+      padding: 8px 12px; cursor: pointer;
+    }
+    .resume-item:hover { border-color: #2563eb; }
+    .resume-item .ri-date { font-weight: bold; color:#e2e8f0; }
+    .resume-item .ri-meta { font-size: 11px; color:#94a3b8; }
+    .badge-in_progress { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb; }
+    .badge-finalized { background: #1a2e1a; color: #86efac; border: 1px solid #16a34a; }
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+</style>
 </head>
 <body>
 
 <div class="topbar">
-<div>
-    <div class="title">Mission Control Device Audit</div>
-    <div class="subtitle">Operational Audit & Compliance Monitoring</div>
+    <div class="brand">
+      <h1>🔍 
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>    <div class="subtitle">Operational Audit & Compliance Monitoring</div>
   </div>
 </div>
 
@@ -199,11 +238,17 @@
   <h2>Start Audit</h2>
   <div class="actions">
     <button onclick="goHome()">Home</button>
-    <select id="siteSelect"></select>
+    <select id="siteSelect" onchange="loadResumeAudits()"></select>
     <button onclick="startAudit()">Start Audit</button>
     <button onclick="openReports()">Reports</button>
   </div>
   <p id="siteStatus" class="status-line">Select a site to begin.</p>
+  <div id="resumePanel" style="display:none; margin-top:12px; border:1px solid #334155; border-radius:10px; padding:12px; background:#0f172a;">
+    <h3 style="margin:0 0 8px 0; font-size:14px; color:#93c5fd;">Resume In-Progress Audit</h3>
+    <div id="resumeList" style="display:flex; flex-direction:column; gap:6px;"></div>
+    <hr style="border-color:#334155; margin:10px 0;">
+    <button onclick="startAudit()" style="background:#2563eb;">Start New Audit</button>
+  </div>
 </div>
 
 <div class="card">
@@ -216,6 +261,9 @@
   <h2>Current Audit</h2>
   <div class="actions" style="margin-bottom:8px;">
     <p id="auditStatus" class="status-line" style="margin:0;">No audit started.</p>
+    <span id="statusBadge" style="display:none; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:bold;"></span>
+    <button id="finalizeBtn" onclick="finalizeAudit()" style="display:none; background:#f59e0b;">Finalize Audit</button>
+    <button id="reopenBtn" onclick="reopenAudit()" style="display:none; background:#6366f1;">Re-open Audit</button>
     <button onclick="saveAllRows()" style="background:#16a34a;">Save All Rows</button>
   </div>
   <p id="saveStatus"></p>
@@ -356,6 +404,78 @@ async function loadSites() {
   document.getElementById("siteStatus").textContent = `Sites loaded: ${sites.length}`;
 }
 
+async function loadResumeAudits() {
+  const siteId = document.getElementById("siteSelect").value;
+  const panel = document.getElementById("resumePanel");
+  const list = document.getElementById("resumeList");
+  if (!siteId) { panel.style.display = "none"; return; }
+
+  const res = await fetch(`${API}/audit-batches/resume/${encodeURIComponent(siteId)}`);
+  const batches = await res.json();
+
+  if (!batches || batches.length === 0) {
+    panel.style.display = "none";
+    return;
+  }
+
+  list.innerHTML = "";
+  batches.forEach(b => {
+    const item = document.createElement("div");
+    item.className = "resume-item";
+    item.innerHTML = `
+      <div>
+        <div class="ri-date">${escHtml(b.audit_date)}</div>
+        <div class="ri-meta">${b.entry_count || 0} devices | ${escHtml(b.audit_batch_id || "").substring(0, 8)}…</div>
+      </div>
+      <button onclick="resumeAudit('${b.audit_batch_id}')" style="background:#16a34a;padding:6px 14px;">Resume</button>
+    `;
+    list.appendChild(item);
+  });
+  panel.style.display = "block";
+}
+
+async function resumeAudit(id) {
+  batchId = id;
+  const siteName = selectedSiteName();
+  document.getElementById("auditStatus").textContent = `Resumed audit: ${siteName} | Batch: ${batchId}`;
+  document.getElementById("resumePanel").style.display = "none";
+  await loadAudit();
+  await updateStatusUI();
+}
+
+async function updateStatusUI() {
+  const badge = document.getElementById("statusBadge");
+  const finalizeBtn = document.getElementById("finalizeBtn");
+  const reopenBtn = document.getElementById("reopenBtn");
+  if (!batchId) { badge.style.display = "none"; finalizeBtn.style.display = "none"; reopenBtn.style.display = "none"; return; }
+
+  const res = await fetch(`${API}/audit-batch/${batchId}`);
+  if (!res.ok) return;
+  const batch = await res.json();
+  const status = batch.status || "in_progress";
+
+  badge.style.display = "inline-block";
+  badge.className = `badge-${status}`;
+  badge.textContent = status === "in_progress" ? "In Progress" : "Finalized";
+
+  finalizeBtn.style.display = status === "in_progress" ? "inline-block" : "none";
+  reopenBtn.style.display = status === "finalized" ? "inline-block" : "none";
+}
+
+async function finalizeAudit() {
+  if (!confirm("Finalize this audit? It will be marked as complete.")) return;
+  const res = await fetch(`${API}/audits/${batchId}/finalize`, { method: "POST" });
+  if (!res.ok) { alert("Finalize failed."); return; }
+  await updateStatusUI();
+}
+
+async function reopenAudit() {
+  if (!confirm("Re-open this audit? It will be marked as in progress again.")) return;
+  const res = await fetch(`${API}/audits/${batchId}/reopen`, { method: "POST" });
+  if (!res.ok) { alert("Re-open failed."); return; }
+  await updateStatusUI();
+}
+
 async function startAudit() {
   const siteId = document.getElementById("siteSelect").value;
   const siteName = selectedSiteName();
@@ -462,7 +582,7 @@ async function loadAudit() {
       <td>${escHtml(resultLabel)}</td>
       <td style="${dataStyle}">${dataLabel}</td>
       <td class="readonly-cell room-col">${escHtml(roomName(rowData))}</td>
-      <td class="readonly-cell device-col">${escHtml(deviceName(rowData))}</td>
+      <td class="readonly-cell device-col">${rowData.device_id ? `<a href="/device-update.html?device_id=${encodeURIComponent(rowData.device_id)}" style="color:#93c5fd;text-decoration:underline;" target="_blank">${escHtml(deviceName(rowData))}</a>` : escHtml(deviceName(rowData))}</td>
       <td class="readonly-cell">${escHtml(rowData.serial_number)}</td>
       <td class="readonly-cell">${escHtml(rowData.device_type)}</td>
       <td class="issue-col">${escHtml(reasons.join(", "))}</td>
@@ -484,6 +604,7 @@ async function loadAudit() {
     `;
     tbody.appendChild(row);
   });
+  await updateStatusUI();
 }
 
 function collectRowData(row) {
@@ -563,7 +684,28 @@ async function saveAllRows() {
   await loadAudit();
 }
 
-loadSites();
+async function initPage() {
+  const params = new URLSearchParams(window.location.search);
+  const batchIdParam = params.get("audit_batch_id");
+
+  if (batchIdParam) {
+    batchId = batchIdParam;
+    const res = await fetch(`${API}/audit-batch/${batchId}`);
+    if (res.ok) {
+      const batch = await res.json();
+      const siteName = batch.site_name || "Unknown";
+      document.getElementById("auditStatus").textContent = `Editing audit: ${siteName} | Batch: ${batchId}`;
+      document.getElementById("siteStatus").style.display = "none";
+      document.querySelector(".card:first-child .actions").style.display = "none";
+      await loadAudit();
+      return;
+    }
+  }
+
+  loadSites();
+}
+
+initPage();
 </script>
 </body>
 </html>

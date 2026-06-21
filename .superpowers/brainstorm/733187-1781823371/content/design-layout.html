@@ -1,0 +1,128 @@
+<h2>Design: Expanded Project Manager</h2>
+<p class="subtitle">Adding tracker links, server info, and creation wizard to the existing page</p>
+
+<div class="section">
+  <h3>Section 1: Project Card (List View) — Updated</h3>
+  <p>Each project card gains a tracker link and health indicator:</p>
+  <div class="mockup" style="max-width:400px">
+    <div class="mockup-header">Project Card Mockup</div>
+    <div class="mockup-body" style="padding:16px;text-align:left">
+      <div style="background:#1c2333;border:1px solid #2d2d3d;border-radius:10px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+          <h3 style="margin:0;font-size:16px;color:#e6edf3">PaintCo V2</h3>
+          <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.12);color:#22c55e;padding:2px 8px;border-radius:999px;font-size:11px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#22c55e"></span> Online
+          </span>
+        </div>
+        <p style="margin:0 0 8px;font-size:13px;color:#8b949e">Paint company management platform</p>
+        <div style="display:flex;gap:6px;font-size:11px;color:#8b949e;margin-bottom:10px">
+          <span>📁 /home/aiagent/paintcoV2</span>
+          <span>🌐 208.87.135.183:3004</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div style="background:#0b1220;border-radius:999px;height:6px;flex:1;overflow:hidden">
+            <div style="width:65%;height:100%;border-radius:999px;background:#00b4d8"></div>
+          </div>
+          <span style="font-size:11px;color:#8b949e">12/18 tasks</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button style="background:#00b4d8;color:#000;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🔗 Open Tracker</button>
+          <button style="background:#1c2333;color:#e6edf3;border:1px solid #2d2d3d;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer">View Tasks</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Section 2: New Project Modal — Extended</h3>
+  <p>Extra fields for tracker configuration:</p>
+  <div class="mockup" style="max-width:480px">
+    <div class="mockup-header">New Project Site Modal</div>
+    <div class="mockup-body" style="padding:16px;text-align:left">
+      <div style="background:#161b22;border:1px solid #2d2d3d;border-radius:12px;padding:20px">
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Project Name</div>
+          <input class="mock-input" value="PaintCo V2" style="width:100%" readonly>
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Description</div>
+          <input class="mock-input" value="Paint company CRM & job management" style="width:100%" readonly>
+        </div>
+        <hr style="border-color:#2d2d3d;margin:14px 0">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;font-weight:600">Tracker Configuration (optional)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Server IP / Host</div>
+            <input class="mock-input" value="208.87.135.183" style="width:100%" readonly>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Port</div>
+            <input class="mock-input" value="3004" style="width:100%" readonly>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Folder Path</div>
+          <input class="mock-input" value="/home/aiagent/paintcoV2/tracker" style="width:100%;font-family:mono" readonly>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase;margin-bottom:4px">Tracker URL (public)</div>
+          <input class="mock-input" value="http://208.87.135.183:3004" style="width:100%" readonly>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#e6edf3">
+          <input type="checkbox" checked style="accent-color:#00b4d8"> Create tracker scaffold files in this folder
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Section 3: Data Model Changes</h3>
+  <p>New fields added to each project in <code>projects.json</code>:</p>
+  <pre style="background:#0d1117;border:1px solid #2d2d3d;border-radius:8px;padding:12px;font-size:12px;overflow-x:auto">
+{
+  "id": "abc123",
+  "name": "Project Name",
+  "description": "...",
+  "tracker_url": "http://host:port",       // ← new
+  "server_host": "208.87.135.183",          // ← new
+  "server_port": 3004,                      // ← new
+  "folder_path": "/home/aiagent/project/tracker", // ← new
+  "has_tracker": true,                      // ← new
+  "tasks": []
+}</pre>
+</div>
+
+<div class="section">
+  <h3>Section 4: New API Endpoints</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="border-bottom:1px solid #2d2d3d"><th style="text-align:left;padding:6px">Method</th><th style="text-align:left;padding:6px">Endpoint</th><th style="text-align:left;padding:6px">Purpose</th></tr>
+    <tr><td style="padding:4px">POST</td><td>/api/projects</td><td>Accept tracker fields in body</td></tr>
+    <tr><td style="padding:4px">POST</td><td>/api/projects/{id}/scaffold-tracker</td><td>Generate tracker files in target folder</td></tr>
+    <tr><td style="padding:4px">GET</td><td>/api/projects/{id}/health</td><td>Ping tracker URL to check if online</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Section 5: Tracker Scaffold Generator</h3>
+  <p>When creating a new tracker, the backend generates 4 files in the target folder:</p>
+  <ol style="font-size:13px;line-height:1.8">
+    <li><strong>index.html</strong> — Clone of the tracker UI, pre-configured with API port</li>
+    <li><strong>server.py</strong> — Standalone tracker server (Python stdlib, no dependencies needed)</li>
+    <li><strong>data.json</strong> — Empty projects data file</li>
+    <li><strong>tracker.service</strong> — systemd service file for auto-start</li>
+  </ol>
+  <p style="margin-top:8px;color:var(--muted);font-size:12px">For remote servers: files are generated locally but the user deploys via SCP/rsync. Future: SSH-based remote deployment.</p>
+</div>
+
+<div class="options" style="margin-top:20px">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Looks good — proceed to build</h3></div>
+  </div>
+  <div class="option" data-choice="changes" onclick="toggleSelect(this)">
+    <div class="letter">✗</div>
+    <div class="content"><h3>I want changes</h3></div>
+  </div>
+</div>

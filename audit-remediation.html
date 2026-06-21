@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audit Remediation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>* { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Arial, sans-serif;
+      background: #0f172a; color: #e2e8f0;
+    }
+    .topbar {display:flex;justify-content:space-between;align-items:center;
+      background: #111827; border-bottom: 1px solid #1e293b;
+      padding: 18px 28px;
+    }
+    .title { font-size: 24px; font-weight: bold; color: #f8fafc; }
+    .subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .container { max-width: 1400px; margin: auto; padding: 24px; }
+    .card {
+      background: #111827; border: 1px solid #1e293b;
+      border-radius: 16px; padding: 22px; margin-bottom: 22px;
+    }
+    h1, h2, h3 { margin-top: 0; color: #f8fafc; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select, button, textarea {
+      padding: 10px; border-radius: 10px; border: 1px solid #334155;
+      background: #0f172a; color: #e2e8f0;
+    }
+    button {
+      background: #2563eb; border: none; font-weight: bold; cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    .status-line { margin-top: 12px; font-weight: bold; color: #93c5fd; }
+    .summary-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .stat-box {
+      background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+      padding: 16px 24px; text-align: center; min-width: 120px;
+    }
+    .stat-box .num { font-size: 32px; font-weight: bold; }
+    .stat-box .lbl { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .stat-open .num { color: #fbbf24; }
+    .stat-resolved .num { color: #4ade80; }
+    .stat-total .num { color: #93c5fd; }
+    .finding-card {
+      background: #0f172a; border: 1px solid #334155;
+      border-radius: 10px; padding: 14px; margin-bottom: 10px;
+    }
+    .finding-card:hover { border-color: #2563eb; }
+    .finding-type {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: bold;
+    }
+    .ft-missing_device { background: #3b1a1a; color: #fca5a5; border: 1px solid #dc2626; }
+    .ft-credential { background: #3b1a1a; color: #fca5a5; border: 1px solid #dc2626; }
+    .ft-photo_retention { background: #3b2e1a; color: #fcd34d; border: 1px solid #d97706; }
+    .ft-hardware { background: #1a2e3b; color: #93c5fd; border: 1px solid #2563eb; }
+    .status-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: bold;
+    }
+    .sb-open { background: #3b2e1a; color: #fcd34d; border: 1px solid #d97706; }
+    .sb-in_progress { background: #1a2e3b; color: #93c5fd; border: 1px solid #2563eb; }
+    .sb-resolved { background: #1a2e1a; color: #86efac; border: 1px solid #16a34a; }
+    .sb-closed { background: #1a2e1a; color: #86efac; border: 1px solid #16a34a; }
+    .sb-accepted_risk { background: #2e1a2e; color: #c084fc; border: 1px solid #9333ea; }
+    .finding-row {
+      display: flex; gap: 12px; align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .finding-info { flex: 1; min-width: 200px; }
+    .finding-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .finding-actions select, .finding-actions button { font-size: 11px; padding: 4px 8px; }
+    .finding-actions textarea { font-size: 11px; padding: 4px 8px; width: 200px; }
+    .device-link { color: #93c5fd; text-decoration: underline; cursor: pointer; }
+    .device-link:hover { color: #bfdbfe; }
+    .section-title {
+      font-size: 16px; font-weight: bold; margin: 20px 0 12px 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .badge-count {
+      background: #1e293b; padding: 2px 8px; border-radius: 10px;
+      font-size: 12px; font-weight: bold;
+    }
+    .no-findings { color: #64748b; font-style: italic; padding: 20px; text-align: center; }
+    .resolved-note {
+      font-size: 11px; color: #94a3b8; margin-top: 4px;
+      background: #111827; padding: 4px 8px; border-radius: 4px;
+    }
+    .footer { text-align: center; color: #64748b; margin-top: 24px; font-size: 13px; }
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="brand">
+      <h1>🔧 
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>    <div class="subtitle">Track and resolve audit findings</div>
+
+    
+  </div>
+  <div class="topbar-right">
+    <a class="nav-btn" href="/help.html">? Help</a>
+    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="actions" style="justify-content:space-between;">
+      <div>
+        <button onclick="goBack()">Back to Reports</button>
+        <button onclick="goToReport()">View Audit Report</button>
+      </div>
+      <div id="batchInfo" style="font-size:13px;color:#94a3b8;"></div>
+    </div>
+  </div>
+
+  <div id="summaryCards" class="card" style="display:none;">
+    <h2>Remediation Summary</h2>
+    <div class="summary-row" id="summaryRow"></div>
+  </div>
+
+  <div id="openSection" class="card" style="display:none;">
+    <div class="section-title">
+      Open & In Progress <span id="openCount" class="badge-count">0</span>
+    </div>
+    <div id="openList"></div>
+  </div>
+
+  <div id="resolvedSection" class="card" style="display:none;">
+    <div class="section-title">
+      Resolved & Closed <span id="resolvedCount" class="badge-count">0</span>
+    </div>
+    <div id="resolvedList"></div>
+  </div>
+
+  <div id="loadingStatus" class="status-line">Loading remediation data...</div>
+</div>
+
+<div class="footer">Mission Control Audit Platform</div>
+<script>
+const API = "/audit-api";
+const params = new URLSearchParams(window.location.search);
+const batchId = params.get("audit_batch_id");
+
+function goBack() {
+  window.location.href = "/audit-reports.html";
+}
+
+function goToReport() {
+  if (batchId) {
+    window.location.href = `/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+  }
+}
+
+function escHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function findingLabel(ft) {
+  const map = {
+    "missing_device": "Missing Device",
+    "credential": "Credential Issue",
+    "photo_retention": "Photo Retention",
+    "hardware": "Hardware Issue",
+  };
+  return map[ft] || ft;
+}
+
+function statusLabel(s) {
+  const map = {
+    "open": "Open",
+    "in_progress": "In Progress",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "accepted_risk": "Accepted Risk",
+  };
+  return map[s] || s;
+}
+
+function statusBadgeClass(s) {
+  const map = {
+    "open": "sb-open",
+    "in_progress": "sb-in_progress",
+    "resolved": "sb-resolved",
+    "closed": "sb-closed",
+    "accepted_risk": "sb-accepted_risk",
+  };
+  return map[s] || "sb-open";
+}
+
+async function loadFindings() {
+  if (!batchId) {
+    document.getElementById("loadingStatus").textContent = "No audit batch specified.";
+    return;
+  }
+
+  document.getElementById("batchInfo").textContent = `Batch: ${batchId.slice(0, 8)}...`;
+
+  const res = await fetch(`${API}/audit-findings/${encodeURIComponent(batchId)}`);
+  if (!res.ok) {
+    document.getElementById("loadingStatus").textContent = "Failed to load findings.";
+    return;
+  }
+
+  const data = await res.json();
+  document.getElementById("loadingStatus").style.display = "none";
+  document.getElementById("summaryCards").style.display = "block";
+  document.getElementById("openSection").style.display = "block";
+  document.getElementById("resolvedSection").style.display = "block";
+
+  // Summary stats
+  const total = data.actions_total || 0;
+  const open = data.actions_open || 0;
+  const resolved = data.actions_resolved || 0;
+  document.getElementById("summaryRow").innerHTML = `
+    <div class="stat-box stat-total">
+      <div class="num">${total}</div>
+      <div class="lbl">Total Actions</div>
+    </div>
+    <div class="stat-box stat-open">
+      <div class="num">${open}</div>
+      <div class="lbl">Open / In Progress</div>
+    </div>
+    <div class="stat-box stat-resolved">
+      <div class="num">${resolved}</div>
+      <div class="lbl">Resolved / Closed</div>
+    </div>
+  `;
+
+  // Collect all action items
+  const allActions = [];
+  for (const f of (data.findings || [])) {
+    for (const finding of (f.findings || [])) {
+      for (const a of (finding.actions || [])) {
+        allActions.push({ ...a, device_name: f.device_name, device_id: f.device_id, serial: f.serial_number, device_type: f.device_type, room: f.room, current_status: f.current_status });
+      }
+    }
+  }
+  for (const f of (data.fixed_findings || [])) {
+    for (const a of (f.actions || [])) {
+      allActions.push({ ...a, device_name: f.device_name, serial: f.serial_number, current_status: "ok" });
+    }
+  }
+
+  // Deduplicate by action_id
+  const seen = new Set();
+  const unique = [];
+  for (const a of allActions) {
+    if (!seen.has(a.action_id)) {
+      seen.add(a.action_id);
+      unique.push(a);
+    }
+  }
+
+  const openItems = unique.filter(a => a.status === "open" || a.status === "in_progress");
+  const resolvedItems = unique.filter(a => a.status === "resolved" || a.status === "closed" || a.status === "accepted_risk");
+
+  document.getElementById("openCount").textContent = openItems.length;
+  document.getElementById("resolvedCount").textContent = resolvedItems.length;
+
+  renderActions("openList", openItems, false);
+  renderActions("resolvedList", resolvedItems, true);
+}
+
+function renderActions(containerId, items, isResolved) {
+  const container = document.getElementById(containerId);
+  if (items.length === 0) {
+    container.innerHTML = '<div class="no-findings">No items to show.</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="finding-card">
+      <div class="finding-row">
+        <div class="finding-info">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+            <span class="finding-type ft-${item.finding_type}">${findingLabel(item.finding_type)}</span>
+            <span class="status-badge ${statusBadgeClass(item.status)}">${statusLabel(item.status)}</span>
+            ${item.priority ? `<span style="color:#94a3b8;font-size:11px;">${item.priority}</span>` : ""}
+          </div>
+          <div style="font-size:13px;margin-bottom:2px;">${escHtml(item.description)}</div>
+          <div style="font-size:11px;color:#94a3b8;">
+            ${item.device_name ? `<a href="/device-update.html?device_id=${encodeURIComponent(item.device_id||"")}" class="device-link" target="_blank">${escHtml(item.device_name)}</a>` : ""}
+            ${item.serial ? `<span style="margin-left:8px;">Serial: ${escHtml(item.serial)}</span>` : ""}
+            ${item.room ? `<span style="margin-left:8px;">${escHtml(item.room)}</span>` : ""}
+            ${item.device_type ? `<span style="margin-left:8px;">${escHtml(item.device_type)}</span>` : ""}
+          </div>
+          ${item.resolved_date ? `<div class="resolved-note">Resolved: ${item.resolved_date}${item.resolution_notes ? " — " + escHtml(item.resolution_notes) : ""}</div>` : ""}
+        </div>
+        <div class="finding-actions">
+          ${isResolved ? "" : `
+            <select id="status-${item.action_id}" style="font-size:11px;padding:4px 6px;">
+              <option value="open" ${item.status === "open" ? "selected" : ""}>Open</option>
+              <option value="in_progress" ${item.status === "in_progress" ? "selected" : ""}>In Progress</option>
+              <option value="resolved" ${item.status === "resolved" ? "selected" : ""}>Resolved</option>
+              <option value="accepted_risk" ${item.status === "accepted_risk" ? "selected" : ""}>Accepted Risk</option>
+            </select>
+            <textarea id="note-${item.action_id}" placeholder="Resolution notes..." style="font-size:11px;padding:4px 6px;width:160px;">${escHtml(item.resolution_notes || "")}</textarea>
+            <button onclick="updateAction('${item.action_id}')" style="font-size:11px;padding:4px 8px;background:#16a34a;">Update</button>
+          `}
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function updateAction(actionId) {
+  const status = document.getElementById(`status-${actionId}`).value;
+  const notes = document.getElementById(`note-${actionId}`).value;
+
+  const res = await fetch(`${API}/remediation-actions/${actionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, resolution_notes: notes }),
+  });
+
+  if (!res.ok) {
+    alert("Update failed.");
+    return;
+  }
+
+  await loadFindings();
+}
+
+if (batchId) {
+  loadFindings();
+} else {
+  document.getElementById("loadingStatus").textContent = "Missing audit_batch_id parameter.";
+}
+</script>
+</body>
+</html>

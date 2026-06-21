@@ -3,8 +3,7 @@
 <head>
   <title>Mission Control — Agent Status</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    * { box-sizing: border-box; }
+  <style>* { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -223,17 +222,47 @@
     .status-dot.online {
       animation: pulse 2s ease-in-out infinite;
     }
-  </style>
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+</style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="topbar-left">
-    <div class="title">Agent Status Monitor</div>
-    <div class="subtitle">Remote probe agents connected to Mission Control</div>
+    <div class="brand">
+      <h1>🤖 
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>    <div class="subtitle">Remote probe agents connected to Mission Control</div>
   </div>
   <div class="topbar-right">
-    <a href="/index-platform.html" class="btn-home" style="color:#f8fafc;padding:8px 18px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Home</a>
+    <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
     <button onclick="loadAgents()">Refresh</button>
     <span class="last-refresh" id="lastRefresh"></span>
   </div>
@@ -314,8 +343,8 @@ function agentStatus(agent) {
   const diffMs = Date.now() - new Date(hb).getTime();
   const diffMin = diffMs / 60000;
 
-  if (diffMin <= 2) return "online";
-  if (diffMin <= 5) return "stale";
+  if (diffMin <= 20) return "online";
+  if (diffMin <= 30) return "stale";
   return "offline";
 }
 
@@ -326,35 +355,14 @@ function statusHtml(status) {
 
 async function loadAgents() {
   try {
-    const res = await fetch(`${API}/api/v1/dashboard/all-sites`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const agentsRes = await fetch(`${API}/api/v1/dashboard/agents`);
+    if (!agentsRes.ok) throw new Error(`HTTP ${agentsRes.status}`);
 
-    const sites = data.sites || [];
-    let allAgents = [];
+    const agentsData = await agentsRes.json();
 
-    // Collect agents from each site's summary endpoint
-    for (const s of sites) {
-      const siteId = s.site.id;
-      const siteName = s.site.site_name;
-
-      if (s.agent_counts.total === 0) continue;
-
-      try {
-        const sRes = await fetch(`${API}/api/v1/dashboard/summary?site_code=${encodeURIComponent(s.site.site_code)}`);
-        if (!sRes.ok) continue;
-        const sData = await sRes.json();
-        const agents = sData.agents || [];
-        agents.forEach(a => { a._site_name = siteName; });
-        allAgents = allAgents.concat(agents);
-      } catch (e) {
-        console.warn(`Failed to fetch agents for ${siteName}:`, e);
-      }
-    }
-
-    // Also handle sites with 0 agents — show them with no agent row
-    const sitesWithAgents = new Set(allAgents.map(a => a._site_name));
-    const sitesWithoutAgents = sites.filter(s => !sitesWithAgents.has(s.site.site_name) && s.site.site_code !== "DEFAULT");
+    let allAgents = (agentsData.agents || []).filter(a => 
+      a.status !== "DISABLED"
+    );
 
     // Update KPIs
     let online = 0, offline = 0, stale = 0;
@@ -369,13 +377,13 @@ async function loadAgents() {
     document.getElementById("kpiOnline").textContent = online;
     document.getElementById("kpiOffline").textContent = offline;
     document.getElementById("kpiStale").textContent = stale;
-    document.getElementById("kpiSites").textContent = sitesWithAgents.size;
+    document.getElementById("kpiSites").textContent = new Set(allAgents.map(a => a._site_name)).size;
 
     // Build table
     const tbody = document.getElementById("agentTable");
     tbody.innerHTML = "";
 
-    if (allAgents.length === 0 && sitesWithoutAgents.length === 0) {
+    if (allAgents.length === 0) {
       tbody.innerHTML = '<tr><td colspan="11" class="no-agents">No agents registered.</td></tr>';
       return;
     }
@@ -406,17 +414,6 @@ async function loadAgents() {
         <td>${esc(subnet)}</td>
         <td>${formatDate(hb)}<br><span class="ago">${timeAgo(hb)}</span></td>
         <td>${formatDate(ls)}<br><span class="ago">${timeAgo(ls)}</span></td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    // Show sites with no agents
-    for (const s of sitesWithoutAgents) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${statusHtml("offline")}</td>
-        <td colspan="2"><em style="color:#64748b;">No agent deployed</em> — ${esc(s.site.site_name)}</td>
-        <td colspan="8" class="meta-text">Site registered but no probe agent has connected.</td>
       `;
       tbody.appendChild(tr);
     }

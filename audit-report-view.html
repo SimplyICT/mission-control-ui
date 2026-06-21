@@ -3,8 +3,7 @@
 <head>
   <title>Mission Control Audit Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    * { box-sizing: border-box; }
+  <style>* { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -13,7 +12,7 @@
       color: #e2e8f0;
     }
 
-    .topbar {
+    .topbar {display:flex;justify-content:space-between;align-items:center;
       background: #111827;
       border-bottom: 1px solid #1e293b;
       padding: 16px 20px;
@@ -224,16 +223,45 @@
     @media (max-width: 900px) {
       .two-col { grid-template-columns: 1fr; }
     }
-  </style>
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+
+/* Platform universal styles */
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
+button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
+
+</style>
 </head>
 <body>
 
 
 <div class="topbar">
-    <a href="/index-platform.html" style="background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">Home</a>
-
-<div class="title">Mission Control Audit Report</div>
-  <div class="subtitle">Executive Summary · Compliance Findings · Audit Evidence</div>
+    <div class="brand">
+      <h1>📄 
+      <span></span>
+    </div>
+    <div class="controls">
+      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/help.html">? Help</a>
+      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+    </div>
+  </div>  <div class="subtitle">Executive Summary · Compliance Findings · Audit Evidence</div>
 </div>
 
 <div class="container">
@@ -421,6 +449,11 @@ async function loadReport(force){
       </div>
     </div>
 
+    <div id="remediationSection" class="card">
+      <h2>Findings & Remediation</h2>
+      <div id="remediationContent"><p class="muted">Loading remediation data...</p></div>
+    </div>
+
     <div class="card">
       <h2>Critical Incidents & Immediate Actions</h2>
       ${critical.length ? critical.map(r => renderFinding(r, "critical")).join("") : "<p>None recorded.</p>"}
@@ -446,6 +479,72 @@ async function loadReport(force){
   `;
 
   document.getElementById("status").textContent = "Audit report loaded.";
+
+  loadRemediation(id);
+}
+
+function findingLabel(ft) {
+  const map = { "missing_device":"Missing Device", "credential":"Credential Issue", "photo_retention":"Photo Retention", "hardware":"Hardware Issue" };
+  return map[ft] || ft;
+}
+
+function statusLabel(s) {
+  const map = { "open":"Open", "in_progress":"In Progress", "resolved":"Resolved", "closed":"Closed", "accepted_risk":"Accepted Risk" };
+  return map[s] || s;
+}
+
+async function loadRemediation(batchId) {
+  const container = document.getElementById("remediationContent");
+  try {
+    const res = await fetch(`${API}/audit-findings/${encodeURIComponent(batchId)}`);
+    if (!res.ok) { container.innerHTML = "<p class='muted'>Remediation tracking not available.</p>"; return; }
+    const data = await res.json();
+    const findings = data.findings || [];
+    const total = data.actions_total || 0;
+
+    if (total === 0) {
+      container.innerHTML = "<p class='muted'>No remediation actions recorded for this audit.</p><p style='margin-top:8px;'><a href='/audit-remediation.html?audit_batch_id=" + encodeURIComponent(batchId) + "' style='color:#8b5cf6;'>Manage Remediation</a></p>";
+      return;
+    }
+
+    let html = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <span style="background:#1e293b;padding:4px 12px;border-radius:6px;font-size:12px;">Total Actions: <b>${data.actions_total}</b></span>
+      <span style="background:#3b2e1a;padding:4px 12px;border-radius:6px;font-size:12px;">Open: <b>${data.actions_open}</b></span>
+      <span style="background:#1a2e1a;padding:4px 12px;border-radius:6px;font-size:12px;">Resolved: <b>${data.actions_resolved}</b></span>
+      <a href='/audit-remediation.html?audit_batch_id=${encodeURIComponent(batchId)}' style="color:#8b5cf6;font-size:12px;padding:4px 12px;">Manage &rarr;</a>
+    </div>`;
+
+    if (findings.length > 0) {
+      html += `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#1e293b;">
+          <th style="padding:6px;border:1px solid #334155;text-align:left;">Device</th>
+          <th style="padding:6px;border:1px solid #334155;text-align:left;">Finding</th>
+          <th style="padding:6px;border:1px solid #334155;text-align:left;">Status</th>
+          <th style="padding:6px;border:1px solid #334155;text-align:left;">Resolution</th>
+        </tr></thead><tbody>`;
+
+      for (const f of findings) {
+        for (const finding of (f.findings || [])) {
+          const actions = finding.actions || [];
+          const action = actions.length > 0 ? actions[actions.length - 1] : null;
+          const status = finding.remediation_status || "unresolved";
+          const resolvedInfo = action && action.resolved_date ? action.resolved_date + (action.resolution_notes ? " — " + esc(action.resolution_notes) : "") : "";
+          html += `<tr>
+            <td style="padding:6px;border:1px solid #334155;">${f.device_name ? esc(f.device_name) + "<br>" : ""}<span style="color:#64748b;font-size:10px;">${esc(f.serial_number||"")}</span></td>
+            <td style="padding:6px;border:1px solid #334155;"><span style="background:#1e293b;padding:1px 6px;border-radius:3px;font-size:10px;">${findingLabel(finding.finding_type)}</span><br><span style="color:#94a3b8;">${esc(finding.description)}</span></td>
+            <td style="padding:6px;border:1px solid #334155;"><span style="color:${status === "resolved" || status === "closed" ? "#4ade80" : status === "open" || status === "in_progress" ? "#fbbf24" : "#64748b"};">${statusLabel(status)}</span></td>
+            <td style="padding:6px;border:1px solid #334155;color:#94a3b8;font-size:11px;">${esc(resolvedInfo)}</td>
+          </tr>`;
+        }
+      }
+
+      html += "</tbody></table>";
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = "<p class='muted'>Could not load remediation data.</p>";
+  }
 }
 
 loadReport(false);

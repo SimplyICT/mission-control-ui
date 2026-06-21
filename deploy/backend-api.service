@@ -1,0 +1,15 @@
+[Unit]
+Description=Mission Control Monitoring Backend API
+Documentation=https://github.com/SimplyICT/mission-control
+After=network.target
+
+[Service]
+User=aiagent
+WorkingDirectory=/home/aiagent/mission-control-site
+EnvironmentFile=/home/aiagent/mission-control-site/.env
+ExecStart=/home/aiagent/mission-control-site/venv/bin/uvicorn backend_api:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

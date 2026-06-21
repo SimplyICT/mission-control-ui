@@ -72,22 +72,29 @@
     .section-anchor { padding-top: 24px; }
 
     .footer { text-align: center; color: #475569; font-size: 12px; padding: 24px; border-top: 1px solid #1e293b; }
-  </style>
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+</style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
-    <div class="title">Mission Control — User Guide</div>
+    <div class="title">Mission Control — User Guide  <a class="nav-btn" href="/help.html">? Help</a>
+    <a class="nav-btn" href="/devdocs.html">DevDocs</a></div>
     <div class="subtitle">Platform how-to, workflows and reference</div>
   </div>
-  <a class="home-btn" href="/index-platform.html">&#9664; Platform Home</a>
+  <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
 </div>
 
 <div class="doc-meta">
   <span>&#128196; Living Document</span>
   <span>&#128197; Last Updated: June 2026</span>
-  <span>&#127381; Version: 1.0</span>
+  <span>&#127381; Version: 1.1</span>
   <span>&#128274; Internal use only</span>
 </div>
 
@@ -108,12 +115,14 @@
       <a href="#running-audit">Running a Device Audit</a>
       <a href="#audit-reports">Generating PDF Reports</a>
       <a href="#active-register">Active Device Register</a>
+      <a href="#audit-remediation">Audit Remediation</a>
       <a href="#csv-import-export">CSV Import / Export</a>
     </div>
 
     <div class="sidebar-group">
       <div class="sidebar-group-label">Compliance — New</div>
       <a href="#remediation">Remediation Tracker</a>
+      <a href="#remediation-page">Remediation Management Page</a>
       <a href="#incidents">Incident Register</a>
       <a href="#site-policy">Site Policy Configuration</a>
     </div>
@@ -238,6 +247,17 @@
         <li>Click <strong>View Report</strong> to see a live summary of critical/warning/ok counts.</li>
         <li>Use the filter controls to focus on critical or warning items.</li>
       </ol>
+
+      <h3>Full audit lifecycle: Audit → Finalize → Remediate → Report</h3>
+      <p>The platform supports a complete audit workflow that captures findings, tracks remediation, and generates evidence-ready reports:</p>
+      <ol class="steps">
+        <li><strong>Audit</strong> — Record device data and issue flags (password issues, photo counts, security concerns, missing devices) using the Device Audit Form for each device at the site.</li>
+        <li><strong>Finalize</strong> — On the Audit Reports page, click <strong>Finalize</strong> for the batch. This locks the current state as the audit snapshot and automatically generates remediation actions for every finding (missing devices, credential issues, photo retention breaches, hardware problems).</li>
+        <li><strong>Remediate</strong> — Click the <strong>Remediate</strong> button (purple) on the Audit Reports page to open the Remediation Management page. Here you can review all open findings, update their status (Open → In Progress → Resolved), add resolution notes, and link to each device's edit page to fix the underlying issue.</li>
+        <li><strong>Report</strong> — Click <strong>View</strong> on the Audit Reports page. The report now includes a <strong>Findings &amp; Remediation</strong> section that shows each finding alongside its remediation status — what was found, whether it's been resolved, and what notes were recorded. This provides a clear before-and-after view for compliance evidence.</li>
+      </ol>
+
+      <div class="callout info">Remediation actions are generated once when the audit is finalized. If you reopen a finalized audit, make changes, and finalize again, new actions are created only for findings that don't already have an action. Duplicate (device + finding type) combinations are skipped automatically.</div>
     </div>
 
     <!-- ── PDF REPORTS ── -->
@@ -261,6 +281,7 @@
           <tr><td>Executive Summary</td><td>KPI tiles — total devices, critical, warnings, missing, photo breaches, security issues</td></tr>
           <tr><td>Key Findings</td><td>Narrative findings grouped by category</td></tr>
           <tr><td>Recommendations</td><td>Prioritised action items derived from findings</td></tr>
+          <tr><td>Findings &amp; Remediation <span class="badge new">New</span></td><td>Table of all audit findings with remediation status, resolution date and notes — shows what was found and what was fixed, for a complete before-and-after compliance record</td></tr>
           <tr><td>Missing Devices</td><td>Full list of devices not sighted during audit</td></tr>
           <tr><td>Credential / Security Issues</td><td>Devices with password, PIN or breach concerns</td></tr>
           <tr><td>Photo Retention Review</td><td>Devices exceeding retention thresholds</td></tr>
@@ -325,13 +346,8 @@
       <p>The Remediation Tracker converts audit findings into tracked action items with owners, priorities, due dates and resolution status. It is the formal record that corrective actions were taken — critical for ACECQA evidence.</p>
 
       <h3>Auto-generating actions from an audit</h3>
-      <ol class="steps">
-        <li>Go to <strong>Remediation Tracker</strong> from the Compliance section.</li>
-        <li>Select the site.</li>
-        <li>Click <strong>Generate from Audit</strong> and select the audit batch.</li>
-        <li>The system auto-creates actions for: missing devices, photo retention breaches, credential/security issues, hardware problems.</li>
-        <li>Duplicate finding types for the same device are skipped automatically.</li>
-      </ol>
+      <p>Remediation actions are now generated <strong>automatically</strong> when a batch is finalized — no separate step is needed. Every finding (missing device, credential issue, photo retention breach, hardware problem) gets a tracked action item. Duplicate finding types for the same device are skipped.</p>
+      <p>To manually generate actions for an already-finalized batch, navigate to the <a href="#remediation-page">Remediation Management Page</a>.</p>
 
       <h3>Creating a manual action</h3>
       <ol class="steps">
@@ -359,6 +375,42 @@
       </table>
 
       <div class="callout warning">Overdue actions (past due date and not resolved) are highlighted in red on the Director View. Regularly review and close resolved items to keep the governance dashboard accurate.</div>
+    </div>
+
+    <!-- ── REMEDIATION MANAGEMENT PAGE ── -->
+    <div id="remediation-page" class="section-anchor">
+      <h2><span class="badge audit">Audit</span> Audit Remediation Management <span class="badge new">New</span></h2>
+      <p>The <strong>Audit Remediation</strong> page provides a focused view of all remediation actions for a specific audit batch. Access it by clicking the <strong>Remediate</strong> (purple) button next to any batch on the Audit Reports page.</p>
+
+      <h3>Page layout</h3>
+      <ol class="steps">
+        <li><strong>Summary cards</strong> at the top show total actions, open/in-progress count and resolved count.</li>
+        <li><strong>Open &amp; In Progress</strong> section lists all unresolved findings with status dropdowns and resolution note fields. Update status and add notes inline, then click <strong>Update</strong> to save.</li>
+        <li><strong>Resolved &amp; Closed</strong> section lists completed actions with their resolution date and notes for reference.</li>
+        <li>Each finding card shows the finding type (colour-coded: red for critical, amber for photo/hardware), description, device name (linked to the device edit page), serial number, room and device type.</li>
+      </ol>
+
+      <h3>Updating a finding from this page</h3>
+      <ol class="steps">
+        <li>In the Open section, use the dropdown to change the action status: <strong>Open</strong> → <strong>In Progress</strong> → <strong>Resolved</strong> or <strong>Accepted Risk</strong>.</li>
+        <li>Add resolution notes describing what was done to fix the issue.</li>
+        <li>Click <strong>Update</strong> to save changes. The page refreshes and the action moves to the appropriate section.</li>
+        <li>To fix the underlying device issue, click the device name link — it opens the Device Update page in a new tab where you can edit device details.</li>
+      </ol>
+
+      <h3>Viewing remediation in the Audit Report</h3>
+      <p>After remediation actions are resolved, open the <strong>Audit Report</strong> (click View on the Audit Reports page). The report now includes a <strong>Findings &amp; Remediation</strong> section that shows:</p>
+      <ul style="color:#94a3b8;font-size:14px;line-height:1.8;">
+        <li>Each finding with its type and description</li>
+        <li>Current remediation status (Open / In Progress / Resolved)</li>
+        <li>Resolution notes and date if resolved</li>
+        <li>Summary totals: total actions, open count, resolved count</li>
+        <li>A link to the Remediation Management page for further action</li>
+      </ul>
+      <p>This creates a complete compliance record: what was found during the audit, what actions were taken, and what the current state is.</p>
+
+      <div class="callout tip">Use the Remediation page as a workflow hub during the period between finalizing an audit and generating the final report. Work through each finding, update device records as fixes are applied, and mark actions resolved with detailed notes for the audit trail.</div>
+      <div class="callout info">The device name in each finding card is a clickable link that opens the Device Update form (<span class="tag">/device-update.html</span>) in a new tab. This lets you fix device details (name, type, room assignment, status) without leaving the remediation workflow.</div>
     </div>
 
     <!-- ── INCIDENT REGISTER ── -->
@@ -927,6 +979,11 @@
 
       <h3>June 2026 — v1.1</h3>
       <ul style="color:#94a3b8;font-size:14px;line-height:1.8;">
+        <li><span class="badge audit">New</span> <strong>Findings &amp; Remediation Report Section</strong> — Audit report now shows a before-and-after table of findings with remediation status, resolution date and notes for each device</li>
+        <li><span class="badge audit">New</span> <strong>Audit Remediation Management Page</strong> — Inline workflow to update action status, add resolution notes, and link to device editing, accessible via the Remediate button on Audit Reports</li>
+        <li><span class="badge audit">Updated</span> <strong>Finalize triggers auto-remediation</strong> — Finalizing an audit now automatically generates remediation actions for all findings (missing devices, credential issues, photo breaches, hardware problems)</li>
+        <li><span class="badge audit">Updated</span> <strong>Edit button on Audit Reports</strong> — Opens the Device Audit Form pre-loaded with a batch for continued data entry</li>
+        <li><span class="badge audit">Updated</span> <strong>Device Audit Form</strong> — Device names are now clickable links to the Device Update page for editing device details in a new tab</li>
         <li><span class="badge monitor">New</span> <strong>Wazuh SOC Dashboard</strong> — Full single-page SIEM dashboard with 14 views: Command Center, Agents, SCA, FIM, Vulnerabilities, MITRE ATT&CK, Rules &amp; Decoders, Events &amp; Alerts, Topology, Threat Intel, SOC Autopilot, Manager Health, Groups, and Help</li>
         <li><span class="badge monitor">New</span> <strong>SOC Autopilot</strong> — AI-powered case management with automated triage, response plans, and approve/reject/execute workflow</li>
         <li><span class="badge monitor">New</span> <strong>Threat Intelligence</strong> — AlienVault OTX integration dashboard with IOC tracking</li>

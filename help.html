@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mission Control — Help Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+
+    .topbar { background: #111827; border-bottom: 1px solid #1e293b; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .topbar .title { font-size: 22px; font-weight: bold; color: #f8fafc; }
+    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 3px; }
+    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
+    .home-btn:hover { background: #334155; color: #f8fafc; }
+
+    .doc-meta { background: #1a2e1a; border-bottom: 1px solid #166534; padding: 10px 28px; font-size: 12px; color: #4ade80; display: flex; gap: 24px; flex-wrap: wrap; }
+    .doc-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .layout { display: flex; }
+
+    /* Sidebar */
+    .sidebar { width: 260px; flex-shrink: 0; background: #111827; border-right: 1px solid #1e293b; overflow-y: auto; padding: 20px 0; position: sticky; top: 0; height: 100vh; align-self: flex-start; }
+    .sidebar-group { margin-bottom: 6px; }
+    .sidebar-group-label { font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 20px 4px 20px; }
+    .sidebar a { display: block; padding: 7px 20px; color: #94a3b8; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; transition: all 0.12s; }
+    .sidebar a:hover { color: #f8fafc; background: #1e293b; border-left-color: #334155; }
+    .sidebar a.active { color: #60a5fa; background: #0c1929; border-left-color: #3b82f6; }
+
+    /* Content */
+    .content { flex: 1; padding: 32px 40px; max-width: 900px; }
+
+    h1 { font-size: 28px; color: #f8fafc; margin: 0 0 8px 0; }
+    h2 { font-size: 20px; color: #f8fafc; margin: 40px 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+    h3 { font-size: 15px; color: #cbd5e1; margin: 24px 0 8px 0; }
+    h4 { font-size: 13px; color: #94a3b8; margin: 16px 0 6px 0; }
+    p { color: #94a3b8; line-height: 1.7; margin: 0 0 14px 0; font-size: 14px; }
+    a { color: #60a5fa; }
+
+    ul, ol { color: #94a3b8; line-height: 1.7; font-size: 14px; margin: 0 0 14px 0; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+    code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #f472b6; }
+    pre { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; font-size: 13px; overflow-x: auto; margin: 12px 0; color: #e2e8f0; line-height: 1.5; }
+
+    .lead { font-size: 15px; color: #cbd5e1; line-height: 1.7; margin-bottom: 20px; }
+
+    /* Steps */
+    ol.steps { margin: 0 0 16px 0; padding-left: 0; list-style: none; counter-reset: step-counter; }
+    ol.steps li { counter-increment: step-counter; display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; font-size: 14px; color: #cbd5e1; line-height: 1.6; }
+    ol.steps li::before { content: counter(step-counter); background: #1e3a5f; color: #60a5fa; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+
+    /* Callout boxes */
+    .callout { border-radius: 10px; padding: 14px 16px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+    .callout.tip { background: #0c1929; border: 1px solid #1e3a5f; color: #93c5fd; }
+    .callout.tip::before { content: "Tip: "; font-weight: bold; }
+    .callout.warning { background: #2d1f0a; border: 1px solid #92400e; color: #fcd34d; }
+    .callout.warning::before { content: "Important: "; font-weight: bold; }
+    .callout.info { background: #0c1f2e; border: 1px solid #0e5a7a; color: #7dd3fc; }
+    .callout.info::before { content: "Info: "; font-weight: bold; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
+    .badge.audit { background: #1e3a5f; color: #60a5fa; }
+    .badge.compliance { background: #3b1f3b; color: #c084fc; }
+    .badge.soc { background: #3b1f1f; color: #f87171; }
+    .badge.monitor { background: #1a3b1a; color: #4ade80; }
+    .badge.admin { background: #3b2e1a; color: #fbbf24; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    th, td { padding: 8px 12px; border-bottom: 1px solid #1e293b; text-align: left; }
+    th { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { color: #94a3b8; }
+
+    .section-anchor { scroll-margin-top: 20px; }
+
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .content { padding: 24px 20px; }
+    }
+  
+.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+
+.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Mission Control — Help Guide</div>
+    <div class="subtitle">Complete user reference for the platform</div>
+  </div>
+  <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+</div>
+
+<div class="doc-meta">
+  <span>&#9881; Version 1.1</span>
+  <span>&#128197; Last updated 20 June 2026</span>
+  <span>&#128214; <a href="/user-guide.html" style="color:#4ade80">Full User Guide</a></span>
+  <span>&#128187; <a href="/devdocs.html" style="color:#4ade80">Developer Docs</a></span>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Getting Started</div>
+      <a href="#overview">Platform Overview</a>
+      <a href="#login">Login &amp; 2FA</a>
+      <a href="#navigation">Navigating the Platform</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Device Auditing</div>
+      <a href="#running-audit">Running a Device Audit</a>
+      <a href="#audit-reports">Generating PDF Reports</a>
+      <a href="#active-register">Active Device Register</a>
+      <a href="#device-records">Device Records &amp; CSV</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Compliance</div>
+      <a href="#site-onboarding">Site Onboarding</a>
+      <a href="#incidents">Incident Register</a>
+      <a href="#remediation">Remediation Tracker</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Dashboards</div>
+      <a href="#director">Director Dashboard</a>
+      <a href="#governance">Governance Summary</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Network Monitoring</div>
+      <a href="#live-dashboard">Live Dashboard</a>
+      <a href="#all-sites">All Sites Overview</a>
+      <a href="#device-admin">Device Classification</a>
+      <a href="#alerts">Alert Management</a>
+      <a href="#executive">Executive Dashboard</a>
+      <a href="#probe-agent">Probe Agent Setup</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Security Operations</div>
+      <a href="#wazuh">Wazuh SOC Dashboard</a>
+      <a href="#soc-agent">SOC Autopilot Agent</a>
+      <a href="#telegram">Telegram Integration</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Project Hub</div>
+      <a href="#project-hub">Managing Trackers</a>
+      <a href="#projects">Project Tasks &amp; Kanban</a>
+      <a href="#deploy">Deploying a Tracker</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Reference</div>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="#shortcuts">Keyboard &amp; UI Shortcuts</a>
+      <a href="#status">Service Statuses Explained</a>
+    </div>
+  </nav>
+
+  <main class="content" id="mainContent">
+
+    <!-- ── Overview ── -->
+    <div id="overview" class="section-anchor">
+      <h1>Mission Control Platform</h1>
+      <p class="lead">Central operations platform for device audit, compliance management, network monitoring, and security operations. Accessible at <a href="https://audit.simplyict.com.au">audit.simplyict.com.au</a>.</p>
+      <p>The platform serves early childhood education services across multiple sites, providing tools for ACECQA compliance auditing, network probe monitoring, and SOC threat detection.</p>
+    </div>
+
+    <div id="login" class="section-anchor">
+      <h2>Login &amp; 2FA</h2>
+      <p>All pages require authentication. The login system includes brute-force protection and optional two-factor authentication.</p>
+      <ol class="steps">
+        <li>Navigate to <a href="/login">the login page</a> and enter your username and password.</li>
+        <li>If 2FA is enabled, you will be redirected to the verification page. Open your authenticator app and enter the 6-digit code.</li>
+        <li>If 2FA is not yet set up, go to <a href="/2fa-setup.html">2FA Setup</a> to scan the QR code with Google Authenticator or Authy.</li>
+      </ol>
+      <div class="callout warning">After 5 failed login attempts, your account is locked for 15 minutes. Contact an admin if you are locked out.</div>
+      <p>Admins can reset 2FA for any user from the <a href="/admin-users.html">User Management</a> page.</p>
+    </div>
+
+    <div id="navigation" class="section-anchor">
+      <h2>Navigating the Platform</h2>
+      <p>The platform is organised into sections accessible from the top navigation bar or the Platform Home page:</p>
+      <ul>
+        <li><strong>Audit Centre</strong> — Device audits, reports, active device register, cleanup tools</li>
+        <li><strong>Executive</strong> — Director dashboard, governance summary, audit recency</li>
+        <li><strong>Compliance</strong> — Site onboarding, incident register, remediation tracking</li>
+        <li><strong>Network Monitoring</strong> — Live dashboards, all-sites view, device classification, alerts</li>
+        <li><strong>Security Operations</strong> — Wazuh SOC, SOC agent dashboard, Telegram integration</li>
+        <li><strong>Administration</strong> — User management, 2FA setup, user guide</li>
+        <li><strong>Projects</strong> — Project Hub, project manager, project trackers</li>
+      </ul>
+      <p>Each page has a <strong>Home</strong> button to return to the platform home, and <strong>Help</strong> and <strong>DevDocs</strong> buttons for assistance.</p>
+    </div>
+
+    <!-- ── Device Auditing ── -->
+    <div id="running-audit" class="section-anchor">
+      <h2><span class="badge audit">Audit</span> Running a Device Audit</h2>
+      <p>The Device Audit form lets you record device checks at a site and classify each device against compliance criteria.</p>
+      <ol class="steps">
+        <li>Go to <a href="/device-audit.html">Device Audit Form</a> and select a site from the dropdown.</li>
+        <li>If a previous audit batch exists for this site, you can continue it. Otherwise, start a new batch.</li>
+        <li>For each device, record: device type, serial number, room, OS version, photo count and date, OneDrive sync status, security check, and notes.</li>
+        <li>Click <strong>Save All Rows</strong> to submit the entire batch at once. Individual rows can also be saved.</li>
+        <li>The system classifies each device as <strong>High Risk</strong>, <strong>Needs Attention</strong>, or <strong>On Track</strong> based on thresholds configured per site.</li>
+      </ol>
+      <div class="callout tip">The Data Completeness column shows whether each device has all required fields filled (green check = complete, yellow warning = partial, red cross = empty).</div>
+    </div>
+
+    <div id="audit-reports" class="section-anchor">
+      <h2><span class="badge audit">Reports</span> Generating PDF Reports</h2>
+      <p>Executive summary PDF reports can be generated for any completed audit batch.</p>
+      <ol class="steps">
+        <li>Go to <a href="/audit-reports.html">Audit Reports</a> and select a site and audit batch.</li>
+        <li>Click <strong>Generate PDF</strong> to produce an executive report with cover page, KPI summary, risk breakdown, room-by-room results, and a Policy Compliance Checklist.</li>
+        <li>The PDF downloads automatically. Filename format: <code>{site}-{date}-executive.pdf</code>.</li>
+      </ol>
+      <p>The report includes: site thresholds, audit frequency, photo retention days, policy compliance score, and NQS quality area mappings.</p>
+    </div>
+
+    <div id="active-register" class="section-anchor">
+      <h2><span class="badge audit">Devices</span> Active Device Register</h2>
+      <p>The <a href="/active-device-register.html">Active Device Register</a> shows all devices currently registered in the system with their latest audit status. Use this page to get a quick overview of device coverage across all sites.</p>
+    </div>
+
+    <div id="device-records" class="section-anchor">
+      <h2><span class="badge audit">Records</span> Device Records &amp; CSV</h2>
+      <p>The <a href="/device-records.html">Device Records</a> page provides full device inventory management:</p>
+      <ul>
+        <li><strong>Export CSV</strong> — Download all device records as a 26-column CSV file</li>
+        <li><strong>Import CSV</strong> — Upload a CSV file to bulk-upsert devices (matched on <code>device_id</code>)</li>
+        <li><strong>Create Device</strong> — Add a single device manually</li>
+        <li><strong>Edit</strong> — Update device details inline</li>
+      </ul>
+      <div class="callout tip">CSV import uses upsert logic — existing devices are updated, new devices are created. Download the current CSV first to see the expected column format.</div>
+    </div>
+
+    <!-- ── Compliance ── -->
+    <div id="site-onboarding" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Site Onboarding</h2>
+      <p><a href="/site-onboarding.html">Site Onboarding</a> configures ACECQA policy compliance settings per site. Each site has 9 policy toggles:</p>
+      <ul>
+        <li>Consent forms current</li>
+        <li>Photo policy documented</li>
+        <li>Staff privacy training current</li>
+        <li>Device encryption enforced</li>
+        <li>Access controls documented</li>
+        <li>Data retention policy in place</li>
+        <li>Incident response plan exists</li>
+        <li>Privacy impact assessment completed</li>
+        <li>Third-party data agreements in place</li>
+      </ul>
+      <p>Additional fields: audit frequency (days) and photo retention days/thresholds. Save to persist changes.</p>
+    </div>
+
+    <div id="incidents" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Incident Register</h2>
+      <p>The <a href="/incident-register.html">Incident Register</a> tracks incidents with full CRUD operations:</p>
+      <ul>
+        <li><strong>Create</strong> — Record new incidents with severity levels and mandatory-reportable flags</li>
+        <li><strong>Edit</strong> — Update incident details, status, and notes</li>
+        <li><strong>Delete</strong> — Remove incidents with confirmation prompt</li>
+      </ul>
+    </div>
+
+    <div id="remediation" class="section-anchor">
+      <h2><span class="badge compliance">Compliance</span> Remediation Tracker</h2>
+      <p>The <a href="/remediation.html">Remediation Tracker</a> manages remediation actions with:</p>
+      <ul>
+        <li>Priority and severity tracking (Critical, High, Medium, Low)</li>
+        <li>Overdue detection with colour-coded status indicators</li>
+        <li>State management: Open, Resolved, Accepted Risk</li>
+        <li>Target date assignment and progress tracking</li>
+      </ul>
+    </div>
+
+    <!-- ── Dashboards ── -->
+    <div id="director" class="section-anchor">
+      <h2><span class="badge admin">Dashboards</span> Director Dashboard</h2>
+      <p>The <a href="/director-view.html">Director Dashboard</a> provides executive oversight with 11 KPI tiles and per-site breakdowns:</p>
+      <ul>
+        <li><strong>Remediation KPIs</strong> — Open, overdue, resolved, critical, high priority counts</li>
+        <li><strong>Incident KPIs</strong> — Open, mandatory, critical, high severity counts</li>
+        <li><strong>Policy KPIs</strong> — Policy gaps count, sites with complete policy coverage</li>
+        <li><strong>Per-Site Policy Table</strong> — Confirmed/9 policies, gaps, missing policy names per site</li>
+        <li><strong>Audit Recency Table</strong> — Last audit date and age per site, overdue flag >90 days</li>
+        <li><strong>NQS Mapping</strong> — Findings mapped to NQS 2.2, 7.1, 7.2 quality areas</li>
+      </ul>
+      <p>Click <strong>Refresh All</strong> to reload both director and governance data.</p>
+    </div>
+
+    <div id="governance" class="section-anchor">
+      <h2><span class="badge admin">Dashboards</span> Governance Summary</h2>
+      <p>The governance summary endpoint (<code>GET /governance-summary</code>) powers the director dashboard. It returns aggregated data on remediation, incidents, policy compliance, and audit recency.</p>
+    </div>
+
+    <!-- ── Network Monitoring ── -->
+    <div id="live-dashboard" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> Live Dashboard</h2>
+      <p>The <a href="/mission_control_live_dashboard_v2.html">Live Dashboard</a> provides a per-site view of network devices, alerts, agents, and observations:</p>
+      <ul>
+        <li><strong>Site Selector</strong> — Choose a site from the dropdown to view its data</li>
+        <li><strong>KPI Cards</strong> — Total devices, online, offline, unknown, open alerts, agent status</li>
+        <li><strong>Device Table</strong> — IP, MAC, friendly name/hostname, device type, latency, last seen</li>
+        <li><strong>Alerts List</strong> — Open and acknowledged alerts with severity, title, source</li>
+        <li><strong>Agent Status</strong> — Online/offline probe agents for the selected site</li>
+      </ul>
+      <p>Requires the API base URL and API key to connect to the backend monitoring API.</p>
+      <div class="callout info">The API key and base URL are saved in your browser's local storage. You only need to enter them once.</div>
+    </div>
+
+    <div id="all-sites" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> All Sites Overview</h2>
+      <p>The <a href="/mission_control_all_sites_dashboard_v1.html">All Sites Dashboard</a> shows a global view of all monitored sites with health status, device counts, online/offline breakdown, alert counts, and agent status. Use this page to quickly identify sites that need attention.</p>
+    </div>
+
+    <div id="device-admin" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> Device Classification</h2>
+      <p>The <a href="/mission_control_device_admin_v1.html">Device Admin</a> page lets you classify devices discovered by the probe agent:</p>
+      <ul>
+        <li><strong>Friendly Name</strong> — Set a human-readable name for the device</li>
+        <li><strong>Device Type</strong> — Choose from: Unknown, Network Infrastructure, Windows/Linux/Apple Device, Mobile, Printer, VoIP Phone, Camera, Server, IoT Device</li>
+        <li><strong>Criticality</strong> — Set to LOW, MEDIUM, HIGH, or CRITICAL</li>
+        <li><strong>Expected Online</strong> — Check if this device should always be online (enables offline alerting)</li>
+        <li><strong>Notes</strong> — Add free-text notes</li>
+        <li><strong>Guess</strong> — Auto-classify using AI based on hostname, MAC OUI, and vendor</li>
+      </ul>
+      <div class="callout tip">Classifying devices with meaningful names and criticality improves the accuracy of offline alerts and the executive dashboard.</div>
+    </div>
+
+    <div id="alerts" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> Alert Management</h2>
+      <p>The <a href="/mission_control_alerts_v1.html">Alerts</a> page provides full alert lifecycle management:</p>
+      <ul>
+        <li><strong>Acknowledge</strong> — Mark the alert as seen (moves from OPEN to ACKNOWLEDGED)</li>
+        <li><strong>Resolve</strong> — Close the alert when the issue is fixed</li>
+        <li><strong>Suppress</strong> — Silence future occurrences of this alert type</li>
+        <li><strong>Reopen</strong> — Re-open a resolved or suppressed alert</li>
+      </ul>
+      <p>Alert types include: DEVICE_OFFLINE, DEVICE_BACK_ONLINE, AGENT_MISSING. Each alert has severity (CRITICAL, HIGH, MEDIUM, LOW), a fingerprint for deduplication, and a count of occurrences.</p>
+    </div>
+
+    <div id="executive" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> Executive Dashboard</h2>
+      <p>The <a href="/mission_control_executive_dashboard_v24_1.html">Executive Dashboard</a> provides multi-site intelligence with availability trends, infrastructure summaries, and device reduction targets. Shows critical devices offline, site health rankings, and executive-level KPIs.</p>
+    </div>
+
+    <div id="probe-agent" class="section-anchor">
+      <h2><span class="badge monitor">Monitoring</span> Probe Agent Setup</h2>
+      <p>Probe agents run on Intel NUCs at client sites. They perform periodic ARP + ICMP discovery of the local subnet and report device state to the central backend.</p>
+      <h3>Windows Install</h3>
+      <p>Run as Administrator in PowerShell:</p>
+      <pre>.\install.ps1 -ApiKey &lt;key&gt; -ApiBase https://audit.simplyict.com.au/monitoring-api -SiteId &lt;id&gt; -SiteName "Name" -AgentId &lt;agent&gt; -Subnet "192.168.1.0/24"</pre>
+      <h3>Linux Install</h3>
+      <p>Run as root:</p>
+      <pre>sudo ./install.sh --api-key &lt;key&gt; --api-base https://audit.simplyict.com.au/monitoring-api --site-id &lt;id&gt; --site-name "Name" --agent-id &lt;agent&gt; --subnet 192.168.1.0/24</pre>
+      <h3>Diagnostics</h3>
+      <p>On Windows, run <code>.\probe-diagnose.ps1</code> to check installation paths, Python environment, service status, log files, and API reachability.</p>
+      <div class="callout warning">The installer uses embeddable Python (no system Python dependency). It downloads NSSM, Python, and the agent package automatically.</div>
+    </div>
+
+    <!-- ── Security Operations ── -->
+    <div id="wazuh" class="section-anchor">
+      <h2><span class="badge soc">SOC</span> Wazuh SOC Dashboard</h2>
+      <p>The <a href="/wazuh-soc.html">Wazuh SOC Dashboard</a> is a full SIEM single-page application with 14 views proxied through the platform:</p>
+      <ul>
+        <li><strong>Command Center</strong> — KPI tiles (agents, vulnerabilities, SCA score, threat index) with Chart.js charts</li>
+        <li><strong>Agents</strong> — Filterable agent list with drill-down to SCA, FIM, vulnerabilities, inventory tabs</li>
+        <li><strong>SCA Compliance</strong> — Fleet-wide Security Configuration Assessment scores and policy results</li>
+        <li><strong>File Integrity</strong> — FIM event log across all agents</li>
+        <li><strong>Vulnerabilities</strong> — CVE aggregation with severity KPIs and sortable table</li>
+        <li><strong>MITRE ATT&amp;CK</strong> — Technique heatmap grid</li>
+        <li><strong>Rules &amp; Decoders</strong> — Wazuh rule/decoder catalogue browser</li>
+        <li><strong>Events &amp; Alerts</strong> — Real-time alert feed with severity filtering</li>
+        <li><strong>Topology</strong> — OS distribution and agent version charts</li>
+        <li><strong>Threat Intel</strong> — AlienVault OTX integration status and IOC counts</li>
+        <li><strong>SOC Autopilot</strong> — AI-powered case management</li>
+        <li><strong>Manager Health</strong> — Daemon status, manager info, cluster status</li>
+        <li><strong>Groups</strong> — Agent group membership</li>
+      </ul>
+    </div>
+
+    <div id="soc-agent" class="section-anchor">
+      <h2><span class="badge soc">SOC</span> SOC Autopilot Agent</h2>
+      <p>The <a href="/soc-agent-dashboard.html">SOC Agent Dashboard</a> provides an AI-like auto-triage agent that monitors alerts, auto-resolves false positives, triggers autopilot cases, and sends periodic summaries.</p>
+      <ul>
+        <li>Monitors open alerts every 5 minutes</li>
+        <li>Auto-resolves DEVICE_OFFLINE alerts when devices come back online</li>
+        <li>Escalates persistent critical alerts with detailed incident information</li>
+      </ul>
+    </div>
+
+    <div id="telegram" class="section-anchor">
+      <h2><span class="badge soc">SOC</span> Telegram Integration</h2>
+      <p>The platform integrates with Telegram for real-time SOC notifications:</p>
+      <ul>
+        <li>Receive real-time alerts directly in a Telegram chat</li>
+        <li>Use commands: <code>/status</code>, <code>/alerts</code>, <code>/cases</code>, <code>/help</code></li>
+        <li>Daily SOC digest at 08:00 with overnight summary and trends</li>
+        <li>30-minute escalation for persistent CRITICAL alerts</li>
+      </ul>
+    </div>
+
+    <!-- ── Project Hub ── -->
+    <div id="project-hub" class="section-anchor">
+      <h2><span class="badge admin">Projects</span> Managing Trackers</h2>
+      <p>The <a href="http://208.87.135.84:3010" target="_blank">Project Hub</a> is the master tracker panel for all build project trackers. It provides an overview of all projects with health status, task progress, and deployment controls.</p>
+      <p>Each project card shows:</p>
+      <ul>
+        <li>Project name, description, and health status (online/offline/unknown)</li>
+        <li>Task progress bar with done/total counts</li>
+        <li>Folder path, server host, and SSH user badges</li>
+        <li>Open Tracker button (if a tracker is deployed)</li>
+        <li>Deploy Tracker button (if no tracker exists)</li>
+      </ul>
+    </div>
+
+    <div id="projects" class="section-anchor">
+      <h2><span class="badge admin">Projects</span> Project Tasks &amp; Kanban</h2>
+      <p>Click any project card to view its tasks in list or Kanban view:</p>
+      <ul>
+        <li><strong>List View</strong> — Filterable task table with status, priority, owner, and target date</li>
+        <li><strong>Kanban View</strong> — Drag-and-drop board with columns: To Do, In Progress, Blocked, Review, Done</li>
+        <li><strong>Add Task</strong> — Quick-add tasks with title, priority, owner, and target date</li>
+        <li><strong>CSV Export</strong> — Download tasks as a CSV file</li>
+      </ul>
+    </div>
+
+    <div id="deploy" class="section-anchor">
+      <h2><span class="badge admin">Projects</span> Deploying a Tracker</h2>
+      <p>For projects without a tracker, click <strong>Deploy Tracker</strong> to scaffold and deploy a standalone tracker server:</p>
+      <ul>
+        <li><strong>Local</strong> — Create tracker files on the local server, install systemd service, start it</li>
+        <li><strong>Remote</strong> — SCP tracker files to a remote server via SSH, install and start the service</li>
+      </ul>
+      <p>The deploy modal shows real-time progress logs. After deployment, the health check verifies the tracker is responding.</p>
+      <div class="callout tip">Tracker deployment creates 4 files: <code>index.html</code>, <code>server.py</code> (stdlib HTTP server), <code>data.json</code>, and a <code>.service</code> unit file.</div>
+    </div>
+
+    <!-- ── Reference ── -->
+    <div id="troubleshooting" class="section-anchor">
+      <h2>Troubleshooting</h2>
+
+      <h3>Blank page after login</h3>
+      <p>Hard refresh (Ctrl+Shift+R on Windows/Linux, Cmd+Shift+R on Mac) or clear your browser cache. Also check your session hasn't expired.</p>
+
+      <h3>Wazuh SOC pages not loading</h3>
+      <p>Check that the Wazuh API proxy is running: <code>sudo systemctl status mission-control-ui</code>. The proxy at <code>/wazuh-api/{path}</code> forwards requests to the Wazuh SOC API on localhost:8000 and auto-retries on 401.</p>
+
+      <h3>Devices showing offline</h3>
+      <p>Check the probe agent status on the Live Dashboard. If the agent is offline, the site NUC may have network issues or the agent process may have stopped. On the NUC, run: <code>nssm status MissionProbe</code>.</p>
+
+      <h3>CSV export not working</h3>
+      <p>Ensure your browser allows pop-ups for file downloads. The export creates a Blob download — if pop-ups are blocked, the download will be silently prevented.</p>
+
+      <h3>2FA code not working</h3>
+      <p>Ensure your device's time is correct (auto-sync recommended). TOTP codes are time-based — a clock drift of more than 30 seconds will cause codes to be rejected. Contact an admin to reset your 2FA if needed.</p>
+
+      <h3>PDF report shows "N/A" for data</h3>
+      <p>This usually means the audit batch doesn't have complete device entries, or the site doesn't have threshold settings configured. Check the Site Onboarding page for threshold values.</p>
+
+      <h3>Login returns "Invalid credentials"</h3>
+      <p>Check Caps Lock is off. If you've forgotten your password, contact an admin to reset it. Remember the 5-attempt lockout — wait 15 minutes if locked out.</p>
+
+      <div class="callout warning">If you encounter persistent issues, check the system status at the <a href="http://208.87.135.84:3010" target="_blank">Project Hub</a> or contact SimplyICT support.</div>
+    </div>
+
+    <div id="shortcuts" class="section-anchor">
+      <h2>Keyboard &amp; UI Shortcuts</h2>
+      <table>
+        <tr><th>Action</th><th>Shortcut</th></tr>
+        <tr><td>Refresh current page</td><td>Refresh button in topbar</td></tr>
+        <tr><td>Return to Platform Home</td><td>Home button in topbar</td></tr>
+        <tr><td>Open Help</td><td>? Help button in topbar</td></tr>
+        <tr><td>Close a modal</td><td>Click overlay background or press Escape</td></tr>
+        <tr><td>Add a task (Project Hub)</td><td>Type in the task input and press Enter</td></tr>
+        <tr><td>Save audit rows</td><td>Save All Rows button (also individual Save per row)</td></tr>
+      </table>
+    </div>
+
+    <div id="status" class="section-anchor">
+      <h2>Service Statuses Explained</h2>
+
+      <h3>Device Statuses</h3>
+      <table>
+        <tr><th>Status</th><th>Meaning</th></tr>
+        <tr><td>ONLINE</td><td>Device responded to ping or ARP in the latest scan cycle</td></tr>
+        <tr><td>OFFLINE</td><td>Device expected online but not seen for &gt;180s and ping verification failed</td></tr>
+        <tr><td>UNKNOWN</td><td>Newly discovered device, not yet classified</td></tr>
+        <tr><td>DEGRADED</td><td>Device online but with issues (high latency, packet loss)</td></tr>
+        <tr><td>DISABLED</td><td>Device excluded from monitoring (expected_online = false)</td></tr>
+      </table>
+
+      <h3>Alert Severity Levels</h3>
+      <table>
+        <tr><th>Severity</th><th>Meaning</th></tr>
+        <tr><td>CRITICAL</td><td>Immediate attention required — security breach, extended outage</td></tr>
+        <tr><td>HIGH</td><td>Urgent — device offline with stable history, pattern escalation</td></tr>
+        <tr><td>MEDIUM</td><td>Needs review — routine offline detection, non-critical</td></tr>
+        <tr><td>LOW</td><td>Informational — device back online, agent reconnected</td></tr>
+      </table>
+
+      <h3>Remediation Priorities</h3>
+      <table>
+        <tr><th>Priority</th><th>Meaning</th></tr>
+        <tr><td>Critical</td><td>Must be resolved immediately — compliance violation, data breach</td></tr>
+        <tr><td>High</td><td>Should be resolved within 7 days — significant risk</td></tr>
+        <tr><td>Medium</td><td>Should be resolved within 30 days — moderate risk</td></tr>
+        <tr><td>Low</td><td>Resolve when convenient — minor risk</td></tr>
+      </table>
+
+      <h3>Agent Statuses</h3>
+      <table>
+        <tr><th>Status</th><th>Meaning</th></tr>
+        <tr><td>ONLINE</td><td>Agent sent heartbeat within the expected interval</td></tr>
+        <tr><td>OFFLINE</td><td>No heartbeat received for &gt;300s (configurable)</td></tr>
+      </table>
+
+      <h3>Project Hub Health Dots</h3>
+      <table>
+        <tr><th>Dot</th><th>Meaning</th></tr>
+        <tr><td>Green</td><td>Tracker URL is responding (HTTP 200)</td></tr>
+        <tr><td>Red</td><td>Tracker URL is unreachable or returns an error</td></tr>
+        <tr><td>Amber</td><td>No tracker URL configured (unknown status)</td></tr>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active sidebar link on scroll
+  var sections = document.querySelectorAll('.section-anchor');
+  var links = document.querySelectorAll('.sidebar a');
+  function onScroll() {
+    var scrollY = window.scrollY + 120;
+    var activeId = '';
+    sections.forEach(function(s) {
+      if (s.offsetTop <= scrollY) activeId = s.id;
+    });
+    links.forEach(function(a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + activeId);
+    });
+  }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+</script>
+</body>
+</html>

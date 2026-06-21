@@ -1,0 +1,61 @@
+<h2>Master Project Hub — Design Options</h2>
+<p class="subtitle">After investigating all project folders, servers, and existing tracker infrastructure</p>
+
+<div class="section">
+  <h3>Current Landscape</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="border-bottom:1px solid #2d2d3d"><th style="text-align:left;padding:6px">Project</th><th style="text-align:left;padding:6px">Folder</th><th style="text-align:left;padding:6px">Tracker URL</th><th style="text-align:left;padding:6px">Backend</th></tr>
+    <tr><td style="padding:4px">Mission Control UI</td><td style="color:var(--muted)">mission-control-ui/</td><td>:8095/project-manager.html</td><td>FastAPI + projects.json</td></tr>
+    <tr><td style="padding:4px">SimplyClik App</td><td style="color:var(--muted)">simplyclik-app/tracker/</td><td>:3003/</td><td>Python HTTPServer + data.json</td></tr>
+    <tr><td style="padding:4px">PaintCo V2</td><td style="color:var(--muted)">paintcoV2/</td><td>208.87.135.183:3004/</td><td>Unknown (different server)</td></tr>
+    <tr><td style="padding:4px">Mission Control Site</td><td style="color:var(--muted)">mission-control-site/</td><td>:8097/</td><td>Monitoring dashboards</td></tr>
+    <tr><td style="padding:4px">Our ND Family Site</td><td style="color:var(--muted)">ourndfamily-site/</td><td>None yet</td><td>Vite/React app</td></tr>
+    <tr><td style="padding:4px">Neodiverse Project</td><td style="color:var(--muted)">neodiverse-project/</td><td>None yet</td><td>Just SEO docs</td></tr>
+    <tr><td style="padding:4px">Mission Control Repo</td><td style="color:var(--muted)">mission-control-repo/</td><td>None yet</td><td>Git + scripts</td></tr>
+  </table>
+</div>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A: Extend project-manager.html</h3>
+      <p>Add project site links + "New Tracker" wizard to the existing page. Projects in the grid get a "Open Tracker" button. New project wizard adds server/folder fields. Keeps the kanban/task views underneath.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Single URL to remember</li><li>Leverages existing API/code</li><li>Users already know it</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Page has dual purpose (hub + tasks)</li><li>Needs backend schema changes</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B: New project-hub.html page</h3>
+      <p>Clean dedicated page showing all project sites with their tracker links, server info, and status. Separate "New Project Site" creation flow. Links to project-manager for task drill-down.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Clean separation</li><li>Designed purely for this</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Another URL to learn</li><li>Duplicate project data</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>C: Rebuild index-platform.html section</h3>
+      <p>Add a "Build Projects" section to the existing landing page with tracker links and creation wizard. Keeps everything under one roof.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Central hub already</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Page already very full</li><li>Not the right place for creation flows</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>My Recommendation: <span style="color:var(--accent)">Option A</span></h3>
+  <p>Extend <code>project-manager.html</code> — it already has the project concept, CRUD API, and users know it. We add:</p>
+  <ol>
+    <li><strong>Tracker URL</strong> field to each project (stored in projects.json)</li>
+    <li><strong>"Open Tracker" button</strong> on each project card — links to the tracker URL</li>
+    <li><strong>"New Project Site"</strong> wizard with fields for: server IP, port, folder path, tracker URL</li>
+    <li><strong>Create Tracker Scaffold</strong> — option to auto-generate a tracker index.html + server.py in the target folder</li>
+    <li><strong>Status indicator</strong> — ping the tracker URL to show online/offline</li>
+  </ol>
+</div>
