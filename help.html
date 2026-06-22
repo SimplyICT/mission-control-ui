@@ -365,7 +365,7 @@
     <!-- ── Security Operations ── -->
     <div id="wazuh" class="section-anchor">
       <h2><span class="badge soc">SOC</span> Wazuh SOC Dashboard</h2>
-      <p>The <a href="/wazuh-soc.html">Wazuh SOC Dashboard</a> is a full SIEM single-page application with 14 views proxied through the platform:</p>
+      <p>The <a href="/wazuh-soc-v2">Wazuh SOC Dashboard</a> is a React-based SIEM single-page application with 17 code-split views, AI-powered triage, and automated case management:</p>
       <ul>
         <li><strong>Command Center</strong> — KPI tiles (agents, vulnerabilities, SCA score, threat index) with Chart.js charts</li>
         <li><strong>Agents</strong> — Filterable agent list with drill-down to SCA, FIM, vulnerabilities, inventory tabs</li>
@@ -385,7 +385,14 @@
 
     <div id="soc-agent" class="section-anchor">
       <h2><span class="badge soc">SOC</span> SOC Autopilot Agent</h2>
-      <p>The <a href="/soc-agent-dashboard.html">SOC Agent Dashboard</a> provides an AI-like auto-triage agent that monitors alerts, auto-resolves false positives, triggers autopilot cases, and sends periodic summaries.</p>
+      <p>The SOC Autopilot provides AI-powered alert triage and case management using DeepSeek:</p>
+      <ul>
+        <li><strong>AI Triage</strong> — Each alert is analyzed by LLM (DeepSeek), returning confidence score, MITRE mapping, and recommended action</li>
+        <li><strong>Auto-resolve</strong> — Low-level alerts (≤7) are auto-resolved; medium-level (8-11) create cases; high-level (12+) create cases with escalation priority</li>
+        <li><strong>Human-in-the-loop</strong> — Cases are created with AI analysis, confidence score, and recommended response plan. Human reviews, approves, rejects, or executes</li>
+        <li><strong>Daily Digest</strong> — AI-generated summary of all alerts, resolutions, and cases for the past 24 hours</li>
+        <li><strong>Rule Fallback</strong> — If LLM is unavailable, rule-based triage ensures cases are still created</li>
+      </ul>
       <ul>
         <li>Monitors open alerts every 5 minutes</li>
         <li>Auto-resolves DEVICE_OFFLINE alerts when devices come back online</li>

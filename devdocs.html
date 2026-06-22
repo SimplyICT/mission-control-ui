@@ -96,6 +96,22 @@ sudo systemctl restart backend-api          # Monitoring API (port 8000)</pre>
     <p><strong>Source:</strong> <code>/home/aiagent/mission-control-repo/site/</code> (monitoring stack)</p>
     <p><strong>Source:</strong> <code>/home/aiagent/mission-control-ui/</code> (audit stack)</p>
   </div>
+
+  <div class="section">
+    <span class="tag tag-red">SOC</span>
+    <h2>AI SOC Agent</h2>
+    <p>The SOC Autopilot has been upgraded with AI-powered triage using DeepSeek API.</p>
+    <p><strong>Modules:</strong></p>
+    <ul>
+      <li><code>ai_triage.py</code> — Alert analysis via LLM (DeepSeek) with rule-based fallback. Returns confidence, MITRE mapping, response plan</li>
+      <li><code>ai_resolver.py</code> — Auto-resolution and case creation. Stores in Supabase (when available) or local JSON files</li>
+      <li><code>ai_digest.py</code> — Daily SOC digest generator via LLM</li>
+    </ul>
+    <p><strong>Alert flow:</strong> Wazuh alerts → AI triage → confidence gate → auto-resolve (level ≤7 or confident) or case creation → human approve/reject/execute</p>
+    <p><strong>API:</strong> <code>AI_API_URL</code> in in <code>.env</code> (OpenAI-compatible, currently DeepSeek). <code>AI_MODEL</code> defaults to <code>deepseek-chat</code></p>
+    <p><strong>Case storage:</strong> <code>ai_cases.json</code> + <code>ai_audit_log.json</code> (auto-detects Supabase if <code>soc_cases</code> table exists)</p>
+    <p><strong>Frontend:</strong> <code>/wazuh-soc-v2/#/autopilot</code> — case list with confidence column, case detail with AI analysis card</p>
+  </div>
 </div>
 </body>
 </html>

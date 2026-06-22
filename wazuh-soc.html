@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mission Control — Wazuh SOC</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+:root{--bg:#07090d;--bg-card:#111827;--bg-hover:#1e293b;--bg-input:#05070a;--bg-primary:#07090d;--bg-secondary:#111827;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--border-accent:rgba(84,214,255,.18);--text:#e7f6ff;--text-primary:#e7f6ff;--text-secondary:#8fa6b5;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00ff88;--amber:#ff9500;--red:#ff4757;--blue:#3b82f6;--accent:#00b4d8;--accent-hover:#0098c7;--radius:12px;--radius-sm:8px;--sidebar-width:220px;--sidebar-collapsed:56px}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);font-size:14px}
 #app{display:flex;height:100vh;overflow:hidden}
 .sidebar{width:var(--sidebar-width);min-width:var(--sidebar-width);background:var(--bg-secondary);border-right:1px solid #2d2d3d;display:flex;flex-direction:column;transition:width .2s,min-width .2s;overflow:hidden;z-index:100}
@@ -121,7 +120,7 @@ select.input{cursor:pointer}
 
 
 /* Platform universal styles */
-:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+:root{--bg:#07090d;--bg-card:#111827;--bg-hover:#1e293b;--bg-input:#05070a;--bg-primary:#07090d;--bg-secondary:#111827;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--border-accent:rgba(84,214,255,.18);--text:#e7f6ff;--text-primary:#e7f6ff;--text-secondary:#8fa6b5;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00ff88;--amber:#ff9500;--red:#ff4757;--blue:#3b82f6;--accent:#00b4d8;--accent-hover:#0098c7;--radius:12px;--radius-sm:8px;--sidebar-width:220px;--sidebar-collapsed:56px}
 *{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
 .brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
@@ -165,13 +164,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
   <main id="main" class="main">
     <div class="topbar">
     <div class="brand">
-      <h1>🖥️ Command Center
-      <span></span>
+      <h1 id="pageTitle">Command Center</h1>
+      <span id="lastUpdated"></span>
     </div>
     <div class="controls">
+      <button id="refreshBtn" class="btn">&#8635; Refresh</button>
+      <input id="globalSearch" class="btn" placeholder="Search..." style="padding:4px 10px;font-size:13px;background:#05070a;border:1px solid #2d2d3d;color:#e7f6ff;border-radius:8px;outline:none;width:160px" />
       <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
       <a class="nav-btn" href="/help.html">? Help</a>
       <a class="nav-btn" href="/devdocs.html">DevDocs</a>
     </div>

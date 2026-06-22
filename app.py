@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timezone
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import hashlib
 import hmac as _hmac
@@ -940,48 +941,19 @@ def wazuh_otx_download():
     )
 
 
-# ── SOC Autopilot Engine ──────────────────────────────────────────────────
-AUTOPILOT_FILE = BASE_DIR / "autopilot_cases.json"
-
-
-def _load_autopilot_cases() -> list:
-    if not AUTOPILOT_FILE.exists():
-        return []
-    try:
-        return json.loads(AUTOPILOT_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-
-
-def _save_autopilot_cases(cases: list) -> None:
-    AUTOPILOT_FILE.write_text(json.dumps(cases, indent=2), encoding="utf-8")
-
-
-def _make_case_id() -> str:
-    import uuid
-    return uuid.uuid4().hex[:8]
+# ── AI SOC Agent Engine ──────────────────────────────────────────────────
+from ai_triage import triage_alert
+from ai_resolver import auto_resolve, create_case, list_cases, get_case, update_case, get_stats
 
 
 @app.get("/wazuh-api/autopilot/stats")
 def autopilot_stats():
-    cases = _load_autopilot_cases()
-    now = datetime.now(timezone.utc)
-    last_24h = [c for c in cases if c.get("created_at") and (now - datetime.fromisoformat(c["created_at"].replace("Z", "+00:00"))).total_seconds() < 86400]
-    return {
-        "last_24h": len(last_24h),
-        "critical": len([c for c in cases if c.get("severity") == "critical"]),
-        "high": len([c for c in cases if c.get("severity") == "high"]),
-        "medium": len([c for c in cases if c.get("severity") == "medium"]),
-        "low": len([c for c in cases if c.get("severity") == "low"]),
-        "resolved": len([c for c in cases if c.get("status") in ("resolved", "closed")]),
-        "avg_triage_time": None,
-    }
+    return get_stats()
 
 
 @app.get("/wazuh-api/autopilot/cases")
 def autopilot_cases():
-    cases = _load_autopilot_cases()
-    cases.sort(key=lambda c: c.get("updated_at", ""), reverse=True)
+    cases = list_cases()
     affected = []
     for c in cases:
         affected.append({
@@ -989,8 +961,10 @@ def autopilot_cases():
             "title": c.get("title", ""),
             "severity": c.get("severity", "low"),
             "status": c.get("status", "open"),
-            "alert_count": len(c.get("alerts", [])),
-            "mitre": c.get("mitre"),
+            "alert_count": len(c.get("alert_ids", [])),
+            "mitre": {"technique_id": c.get("mitre_technique", "")},
+            "ai_analysis": c.get("ai_analysis", ""),
+            "confidence": c.get("confidence", 0.5),
             "updated_at": c.get("updated_at", ""),
             "created_at": c.get("created_at", ""),
         })
@@ -999,161 +973,228 @@ def autopilot_cases():
 
 @app.get("/wazuh-api/autopilot/cases/{case_id}")
 def autopilot_case_detail(case_id: str):
-    cases = _load_autopilot_cases()
-    for c in cases:
-        if c.get("id") == case_id:
-            return c
+    c = get_case(case_id)
+    if c:
+        return c
     raise HTTPException(status_code=404, detail="Case not found")
 
 
 @app.post("/wazuh-api/autopilot/cases/{case_id}/approve")
 def autopilot_approve(case_id: str):
-    cases = _load_autopilot_cases()
     now = datetime.now(timezone.utc).isoformat()
-    for c in cases:
-        if c.get("id") == case_id:
-            c["status"] = "approved"
-            c["updated_at"] = now
-            c.setdefault("events", []).append({"type": "approved", "timestamp": now, "alert_id": None})
-            _save_autopilot_cases(cases)
-            return {"status": "ok", "case": {"id": case_id, "status": "approved"}}
-    raise HTTPException(status_code=404, detail="Case not found")
+    c = get_case(case_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Case not found")
+    events = c.get("events", [])
+    if isinstance(events, str):
+        try:
+            events = json.loads(events)
+        except Exception:
+            events = []
+    events.append({"type": "approved", "timestamp": now, "detail": "Approved by SOC operator"})
+    update_case(case_id, {"status": "approved", "events": json.dumps(events)})
+    return {"status": "ok", "case": {"id": case_id, "status": "approved"}}
 
 
 @app.post("/wazuh-api/autopilot/cases/{case_id}/reject")
 def autopilot_reject(case_id: str):
-    cases = _load_autopilot_cases()
+    c = get_case(case_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Case not found")
     now = datetime.now(timezone.utc).isoformat()
-    for c in cases:
-        if c.get("id") == case_id:
-            c["status"] = "rejected"
-            c["updated_at"] = now
-            c.setdefault("events", []).append({"type": "rejected", "timestamp": now, "alert_id": None})
-            _save_autopilot_cases(cases)
-            return {"status": "ok", "case": {"id": case_id, "status": "rejected"}}
-    raise HTTPException(status_code=404, detail="Case not found")
+    events = c.get("events", [])
+    if isinstance(events, str):
+        try:
+            events = json.loads(events)
+        except Exception:
+            events = []
+    events.append({"type": "rejected", "timestamp": now, "detail": "Rejected by SOC operator"})
+    update_case(case_id, {"status": "rejected", "events": json.dumps(events)})
+    return {"status": "ok", "case": {"id": case_id, "status": "rejected"}}
 
 
 @app.post("/wazuh-api/autopilot/cases/{case_id}/execute")
 def autopilot_execute(case_id: str):
-    cases = _load_autopilot_cases()
+    c = get_case(case_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if c.get("status") != "approved":
+        raise HTTPException(status_code=400, detail="Case must be approved before execution")
     now = datetime.now(timezone.utc).isoformat()
-    for c in cases:
-        if c.get("id") == case_id:
-            if c.get("status") != "approved":
-                raise HTTPException(status_code=400, detail="Case must be approved before execution")
-            c["status"] = "in_progress"
-            c["updated_at"] = now
-            c.setdefault("events", []).append({"type": "executed", "timestamp": now, "alert_id": None})
-            c.setdefault("actions", []).append({"action": "response_plan_executed", "target": "", "status": "requested", "detail": "Execution triggered"})
-            _save_autopilot_cases(cases)
-            return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}}
-    raise HTTPException(status_code=404, detail="Case not found")
+    events = c.get("events", [])
+    if isinstance(events, str):
+        try:
+            events = json.loads(events)
+        except Exception:
+            events = []
+    events.append({"type": "executed", "timestamp": now, "detail": "Response plan executed"})
+    update_case(case_id, {"status": "in_progress", "events": json.dumps(events)})
+    return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}}
 
 
-def _generate_autopilot_case(alerts: list, site_name: str, device_info: dict = None) -> dict:
-    now = datetime.now(timezone.utc).isoformat()
-    severities = [a.get("severity", "low") for a in alerts]
-    highest = "critical" if "critical" in severities else "high" if "high" in severities else "medium"
+def _fetch_open_alerts() -> list[dict]:
+    """Fetch open alerts from Wazuh SIEM and internal monitoring."""
+    alerts = []
 
-    alert_types = list(set(a.get("alert_type", "") for a in alerts))
-    device_ip = device_info.get("ip_address", "") if device_info else ""
-
-    title = f"Multiple alerts on {site_name}"
-    if device_ip:
-        title += f" — {device_ip}"
-
-    description_lines = [
-        f"Autopilot detected {len(alerts)} related alerts on {site_name}.",
-        f"Alert types: {', '.join(alert_types)}.",
-    ]
-    if device_info:
-        description_lines.append(f"Device: {device_info.get('friendly_name') or device_info.get('hostname') or device_ip}.")
-
-    mitre = {"technique_id": "T1078", "technique": "Valid Accounts"}
-    if "DEVICE_OFFLINE" in alert_types:
-        mitre = {"technique_id": "T1042", "technique": "Change Default File Extension"}
-
-    response_actions = [
-        {"type": "investigate", "target": site_name, "rationale": f"Review {len(alerts)} related alerts and determine root cause."},
-        {"type": "notify", "target": "SOC team", "rationale": "Alert SOC team to active incident."},
-    ]
-    if device_ip:
-        response_actions.insert(0, {"type": "ping", "target": device_ip, "rationale": "Verify device is reachable on network."})
-
-    return {
-        "id": _make_case_id(),
-        "title": title,
-        "severity": highest,
-        "status": "awaiting_approval",
-        "description": "\n".join(description_lines),
-        "alerts": [{"id": a.get("id"), "title": a.get("title"), "severity": a.get("severity")} for a in alerts],
-        "entities": [{"type": "site", "value": site_name, "role": "affected"}],
-        "mitre": mitre,
-        "confidence": 0.75 if highest == "critical" else 0.6,
-        "response_plan": {
-            "risk_level": highest,
-            "summary": f"Investigate {len(alerts)} related alerts at {site_name}. Recommended actions: ping device, review alert details, notify SOC team.",
-            "actions": response_actions,
-        },
-        "actions": [],
-        "events": [{"type": "created", "timestamp": now, "alert_id": None}],
-        "created_at": now,
-        "updated_at": now,
-    }
-
-
-def autopilot_scan_and_generate():
-    """Called periodically or on-demand. Checks for alert clusters and generates cases."""
-    cases = _load_autopilot_cases()
-    existing_fingerprints = set()
-    for c in cases:
-        for a in c.get("alerts", []):
-            if a.get("id"):
-                existing_fingerprints.add(str(a["id"]))
-
+    # 1. Wazuh SIEM alerts (levels 0-15, the main SOC data)
     try:
+        token = _wazuh_soc_token["value"] or _wazuh_soc_login()
+        if token:
+            resp = requests.get(
+                f"{WAZUH_SOC_API_BASE}/events",
+                params={"size": 200},
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30,
+            )
+            if resp.ok:
+                data = resp.json()
+                wazuh_alerts = data.get("data", {}).get("affected_items", data.get("affected_items", []))
+                for a in wazuh_alerts:
+                    alerts.append({
+                        "id": a.get("id", ""),
+                        "level": a.get("level", 0),
+                        "title": a.get("description", ""),
+                        "description": a.get("description", ""),
+                        "source": a.get("agent", {}).get("name", "unknown"),
+                        "rule_id": a.get("rule_id", 0),
+                        "similar_count": 0,
+                        "timestamp": a.get("timestamp", ""),
+                    })
+                logger.info("Fetched %d Wazuh alerts", len(wazuh_alerts))
+    except Exception as e:
+        logger.error("Failed to fetch Wazuh alerts: %s", e)
+
+    # 2. Internal monitoring alerts (port 8000)
+    try:
+        api_key = os.getenv("MISSION_API_KEY", "mission-test-key-123")
         resp = requests.get(
             "http://127.0.0.1:8000/api/v1/alerts",
-            params={"status": "OPEN,ACKNOWLEDGED", "limit": "200"},
-            timeout=10,
+            params={"status": "OPEN,ACKNOWLEDGED", "limit": 200},
+            headers={"x-api-key": api_key},
+            timeout=30,
         )
-        if resp.status_code != 200:
-            logger.warning("Autopilot scan: failed to fetch alerts (%s)", resp.status_code)
-            return
-        data = resp.json()
-        alerts = data.get("alerts", []) if isinstance(data, dict) else []
-    except Exception as exc:
-        logger.warning("Autopilot scan: failed to connect to backend: %s", exc)
-        return
+        if resp.ok:
+            data = resp.json()
+            for a in data.get("alerts", []):
+                ad = a.get("alert", a)
+                alerts.append({
+                    "id": ad.get("id", ""),
+                    "level": ad.get("level", 0),
+                    "title": ad.get("title", ad.get("message", "")),
+                    "description": ad.get("message", ad.get("description", "")),
+                    "source": ad.get("source", a.get("site", {}).get("site_name", "unknown")),
+                    "rule_id": ad.get("rule_id", 0),
+                    "similar_count": 0,
+                    "timestamp": ad.get("created_at", ""),
+                })
+    except Exception as e:
+        logger.error("Failed to fetch internal alerts: %s", e)
 
-    from collections import defaultdict
-    by_site = defaultdict(list)
+    return alerts
+
+
+def _fetch_processed_alert_ids() -> set:
+    """Get set of alert IDs already triaged (from audit log or case alert_ids)."""
+    processed = set()
+    try:
+        for c in list_cases():
+            for aid in c.get("alert_ids", []):
+                if aid:
+                    processed.add(str(aid))
+    except Exception:
+        pass
+    try:
+        import json as _json
+        from ai_resolver import AUDIT_FILE
+        if AUDIT_FILE.exists():
+            for entry in _json.loads(AUDIT_FILE.read_text(encoding="utf-8")):
+                aid = entry.get("alert_id", "")
+                if aid:
+                    processed.add(str(aid))
+    except Exception:
+        pass
+    return processed
+
+
+def ai_scan_and_generate():
+    """AI-powered scan cycle — triages new alerts and routes to auto-resolve or case."""
+    new_cases = 0
+    auto_resolved = 0
+
+    processed_ids = _fetch_processed_alert_ids()
+    alerts = _fetch_open_alerts()
+
+    if not alerts:
+        logger.info("AI scan: no open alerts to process")
+        return {"new_cases": 0, "auto_resolved": 0}
+
+    new_alerts = []
     for a in alerts:
-        if str(a.get("alert", {}).get("id", "")) in existing_fingerprints:
-            continue
-        site = a.get("site", {})
-        key = site.get("site_name") or site.get("site_code") or "Unknown"
-        severity = (a.get("alert", {}).get("severity") or "low").upper()
-        if severity in ("CRITICAL", "HIGH"):
-            by_site[key].append(a)
+        alert_data = a.get("alert", a)
+        aid = str(alert_data.get("id", ""))
+        if aid and aid not in processed_ids:
+            new_alerts.append(alert_data)
 
-    now = datetime.now(timezone.utc).isoformat()
-    created = 0
-    for site_name, site_alerts in by_site.items():
-        if len(site_alerts) < 2:
-            continue
-        device_info = site_alerts[0].get("device") if len(site_alerts) > 0 else None
-        case = _generate_autopilot_case([a["alert"] for a in site_alerts[:5]], site_name, device_info)
-        cases.append(case)
-        created += 1
+    if not new_alerts:
+        logger.info("AI scan: no new alerts to process")
+        return {"new_cases": 0, "auto_resolved": 0}
 
-    if created:
-        _save_autopilot_cases(cases)
-        logger.info("Autopilot: created %d new cases", created)
+    logger.info("AI scan: processing %d new alerts", len(new_alerts))
+
+    # Prioritize high-level alerts, limit batch size
+    new_alerts.sort(key=lambda a: a.get("level", 0), reverse=True)
+    batch = [a for a in new_alerts if a.get("level", 0) >= 12][:5]  # max 5 high-sev per cycle
+    if not batch:
+        batch = new_alerts[:3]  # fallback to first 3 if none high-sev
+    logger.info("AI scan: triaging %d alerts this cycle (levels: %s)",
+                len(batch), [a.get("level", 0) for a in batch])
+
+    for alert in batch:
+        try:
+            analysis = triage_alert({
+                "id": alert.get("id", ""),
+                "level": alert.get("level", 0),
+                "title": alert.get("title", ""),
+                "description": alert.get("description", ""),
+                "source": alert.get("source", "unknown"),
+                "rule_id": alert.get("rule_id", 0),
+                "similar_count": 0,
+            })
+
+            confidence = analysis.get("confidence", 0.5)
+            recommended_action = analysis.get("recommended_action", "escalate")
+            level = alert.get("level", 0)
+            is_wazuh = alert.get("timestamp", "") != ""  # Wazuh alerts have timestamps
+
+            # Always create cases for Wazuh alerts (can't auto-resolve via internal API)
+            # For internal alerts: auto-resolve if low level or AI is confident
+            should_auto = (
+                not is_wazuh
+                and (
+                    (recommended_action == "resolve" and confidence >= 0.9)
+                    or level <= 11
+                )
+            )
+
+            if should_auto:
+                ok = auto_resolve(alert, analysis)
+                if ok:
+                    auto_resolved += 1
+            else:
+                cid = create_case([alert], analysis)
+                if cid:
+                    new_cases += 1
+
+        except Exception as e:
+            logger.error("AI scan: error processing alert %s: %s",
+                         alert.get("id", "?"), e)
+
+    logger.info("AI scan complete: %d cases created, %d auto-resolved",
+                new_cases, auto_resolved)
+    return {"new_cases": new_cases, "auto_resolved": auto_resolved}
 
 
-# Schedule autopilot scan every 5 minutes
+# Schedule AI scan every 5 minutes
 AUTOPILOT_SCAN_INTERVAL = 300
 
 
@@ -1165,13 +1206,13 @@ def _start_autopilot_scanner():
         while True:
             time.sleep(AUTOPILOT_SCAN_INTERVAL)
             try:
-                autopilot_scan_and_generate()
+                ai_scan_and_generate()
             except Exception as exc:
-                logger.error("Autopilot scanner error: %s", exc)
+                logger.error("AI scanner error: %s", exc)
 
     t = threading.Thread(target=_scanner_loop, daemon=True)
     t.start()
-    logger.info("Autopilot scanner started (interval=%ds)", AUTOPILOT_SCAN_INTERVAL)
+    logger.info("AI Autopilot scanner started (interval=%ds)", AUTOPILOT_SCAN_INTERVAL)
 
     # Start SOC Agent daemon (Telegram + auto-triage)
     try:
@@ -1185,8 +1226,8 @@ def _start_autopilot_scanner():
 
 @app.post("/wazuh-api/autopilot/scan")
 def autopilot_manual_scan():
-    autopilot_scan_and_generate()
-    return {"status": "ok"}
+    result = ai_scan_and_generate()
+    return {"status": "ok", "result": result}
 
 
 # ── SOC Agent / Telegram Endpoints ────────────────────────────────────────
@@ -2023,4 +2064,15 @@ def project_tracker_tasks_json():
     if not tracker_file.exists():
         return JSONResponse({"error": "tracker_not_found"}, status_code=404)
     return Response(content=tracker_file.read_text(encoding="utf-8"), media_type="application/json")
+
+
+SPA_DIR = Path("/home/aiagent/wazuh-soc/dist")
+if SPA_DIR.exists():
+    app.mount("/wazuh-soc-v2/assets", StaticFiles(directory=str(SPA_DIR / "assets")), name="wazuh_soc_assets")
+
+    @app.get("/wazuh-soc-v2", response_class=HTMLResponse)
+    @app.get("/wazuh-soc-v2/", response_class=HTMLResponse)
+    @app.get("/wazuh-soc-v2.html", response_class=HTMLResponse)
+    def wazuh_soc_v2_index():
+        return HTMLResponse(content=(SPA_DIR / "index.html").read_text(encoding="utf-8"))
 
