@@ -1020,6 +1020,10 @@ def autopilot_execute(case_id: str):
         raise HTTPException(status_code=404, detail="Case not found")
     if c.get("status") != "approved":
         raise HTTPException(status_code=400, detail="Case must be approved before execution")
+
+    from ai_remediate import execute_case
+    results = execute_case(c)
+
     now = datetime.now(timezone.utc).isoformat()
     events = c.get("events", [])
     if isinstance(events, str):
@@ -1027,9 +1031,19 @@ def autopilot_execute(case_id: str):
             events = json.loads(events)
         except Exception:
             events = []
-    events.append({"type": "executed", "timestamp": now, "detail": "Response plan executed"})
-    update_case(case_id, {"status": "in_progress", "events": json.dumps(events)})
-    return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}}
+    for r in results:
+        r_status = "ok" if r.get("success") else r.get("error", "failed")
+        events.append({
+            "type": "executed" if r.get("success") else "failed",
+            "timestamp": now,
+            "detail": f"{r.get('action', 'unknown')} → {r.get('target', '')}: {r_status}",
+        })
+    update_case(case_id, {
+        "status": "in_progress",
+        "events": json.dumps(events),
+        "actions": json.dumps(results),
+    })
+    return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}, "results": results}
 
 
 def _fetch_open_alerts() -> list[dict]:
@@ -1164,26 +1178,44 @@ def ai_scan_and_generate():
             confidence = analysis.get("confidence", 0.5)
             recommended_action = analysis.get("recommended_action", "escalate")
             level = alert.get("level", 0)
-            is_wazuh = alert.get("timestamp", "") != ""  # Wazuh alerts have timestamps
 
-            # Always create cases for Wazuh alerts (can't auto-resolve via internal API)
-            # For internal alerts: auto-resolve if low level or AI is confident
-            should_auto = (
-                not is_wazuh
-                and (
-                    (recommended_action == "resolve" and confidence >= 0.9)
-                    or level <= 11
-                )
-            )
-
-            if should_auto:
-                ok = auto_resolve(alert, analysis)
-                if ok:
+            # Intelligence-driven triage:
+            #   Level 0-7 (low):     always auto-resolve (log + skip, no case)
+            #   Level 8-11 (medium): case only if AI recommends escalate
+            #   Level 12+ (high):    always create case
+            if level <= 7:
+                from ai_resolver import log_action as _log
+                _log(alert.get("id", ""), alert.get("title", ""), level,
+                     "auto_resolve", confidence, analysis.get("analysis", ""))
+                auto_resolved += 1
+            elif level <= 11:
+                if recommended_action == "escalate":
+                    cid = create_case([alert], analysis)
+                    if cid:
+                        new_cases += 1
+                else:
+                    from ai_resolver import log_action as _log
+                    _log(alert.get("id", ""), alert.get("title", ""), level,
+                         "auto_resolve", confidence, analysis.get("analysis", ""))
                     auto_resolved += 1
             else:
                 cid = create_case([alert], analysis)
                 if cid:
                     new_cases += 1
+                    # Auto-execute for critical alerts with high confidence
+                    if level >= 15 and confidence >= 0.9:
+                        from ai_remediate import execute_case
+                        new_case = get_case(cid)
+                        if new_case:
+                            results = execute_case(new_case)
+                            update_case(cid, {"status": "in_progress",
+                                              "actions": json.dumps(results)})
+                            from ai_resolver import log_action as _log
+                            _log(alert.get("id", ""), alert.get("title", ""), level,
+                                 "auto_executed", confidence,
+                                 f"Auto-remediation: {len(results)} actions")
+                            logger.info("Auto-executed case %s (%d actions)",
+                                        cid, len(results))
 
         except Exception as e:
             logger.error("AI scan: error processing alert %s: %s",
