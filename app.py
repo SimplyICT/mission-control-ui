@@ -996,7 +996,6 @@ def autopilot_approve(case_id: str):
     return {"status": "ok", "case": {"id": case_id, "status": "approved"}}
 
 
-@app.post("/wazuh-api/autopilot/cases/{case_id}/reject")
 SUPPRESS_FILE = BASE_DIR / "ai_suppressions.json"
 
 
@@ -1014,7 +1013,6 @@ def _save_suppressions(s: list):
 
 
 def _add_suppression(case: dict):
-    """Extract alert pattern from a rejected case and add to suppression list."""
     patterns = _load_suppressions()
     entry = {
         "title": (case.get("title") or "").strip(),
@@ -1022,7 +1020,6 @@ def _add_suppression(case: dict):
         "rule_id": 0,
         "suppressed_at": datetime.now(timezone.utc).isoformat(),
     }
-    # Try to extract source/rule_id from case data or entities
     entities = case.get("entities", [])
     if isinstance(entities, str):
         try:
@@ -1041,7 +1038,6 @@ def _add_suppression(case: dict):
 
 
 def _is_suppressed(alert: dict) -> bool:
-    """Check if an alert matches any suppression pattern."""
     title = (alert.get("title") or "").strip().lower()
     source = (alert.get("source") or "").strip().lower()
     for p in _load_suppressions():
@@ -1056,6 +1052,7 @@ def _is_suppressed(alert: dict) -> bool:
     return False
 
 
+@app.post("/wazuh-api/autopilot/cases/{case_id}/reject")
 def autopilot_reject(case_id: str):
     c = get_case(case_id)
     if not c:
@@ -1082,7 +1079,34 @@ def autopilot_execute(case_id: str):
         raise HTTPException(status_code=400, detail="Case must be approved before execution")
 
     from ai_remediate import execute_case
-    results = execute_case(c)
+    import threading
+
+    def _run():
+        try:
+            results = execute_case(c)
+            now = datetime.now(timezone.utc).isoformat()
+            events = c.get("events", [])
+            if isinstance(events, str):
+                try:
+                    events = json.loads(events)
+                except Exception:
+                    events = []
+            for r in results:
+                r_status = "ok" if r.get("success") else r.get("error", "failed")
+                events.append({
+                    "type": "executed" if r.get("success") else "failed",
+                    "timestamp": now,
+                    "detail": f"{r.get('action', 'unknown')} → {r.get('target', '')}: {r_status}",
+                })
+            update_case(case_id, {
+                "status": "in_progress",
+                "events": events,
+                "actions": results,
+            })
+        except Exception as e:
+            logger.error("Execute error for case %s: %s", case_id, e)
+
+    threading.Thread(target=_run, daemon=True).start()
 
     now = datetime.now(timezone.utc).isoformat()
     events = c.get("events", [])

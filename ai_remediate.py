@@ -96,10 +96,10 @@ def suppress_rule(rule_id: int, source: str, alert_type: str = "") -> dict:
 
 
 def notify_soc(message: str, level: str = "info") -> dict:
-    """Send notification via Telegram."""
+    """Send notification via Telegram (plain text, no markdown)."""
     try:
         from soc_agent import tg_send
-        ok = tg_send(f"[{level.upper()}] {message}")
+        ok = tg_send(f"[{level.upper()}] {message}", parse_mode="")
         if ok:
             logger.info("Telegram notification sent: %s", message[:80])
             return {"success": True, "action": "notify", "target": "telegram", "message": message[:80]}
