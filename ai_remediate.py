@@ -98,13 +98,15 @@ def suppress_rule(rule_id: int, source: str, alert_type: str = "") -> dict:
 def notify_soc(message: str, level: str = "info") -> dict:
     """Send notification via Telegram."""
     try:
-        from soc_agent import _send_telegram
-        _send_telegram(f"[{level.upper()}] {message}")
-        logger.info("Telegram notification sent: %s", message[:80])
-        return {"success": True, "action": "notify", "target": "telegram", "message": message[:80]}
+        from soc_agent import tg_send
+        ok = tg_send(f"[{level.upper()}] {message}")
+        if ok:
+            logger.info("Telegram notification sent: %s", message[:80])
+            return {"success": True, "action": "notify", "target": "telegram", "message": message[:80]}
+        return {"success": False, "action": "notify", "error": "tg_send returned False"}
     except Exception as e:
         logger.warning("Telegram notify failed: %s", e)
-    return {"success": False, "action": "notify", "error": "telegram unavailable"}
+    return {"success": False, "action": "notify", "error": str(e)}
 
 
 def add_watchlist(ioc: str, ioc_type: str = "ip") -> dict:
