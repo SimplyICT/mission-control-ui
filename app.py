@@ -992,11 +992,70 @@ def autopilot_approve(case_id: str):
         except Exception:
             events = []
     events.append({"type": "approved", "timestamp": now, "detail": "Approved by SOC operator"})
-    update_case(case_id, {"status": "approved", "events": json.dumps(events)})
+    update_case(case_id, {"status": "approved", "events": events})
     return {"status": "ok", "case": {"id": case_id, "status": "approved"}}
 
 
 @app.post("/wazuh-api/autopilot/cases/{case_id}/reject")
+SUPPRESS_FILE = BASE_DIR / "ai_suppressions.json"
+
+
+def _load_suppressions() -> list:
+    if not SUPPRESS_FILE.exists():
+        return []
+    try:
+        return json.loads(SUPPRESS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def _save_suppressions(s: list):
+    SUPPRESS_FILE.write_text(json.dumps(s, indent=2), encoding="utf-8")
+
+
+def _add_suppression(case: dict):
+    """Extract alert pattern from a rejected case and add to suppression list."""
+    patterns = _load_suppressions()
+    entry = {
+        "title": (case.get("title") or "").strip(),
+        "source": "",
+        "rule_id": 0,
+        "suppressed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # Try to extract source/rule_id from case data or entities
+    entities = case.get("entities", [])
+    if isinstance(entities, str):
+        try:
+            entities = json.loads(entities)
+        except Exception:
+            entities = []
+    for e in entities:
+        if isinstance(e, dict):
+            src = e.get("source") or e.get("value", "")
+            if src and src != "unknown":
+                entry["source"] = src
+                break
+    patterns.append(entry)
+    _save_suppressions(patterns)
+    logger.info("Added suppression: %s — %d patterns total", entry["title"], len(patterns))
+
+
+def _is_suppressed(alert: dict) -> bool:
+    """Check if an alert matches any suppression pattern."""
+    title = (alert.get("title") or "").strip().lower()
+    source = (alert.get("source") or "").strip().lower()
+    for p in _load_suppressions():
+        pt = p.get("title", "").lower()
+        ps = p.get("source", "").lower()
+        if pt and pt in title:
+            return True
+        if ps and source and ps in source:
+            return True
+        if ps and source and source in ps:
+            return True
+    return False
+
+
 def autopilot_reject(case_id: str):
     c = get_case(case_id)
     if not c:
@@ -1009,8 +1068,9 @@ def autopilot_reject(case_id: str):
         except Exception:
             events = []
     events.append({"type": "rejected", "timestamp": now, "detail": "Rejected by SOC operator"})
-    update_case(case_id, {"status": "rejected", "events": json.dumps(events)})
-    return {"status": "ok", "case": {"id": case_id, "status": "rejected"}}
+    update_case(case_id, {"status": "rejected", "events": events})
+    _add_suppression(c)
+    return {"status": "ok", "case": {"id": case_id, "status": "rejected"}, "suppressed": True}
 
 
 @app.post("/wazuh-api/autopilot/cases/{case_id}/execute")
@@ -1040,8 +1100,8 @@ def autopilot_execute(case_id: str):
         })
     update_case(case_id, {
         "status": "in_progress",
-        "events": json.dumps(events),
-        "actions": json.dumps(results),
+        "events": events,
+        "actions": results,
     })
     return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}, "results": results}
 
@@ -1164,6 +1224,9 @@ def ai_scan_and_generate():
                 len(batch), [a.get("level", 0) for a in batch])
 
     for alert in batch:
+        if _is_suppressed(alert):
+            logger.info("Skipping suppressed alert %s: %s", alert.get("id", "?"), alert.get("title", "")[:60])
+            continue
         try:
             analysis = triage_alert({
                 "id": alert.get("id", ""),
@@ -1209,7 +1272,7 @@ def ai_scan_and_generate():
                         if new_case:
                             results = execute_case(new_case)
                             update_case(cid, {"status": "in_progress",
-                                              "actions": json.dumps(results)})
+                                              "actions": results})
                             from ai_resolver import log_action as _log
                             _log(alert.get("id", ""), alert.get("title", ""), level,
                                  "auto_executed", confidence,
