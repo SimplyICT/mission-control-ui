@@ -1108,26 +1108,7 @@ def autopilot_execute(case_id: str):
 
     threading.Thread(target=_run, daemon=True).start()
 
-    now = datetime.now(timezone.utc).isoformat()
-    events = c.get("events", [])
-    if isinstance(events, str):
-        try:
-            events = json.loads(events)
-        except Exception:
-            events = []
-    for r in results:
-        r_status = "ok" if r.get("success") else r.get("error", "failed")
-        events.append({
-            "type": "executed" if r.get("success") else "failed",
-            "timestamp": now,
-            "detail": f"{r.get('action', 'unknown')} → {r.get('target', '')}: {r_status}",
-        })
-    update_case(case_id, {
-        "status": "in_progress",
-        "events": events,
-        "actions": results,
-    })
-    return {"status": "ok", "case": {"id": case_id, "status": "in_progress"}, "results": results}
+    return {"status": "ok", "message": "Execution triggered, running in background"}
 
 
 def _fetch_open_alerts() -> list[dict]:
@@ -1247,50 +1228,79 @@ def ai_scan_and_generate():
     logger.info("AI scan: triaging %d alerts this cycle (levels: %s)",
                 len(batch), [a.get("level", 0) for a in batch])
 
-    for alert in batch:
-        if _is_suppressed(alert):
-            logger.info("Skipping suppressed alert %s: %s", alert.get("id", "?"), alert.get("title", "")[:60])
+    # Group alerts by source + time window (10 min)
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for a in batch:
+        if _is_suppressed(a):
+            logger.info("Skipping suppressed alert %s: %s", a.get("id", "?"), a.get("title", "")[:60])
             continue
+        groups[a.get("source", "unknown")].append(a)
+
+    # Merge groups that share at least one alert within 10 min of each other
+    merged = []
+    for source, alerts in groups.items():
+        alerts.sort(key=lambda a: a.get("timestamp", ""))
+        window_start = 0
+        for i in range(1, len(alerts)):
+            t1 = alerts[window_start].get("timestamp", "")
+            t2 = alerts[i].get("timestamp", "")
+            if t1 and t2:
+                try:
+                    from datetime import datetime as _dt
+                    dt1 = _dt.fromisoformat(t1.replace("Z", "+00:00"))
+                    dt2 = _dt.fromisoformat(t2.replace("Z", "+00:00"))
+                    if (dt2 - dt1).total_seconds() > 600:  # 10 min window
+                        merged.append(alerts[window_start:i])
+                        window_start = i
+                except Exception:
+                    pass
+        merged.append(alerts[window_start:])
+
+    for group in merged:
+        if not group:
+            continue
+        max_level = max(a.get("level", 0) for a in group)
+        group.sort(key=lambda a: a.get("level", 0), reverse=True)
+        primary = group[0]
+
         try:
             analysis = triage_alert({
-                "id": alert.get("id", ""),
-                "level": alert.get("level", 0),
-                "title": alert.get("title", ""),
-                "description": alert.get("description", ""),
-                "source": alert.get("source", "unknown"),
-                "rule_id": alert.get("rule_id", 0),
-                "similar_count": 0,
+                "id": primary.get("id", ""),
+                "level": max_level,
+                "title": f"{len(group)} related alerts — {primary.get('title', '')}",
+                "description": f"Alert cluster: {len(group)} events from {primary.get('source', 'unknown')}. {primary.get('description', '')}",
+                "source": primary.get("source", "unknown"),
+                "rule_id": primary.get("rule_id", 0),
+                "similar_count": len(group) - 1,
             })
 
             confidence = analysis.get("confidence", 0.5)
             recommended_action = analysis.get("recommended_action", "escalate")
-            level = alert.get("level", 0)
 
-            # Intelligence-driven triage:
-            #   Level 0-7 (low):     always auto-resolve (log + skip, no case)
-            #   Level 8-11 (medium): case only if AI recommends escalate
-            #   Level 12+ (high):    always create case
-            if level <= 7:
-                from ai_resolver import log_action as _log
-                _log(alert.get("id", ""), alert.get("title", ""), level,
-                     "auto_resolve", confidence, analysis.get("analysis", ""))
-                auto_resolved += 1
-            elif level <= 11:
+            if max_level <= 7:
+                for a in group:
+                    from ai_resolver import log_action as _log
+                    _log(a.get("id", ""), a.get("title", ""), a.get("level", 0),
+                         "auto_resolve", confidence, analysis.get("analysis", ""))
+                auto_resolved += len(group)
+            elif max_level <= 11:
                 if recommended_action == "escalate":
-                    cid = create_case([alert], analysis)
+                    cid = create_case(group, analysis)
                     if cid:
                         new_cases += 1
                 else:
-                    from ai_resolver import log_action as _log
-                    _log(alert.get("id", ""), alert.get("title", ""), level,
-                         "auto_resolve", confidence, analysis.get("analysis", ""))
-                    auto_resolved += 1
+                    for a in group:
+                        from ai_resolver import log_action as _log
+                        _log(a.get("id", ""), a.get("title", ""), a.get("level", 0),
+                             "auto_resolve", confidence, analysis.get("analysis", ""))
+                    auto_resolved += len(group)
             else:
-                cid = create_case([alert], analysis)
+                cid = create_case(group, analysis)
                 if cid:
                     new_cases += 1
                     # Auto-execute for critical alerts with high confidence
-                    if level >= 15 and confidence >= 0.9:
+                    if max_level >= 15 and confidence >= 0.9:
                         from ai_remediate import execute_case
                         new_case = get_case(cid)
                         if new_case:
@@ -1298,7 +1308,7 @@ def ai_scan_and_generate():
                             update_case(cid, {"status": "in_progress",
                                               "actions": results})
                             from ai_resolver import log_action as _log
-                            _log(alert.get("id", ""), alert.get("title", ""), level,
+                            _log(primary.get("id", ""), primary.get("title", ""), max_level,
                                  "auto_executed", confidence,
                                  f"Auto-remediation: {len(results)} actions")
                             logger.info("Auto-executed case %s (%d actions)",
