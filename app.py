@@ -951,6 +951,32 @@ def autopilot_stats():
     return get_stats()
 
 
+@app.get("/wazuh-api/autopilot/trends")
+def autopilot_trends():
+    """Return case counts grouped by day for the last 14 days."""
+    import calendar
+    from datetime import timedelta
+
+    cases = list_cases()
+    now = datetime.now(timezone.utc)
+    days = []
+    for i in range(13, -1, -1):
+        day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        days.append(day)
+
+    by_day = {d: {"created": 0, "resolved": 0, "total": 0} for d in days}
+    for c in cases:
+        created = (c.get("created_at") or "")[:10]
+        if created in by_day:
+            by_day[created]["created"] += 1
+            by_day[created]["total"] += 1
+        resolved = (c.get("updated_at") or "")[:10]
+        if resolved in by_day and c.get("status") in ("resolved", "closed", "rejected"):
+            by_day[resolved]["resolved"] += 1
+
+    return {"days": [{"date": d, **by_day[d]} for d in days]}
+
+
 @app.get("/wazuh-api/autopilot/cases")
 def autopilot_cases():
     cases = list_cases()
