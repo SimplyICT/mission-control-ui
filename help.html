@@ -385,18 +385,19 @@
 
     <div id="soc-agent" class="section-anchor">
       <h2><span class="badge soc">SOC</span> SOC Autopilot Agent</h2>
-      <p>The SOC Autopilot provides AI-powered alert triage and case management using DeepSeek:</p>
+      <p>The SOC Autopilot provides AI-powered alert triage, case management, and remediation using DeepSeek:</p>
       <ul>
         <li><strong>AI Triage</strong> — Each alert is analyzed by LLM (DeepSeek), returning confidence score, MITRE mapping, and recommended action</li>
-        <li><strong>Auto-resolve</strong> — Low-level alerts (≤7) are auto-resolved; medium-level (8-11) create cases; high-level (12+) create cases with escalation priority</li>
-        <li><strong>Human-in-the-loop</strong> — Cases are created with AI analysis, confidence score, and recommended response plan. Human reviews, approves, rejects, or executes</li>
+        <li><strong>Alert Grouping</strong> — Related alerts (same source, 10-min window) are grouped into a single consolidated case</li>
+        <li><strong>Auto-resolve</strong> — Low-level alerts (≤7) are auto-resolved; medium-level (8-11) create cases if AI says escalate; high-level (12+) always create cases</li>
+        <li><strong>Human-in-the-loop</strong> — Cases show AI analysis, confidence score, and recommended response plan. Human reviews, approves, rejects, or executes</li>
+        <li><strong>Auto-suppression</strong> — Rejecting a case suppresses similar alerts from creating new cases</li>
+        <li><strong>Remediation</strong> — Execute Plan runs response actions: block IP (iptables), ping device, notify Telegram, add to watchlist, suppress Wazuh rules</li>
+        <li><strong>Auto-execute</strong> — Critical alerts (15+) with high confidence (>90%) skip human step and auto-remediate</li>
         <li><strong>Daily Digest</strong> — AI-generated summary of all alerts, resolutions, and cases for the past 24 hours</li>
+        <li><strong>14-Day Trends</strong> — Case volume bar chart on the Autopilot page</li>
+        <li><strong>Events Search</strong> — Events page supports agent name/ID/description search and fetches 500 events</li>
         <li><strong>Rule Fallback</strong> — If LLM is unavailable, rule-based triage ensures cases are still created</li>
-      </ul>
-      <ul>
-        <li>Monitors open alerts every 5 minutes</li>
-        <li>Auto-resolves DEVICE_OFFLINE alerts when devices come back online</li>
-        <li>Escalates persistent critical alerts with detailed incident information</li>
       </ul>
     </div>
 

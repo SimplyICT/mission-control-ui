@@ -100,17 +100,27 @@ sudo systemctl restart backend-api          # Monitoring API (port 8000)</pre>
   <div class="section">
     <span class="tag tag-red">SOC</span>
     <h2>AI SOC Agent</h2>
-    <p>The SOC Autopilot has been upgraded with AI-powered triage using DeepSeek API.</p>
+    <p>The SOC Autopilot provides AI-powered triage, case management, and remediation using DeepSeek.</p>
     <p><strong>Modules:</strong></p>
     <ul>
       <li><code>ai_triage.py</code> — Alert analysis via LLM (DeepSeek) with rule-based fallback. Returns confidence, MITRE mapping, response plan</li>
-      <li><code>ai_resolver.py</code> — Auto-resolution and case creation. Stores in Supabase (when available) or local JSON files</li>
+      <li><code>ai_resolver.py</code> — Auto-resolution and case creation. Dual storage: Supabase or local JSON files</li>
       <li><code>ai_digest.py</code> — Daily SOC digest generator via LLM</li>
+      <li><code>ai_remediate.py</code> — Remediation executor: block IP (iptables), ping device, suppress Wazuh rules, notify Telegram, add watchlist</li>
     </ul>
-    <p><strong>Alert flow:</strong> Wazuh alerts → AI triage → confidence gate → auto-resolve (level ≤7 or confident) or case creation → human approve/reject/execute</p>
-    <p><strong>API:</strong> <code>AI_API_URL</code> in in <code>.env</code> (OpenAI-compatible, currently DeepSeek). <code>AI_MODEL</code> defaults to <code>deepseek-chat</code></p>
-    <p><strong>Case storage:</strong> <code>ai_cases.json</code> + <code>ai_audit_log.json</code> (auto-detects Supabase if <code>soc_cases</code> table exists)</p>
-    <p><strong>Frontend:</strong> <code>/wazuh-soc-v2/#/autopilot</code> — case list with confidence column, case detail with AI analysis card</p>
+    <p><strong>Alert flow:</strong> Wazuh alerts → group by source + 10min window → AI triage → level ≤7 auto-resolve | level 8-11 AI decides | level 12+ case → human approve/reject/execute → remediation actions</p>
+    <p><strong>Auto-suppression:</strong> Rejecting a case saves the alert pattern; matching future alerts are skipped</p>
+    <p><strong>Auto-execute:</strong> Critical alerts (15+) with confidence >90% auto-remediate without human</p>
+    <p><strong>Endpoints:</strong></p>
+    <ul>
+      <li><code>GET /wazuh-api/autopilot/stats</code> — Case counts</li>
+      <li><code>GET /wazuh-api/autopilot/trends</code> — 14-day case volume by day</li>
+      <li><code>GET /wazuh-api/autopilot/cases</code> — Case list</li>
+      <li><code>POST .../approve | /reject | /execute</code> — Case workflow</li>
+    </ul>
+    <p><strong>API:</strong> <code>AI_API_URL</code> in <code>.env</code> (OpenAI-compatible, currently DeepSeek). <code>AI_MODEL</code> defaults to <code>deepseek-chat</code></p>
+    <p><strong>Storage:</strong> <code>ai_cases.json</code> + <code>ai_audit_log.json</code> + <code>ai_suppressions.json</code></p>
+    <p><strong>Frontend:</strong> <code>/wazuh-soc-v2/#/autopilot</code> — case list with AI confidence, 14-day trend chart, searchable events</p>
   </div>
 </div>
 </body>
