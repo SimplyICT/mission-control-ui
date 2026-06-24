@@ -287,7 +287,7 @@ function roleBadge(role) {
 }
 
 function loadPageList() {
-  return fetch('/api/page-list')
+  return fetch('/mission/api/page-list')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       allPages = data.pages || [];
@@ -300,7 +300,7 @@ function loadUsers() {
   var wrap = document.getElementById('usersTableWrap');
   wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span>Loading...</div>';
 
-  fetch('/api/users')
+  fetch('/mission/api/users')
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
       if (!res.ok) {
@@ -455,7 +455,7 @@ function createUser() {
     active: true
   };
 
-  fetch('/api/users', {
+  fetch('/mission/api/users', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -527,7 +527,7 @@ function saveUser() {
     payload.password = password;
   }
 
-  fetch('/api/users/' + userId, {
+  fetch('/mission/api/users/' + userId, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -546,7 +546,7 @@ function deleteUser() {
   if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
   var userId = document.getElementById('editUserId').value;
 
-  fetch('/api/users/' + userId, { method: 'DELETE' })
+  fetch('/mission/api/users/' + userId, { method: 'DELETE' })
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
       if (!res.ok) { showStatus('editStatus', 'error', res.data.detail || 'Delete failed.'); return; }

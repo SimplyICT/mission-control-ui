@@ -201,7 +201,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 </style>
 <script>
 /* ── Wazuh SOC Dashboard — Full Integration ─────────────────── */
-var API = "/wazuh-api";
+var API = "/mission/wazuh-api";
 var charts = {};
 var refreshInterval = null;
 var currentRoute = "";
@@ -435,7 +435,7 @@ function pageHelp(){currentRoute="/help";$("pageTitle").textContent="Help";rende
 function pageAlertDetail(alertId){
   currentRoute="/alert/"+alertId;$("pageTitle").textContent="Alert #"+alertId;showLoading("content");
   var alertData=null,remediation=null;
-  fetch("http://127.0.0.1:8000/api/v1/remediation/suggest/"+alertId,{headers:{"x-api-key":"mission-test-key-123"}}).then(function(r){return r.json()}).then(function(d){remediation=d}).catch(function(){});
+  fetch(API+"/api/v1/remediation/suggest/"+alertId,{headers:{"x-api-key":"mission-test-key-123"}}).then(function(r){return r.json()}).then(function(d){remediation=d}).catch(function(){});
   fetch(API+"/events?size=1").then(function(r){return r.json()}).then(function(d){
     var items=d.data&&d.data.affected_items||[];
     var a=items[0]||{};

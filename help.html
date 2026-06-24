@@ -95,14 +95,14 @@
     <div class="title">Mission Control — Help Guide</div>
     <div class="subtitle">Complete user reference for the platform</div>
   </div>
-  <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+  <a class="nav-btn-home" href="/mission/index-platform.html">&#9664; Home</a>
 </div>
 
 <div class="doc-meta">
   <span>&#9881; Version 1.1</span>
   <span>&#128197; Last updated 20 June 2026</span>
-  <span>&#128214; <a href="/user-guide.html" style="color:#4ade80">Full User Guide</a></span>
-  <span>&#128187; <a href="/devdocs.html" style="color:#4ade80">Developer Docs</a></span>
+  <span>&#128214; <a href="/mission/user-guide.html" style="color:#4ade80">Full User Guide</a></span>
+  <span>&#128187; <a href="/mission/devdocs.html" style="color:#4ade80">Developer Docs</a></span>
 </div>
 
 <div class="layout">
@@ -173,12 +173,12 @@
       <h2>Login &amp; 2FA</h2>
       <p>All pages require authentication. The login system includes brute-force protection and optional two-factor authentication.</p>
       <ol class="steps">
-        <li>Navigate to <a href="/login">the login page</a> and enter your username and password.</li>
+        <li>Navigate to <a href="/mission/login">the login page</a> and enter your username and password.</li>
         <li>If 2FA is enabled, you will be redirected to the verification page. Open your authenticator app and enter the 6-digit code.</li>
-        <li>If 2FA is not yet set up, go to <a href="/2fa-setup.html">2FA Setup</a> to scan the QR code with Google Authenticator or Authy.</li>
+        <li>If 2FA is not yet set up, go to <a href="/mission/2fa-setup.html">2FA Setup</a> to scan the QR code with Google Authenticator or Authy.</li>
       </ol>
       <div class="callout warning">After 5 failed login attempts, your account is locked for 15 minutes. Contact an admin if you are locked out.</div>
-      <p>Admins can reset 2FA for any user from the <a href="/admin-users.html">User Management</a> page.</p>
+      <p>Admins can reset 2FA for any user from the <a href="/mission/admin-users.html">User Management</a> page.</p>
     </div>
 
     <div id="navigation" class="section-anchor">
@@ -201,7 +201,7 @@
       <h2><span class="badge audit">Audit</span> Running a Device Audit</h2>
       <p>The Device Audit form lets you record device checks at a site and classify each device against compliance criteria.</p>
       <ol class="steps">
-        <li>Go to <a href="/device-audit.html">Device Audit Form</a> and select a site from the dropdown.</li>
+        <li>Go to <a href="/mission/device-audit.html">Device Audit Form</a> and select a site from the dropdown.</li>
         <li>If a previous audit batch exists for this site, you can continue it. Otherwise, start a new batch.</li>
         <li>For each device, record: device type, serial number, room, OS version, photo count and date, OneDrive sync status, security check, and notes.</li>
         <li>Click <strong>Save All Rows</strong> to submit the entire batch at once. Individual rows can also be saved.</li>
@@ -214,7 +214,7 @@
       <h2><span class="badge audit">Reports</span> Generating PDF Reports</h2>
       <p>Executive summary PDF reports can be generated for any completed audit batch.</p>
       <ol class="steps">
-        <li>Go to <a href="/audit-reports.html">Audit Reports</a> and select a site and audit batch.</li>
+        <li>Go to <a href="/mission/audit-reports.html">Audit Reports</a> and select a site and audit batch.</li>
         <li>Click <strong>Generate PDF</strong> to produce an executive report with cover page, KPI summary, risk breakdown, room-by-room results, and a Policy Compliance Checklist.</li>
         <li>The PDF downloads automatically. Filename format: <code>{site}-{date}-executive.pdf</code>.</li>
       </ol>
@@ -223,12 +223,12 @@
 
     <div id="active-register" class="section-anchor">
       <h2><span class="badge audit">Devices</span> Active Device Register</h2>
-      <p>The <a href="/active-device-register.html">Active Device Register</a> shows all devices currently registered in the system with their latest audit status. Use this page to get a quick overview of device coverage across all sites.</p>
+      <p>The <a href="/mission/active-device-register.html">Active Device Register</a> shows all devices currently registered in the system with their latest audit status. Use this page to get a quick overview of device coverage across all sites.</p>
     </div>
 
     <div id="device-records" class="section-anchor">
       <h2><span class="badge audit">Records</span> Device Records &amp; CSV</h2>
-      <p>The <a href="/device-records.html">Device Records</a> page provides full device inventory management:</p>
+      <p>The <a href="/mission/device-records.html">Device Records</a> page provides full device inventory management:</p>
       <ul>
         <li><strong>Export CSV</strong> — Download all device records as a 26-column CSV file</li>
         <li><strong>Import CSV</strong> — Upload a CSV file to bulk-upsert devices (matched on <code>device_id</code>)</li>
@@ -241,7 +241,7 @@
     <!-- ── Compliance ── -->
     <div id="site-onboarding" class="section-anchor">
       <h2><span class="badge compliance">Compliance</span> Site Onboarding</h2>
-      <p><a href="/site-onboarding.html">Site Onboarding</a> configures ACECQA policy compliance settings per site. Each site has 9 policy toggles:</p>
+      <p><a href="/mission/site-onboarding.html">Site Onboarding</a> configures ACECQA policy compliance settings per site. Each site has 9 policy toggles:</p>
       <ul>
         <li>Consent forms current</li>
         <li>Photo policy documented</li>
@@ -258,7 +258,7 @@
 
     <div id="incidents" class="section-anchor">
       <h2><span class="badge compliance">Compliance</span> Incident Register</h2>
-      <p>The <a href="/incident-register.html">Incident Register</a> tracks incidents with full CRUD operations:</p>
+      <p>The <a href="/mission/incident-register.html">Incident Register</a> tracks incidents with full CRUD operations:</p>
       <ul>
         <li><strong>Create</strong> — Record new incidents with severity levels and mandatory-reportable flags</li>
         <li><strong>Edit</strong> — Update incident details, status, and notes</li>
@@ -268,7 +268,7 @@
 
     <div id="remediation" class="section-anchor">
       <h2><span class="badge compliance">Compliance</span> Remediation Tracker</h2>
-      <p>The <a href="/remediation.html">Remediation Tracker</a> manages remediation actions with:</p>
+      <p>The <a href="/mission/remediation.html">Remediation Tracker</a> manages remediation actions with:</p>
       <ul>
         <li>Priority and severity tracking (Critical, High, Medium, Low)</li>
         <li>Overdue detection with colour-coded status indicators</li>
@@ -280,7 +280,7 @@
     <!-- ── Dashboards ── -->
     <div id="director" class="section-anchor">
       <h2><span class="badge admin">Dashboards</span> Director Dashboard</h2>
-      <p>The <a href="/director-view.html">Director Dashboard</a> provides executive oversight with 11 KPI tiles and per-site breakdowns:</p>
+      <p>The <a href="/mission/director-view.html">Director Dashboard</a> provides executive oversight with 11 KPI tiles and per-site breakdowns:</p>
       <ul>
         <li><strong>Remediation KPIs</strong> — Open, overdue, resolved, critical, high priority counts</li>
         <li><strong>Incident KPIs</strong> — Open, mandatory, critical, high severity counts</li>
@@ -300,7 +300,7 @@
     <!-- ── Network Monitoring ── -->
     <div id="live-dashboard" class="section-anchor">
       <h2><span class="badge monitor">Monitoring</span> Live Dashboard</h2>
-      <p>The <a href="/mission_control_live_dashboard_v2.html">Live Dashboard</a> provides a per-site view of network devices, alerts, agents, and observations:</p>
+      <p>The <a href="/mission/mission_control_live_dashboard_v2.html">Live Dashboard</a> provides a per-site view of network devices, alerts, agents, and observations:</p>
       <ul>
         <li><strong>Site Selector</strong> — Choose a site from the dropdown to view its data</li>
         <li><strong>KPI Cards</strong> — Total devices, online, offline, unknown, open alerts, agent status</li>
@@ -314,12 +314,12 @@
 
     <div id="all-sites" class="section-anchor">
       <h2><span class="badge monitor">Monitoring</span> All Sites Overview</h2>
-      <p>The <a href="/mission_control_all_sites_dashboard_v1.html">All Sites Dashboard</a> shows a global view of all monitored sites with health status, device counts, online/offline breakdown, alert counts, and agent status. Use this page to quickly identify sites that need attention.</p>
+      <p>The <a href="/mission/mission_control_all_sites_dashboard_v1.html">All Sites Dashboard</a> shows a global view of all monitored sites with health status, device counts, online/offline breakdown, alert counts, and agent status. Use this page to quickly identify sites that need attention.</p>
     </div>
 
     <div id="device-admin" class="section-anchor">
       <h2><span class="badge monitor">Monitoring</span> Device Classification</h2>
-      <p>The <a href="/mission_control_device_admin_v1.html">Device Admin</a> page lets you classify devices discovered by the probe agent:</p>
+      <p>The <a href="/mission/mission_control_device_admin_v1.html">Device Admin</a> page lets you classify devices discovered by the probe agent:</p>
       <ul>
         <li><strong>Friendly Name</strong> — Set a human-readable name for the device</li>
         <li><strong>Device Type</strong> — Choose from: Unknown, Network Infrastructure, Windows/Linux/Apple Device, Mobile, Printer, VoIP Phone, Camera, Server, IoT Device</li>
@@ -333,7 +333,7 @@
 
     <div id="alerts" class="section-anchor">
       <h2><span class="badge monitor">Monitoring</span> Alert Management</h2>
-      <p>The <a href="/mission_control_alerts_v1.html">Alerts</a> page provides full alert lifecycle management:</p>
+      <p>The <a href="/mission/mission_control_alerts_v1.html">Alerts</a> page provides full alert lifecycle management:</p>
       <ul>
         <li><strong>Acknowledge</strong> — Mark the alert as seen (moves from OPEN to ACKNOWLEDGED)</li>
         <li><strong>Resolve</strong> — Close the alert when the issue is fixed</li>
@@ -345,7 +345,7 @@
 
     <div id="executive" class="section-anchor">
       <h2><span class="badge monitor">Monitoring</span> Executive Dashboard</h2>
-      <p>The <a href="/mission_control_executive_dashboard_v24_1.html">Executive Dashboard</a> provides multi-site intelligence with availability trends, infrastructure summaries, and device reduction targets. Shows critical devices offline, site health rankings, and executive-level KPIs.</p>
+      <p>The <a href="/mission/mission_control_executive_dashboard_v24_1.html">Executive Dashboard</a> provides multi-site intelligence with availability trends, infrastructure summaries, and device reduction targets. Shows critical devices offline, site health rankings, and executive-level KPIs.</p>
     </div>
 
     <div id="probe-agent" class="section-anchor">
@@ -365,7 +365,7 @@
     <!-- ── Security Operations ── -->
     <div id="wazuh" class="section-anchor">
       <h2><span class="badge soc">SOC</span> Wazuh SOC Dashboard</h2>
-      <p>The <a href="/wazuh-soc-v2">Wazuh SOC Dashboard</a> is a React-based SIEM single-page application with 17 code-split views, AI-powered triage, and automated case management:</p>
+      <p>The <a href="/mission/wazuh-soc-v2">Wazuh SOC Dashboard</a> is a React-based SIEM single-page application with 17 code-split views, AI-powered triage, and automated case management:</p>
       <ul>
         <li><strong>Command Center</strong> — KPI tiles (agents, vulnerabilities, SCA score, threat index) with Chart.js charts</li>
         <li><strong>Agents</strong> — Filterable agent list with drill-down to SCA, FIM, vulnerabilities, inventory tabs</li>
@@ -415,7 +415,7 @@
     <!-- ── Project Hub ── -->
     <div id="project-hub" class="section-anchor">
       <h2><span class="badge admin">Projects</span> Managing Trackers</h2>
-      <p>The <a href="http://208.87.135.84:3010" target="_blank">Project Hub</a> is the master tracker panel for all build project trackers. It provides an overview of all projects with health status, task progress, and deployment controls.</p>
+      <p>The <a href="/hub/" target="_blank">Project Hub</a> is the master tracker panel for all build project trackers. It provides an overview of all projects with health status, task progress, and deployment controls.</p>
       <p>Each project card shows:</p>
       <ul>
         <li>Project name, description, and health status (online/offline/unknown)</li>
@@ -473,7 +473,7 @@
       <h3>Login returns "Invalid credentials"</h3>
       <p>Check Caps Lock is off. If you've forgotten your password, contact an admin to reset it. Remember the 5-attempt lockout — wait 15 minutes if locked out.</p>
 
-      <div class="callout warning">If you encounter persistent issues, check the system status at the <a href="http://208.87.135.84:3010" target="_blank">Project Hub</a> or contact SimplyICT support.</div>
+      <div class="callout warning">If you encounter persistent issues, check the system status at the <a href="/hub/" target="_blank">Project Hub</a> or contact SimplyICT support.</div>
     </div>
 
     <div id="shortcuts" class="section-anchor">

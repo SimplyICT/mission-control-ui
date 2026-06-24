@@ -121,11 +121,11 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     </div>
   </div>  <div class="topbar-actions">
     <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-    <a class="btn btn-sm" href="http://208.87.135.84:3010/" style="color:var(--accent)">&#8599; Project Hub</a>
+    <a class="btn btn-sm" href="/hub/" style="color:var(--accent)">&#8599; Project Hub</a>
     <button class="btn btn-sm btn-primary" id="btnNewProject">+ New Project</button>
     <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
     <button class="btn btn-sm" id="btnExportCSV" onclick="exportCSV()" style="display:none">CSV</button>
-    <button class="btn btn-sm" onclick="window.open('/api/backup/projects')">Backup</button>
+    <button class="btn btn-sm" onclick="window.open('/mission/api/backup/projects')">Backup</button>
   
     <a class="nav-btn" href="/help.html">? Help</a>
     <a class="nav-btn" href="/devdocs.html">DevDocs</a>
@@ -146,7 +146,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 </div>
 
 <script>
-var API = "";
+var API = "/mission";
 var currentView = "list";
 var currentProjectId = null;
 var currentFilter = "all";
@@ -338,7 +338,7 @@ document.getElementById("modalSave").addEventListener("click",function(){
 });
 
 loadList();
-var sse=new EventSource("/api/events/stream");
+var sse=new EventSource("/mission/api/events/stream");
 sse.onmessage=function(){
   if(currentView==="list")loadList();
   else if(currentView==="project"&&currentProjectId)loadProject(currentProjectId);

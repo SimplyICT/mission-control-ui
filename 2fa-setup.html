@@ -166,7 +166,7 @@ let currentStatus = null;
 
 async function loadStatus() {
   try {
-    const r = await fetch('/api/2fa/status');
+    const r = await fetch('/mission/api/2fa/status');
     const d = await r.json();
     currentStatus = d;
     const badge = document.getElementById('statusBadge');
@@ -198,7 +198,7 @@ async function startSetup() {
   document.getElementById('qrArea').innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">Generating QR code...</div>';
 
   try {
-    const r = await fetch('/api/2fa/generate', { method: 'POST' });
+    const r = await fetch('/mission/api/2fa/generate', { method: 'POST' });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Failed to generate');
 
@@ -219,7 +219,7 @@ async function activateTotp() {
   if (code.length !== 6) { showMsg(msg, 'Enter a 6-digit code.', 'error'); return; }
 
   try {
-    const r = await fetch('/api/2fa/activate', {
+    const r = await fetch('/mission/api/2fa/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })
@@ -254,7 +254,7 @@ async function disableTotp() {
   if (code.length !== 6) { showMsg(msg, 'Enter a 6-digit code.', 'error'); return; }
 
   try {
-    const r = await fetch('/api/2fa/disable', {
+    const r = await fetch('/mission/api/2fa/disable', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })

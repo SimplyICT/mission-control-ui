@@ -134,7 +134,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     </div>
   </div>  <div style="display:flex;gap:8px">
     <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-    <a class="btn btn-sm" href="http://208.87.135.84:3010/">Project Hub</a>
+    <a class="btn btn-sm" href="/hub/">Project Hub</a>
     <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
   
     <a class="nav-btn" href="/help.html">? Help</a>
@@ -183,7 +183,7 @@ const TECH_CHECKLIST = [
 ];
 
 function render(){
-  fetch("/api/projects/"+PROJECT_ID)
+  fetch("/mission/api/projects/"+PROJECT_ID)
     .then(function(r){return r.json()})
     .then(function(p){
       var tasks = p.tasks || [];
@@ -281,7 +281,7 @@ function render(){
       $("app").innerHTML = h;
     })
     .catch(function(e){
-      $("app").innerHTML = '<div class="hero"><h2>Error Loading Project</h2><p>'+esc(e.message)+'</p><p style="margin-top:10px"><a class="btn" href="http://208.87.135.84:3010/">Go to Project Hub</a></p></div>';
+      $("app").innerHTML = '<div class="hero"><h2>Error Loading Project</h2><p>'+esc(e.message)+'</p><p style="margin-top:10px"><a class="btn" href="/hub/">Go to Project Hub</a></p></div>';
     });
 }
 

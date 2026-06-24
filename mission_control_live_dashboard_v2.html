@@ -399,7 +399,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
   </div>
 
   <script>
-    const DEFAULT_API_BASE = localStorage.getItem("mission_api_base") || "http://10.121.16.176:8000";
+    const DEFAULT_API_BASE = localStorage.getItem("mission_api_base") || "/api";
     let initialSiteCode = new URLSearchParams(window.location.search).get("site_code") || "";
     let lastData = null;
 

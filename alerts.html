@@ -74,7 +74,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
   </div><div class="wrap" id="content">Loading...</div>
 <div class="toast" id="toast"></div>
 <script>
-var API="";
+var API="/mission";
 var allAlerts=[];
 
 function $(id){return document.getElementById(id)}
@@ -164,7 +164,7 @@ function exportCSV(){
 }
 
 loadAlerts();
-var sse=new EventSource("/api/events/stream");sse.onmessage=function(){loadAlerts()};
+var sse=new EventSource("/mission/api/events/stream");sse.onmessage=function(){loadAlerts()};
 setInterval(loadAlerts,60000);
 </script>
 </body>

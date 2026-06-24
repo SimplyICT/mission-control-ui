@@ -84,10 +84,10 @@ function toast(msg,ok){
 function loadDashboard(){
   $("content").innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Loading SOC Agent status...</div>';
   Promise.all([
-    fetch("/api/soc-agent/status").then(function(r){return r.json()}),
-    fetch("/api/soc-agent/alerts").then(function(r){return r.json()}),
-    fetch("/api/soc-agent/history").then(function(r){return r.json()}),
-    fetch("/api/soc-agent/alert-list?limit=10").then(function(r){return r.json()}),
+    fetch("/mission/api/soc-agent/status").then(function(r){return r.json()}),
+    fetch("/mission/api/soc-agent/alerts").then(function(r){return r.json()}),
+    fetch("/mission/api/soc-agent/history").then(function(r){return r.json()}),
+    fetch("/mission/api/soc-agent/alert-list?limit=10").then(function(r){return r.json()}),
   ]).then(function(res){
     var s=res[0],a=res[1],h=res[2],alertList=res[3];
     var tgOk=s.telegram_configured;

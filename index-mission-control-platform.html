@@ -246,9 +246,9 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/mission/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn" href="/mission/help.html">? Help</a>
+      <a class="nav-btn" href="/mission/devdocs.html">DevDocs</a>
     </div>
   </div>  <div class="subtitle">Operations Dashboard · Fleet Services · Audit & Compliance</div>
 </div>
@@ -315,7 +315,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 <script>
 async function loadFleet() {
   try {
-    const res = await fetch('/api/fleet');
+    const res = await fetch('/mission/api/fleet');
     const data = await res.json();
     const fleet = document.getElementById('fleet');
     fleet.innerHTML = '';
@@ -360,7 +360,7 @@ async function loadFleet() {
 }
 
 async function viewLogs(server, service) {
-  const res = await fetch(`/api/logs/${server}/${service}`);
+  const res = await fetch(`/mission/api/logs/${server}/${service}`);
   const data = await res.json();
   document.getElementById('output').textContent = data.logs;
 }
@@ -368,7 +368,7 @@ async function viewLogs(server, service) {
 async function restart(server, service) {
   if (!confirm(`Restart ${service} on ${server}?`)) return;
 
-  const res = await fetch(`/api/restart/${server}/${service}`, {
+  const res = await fetch(`/mission/api/restart/${server}/${service}`, {
     method:'POST'
   });
 
