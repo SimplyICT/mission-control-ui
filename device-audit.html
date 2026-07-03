@@ -224,9 +224,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>    <div class="subtitle">Operational Audit & Compliance Monitoring</div>
   </div>
@@ -325,8 +323,8 @@ function dateValue(value) { if (!value) return ""; return String(value).substrin
 function roomName(row) { return row.assigned_user_room || row.assigned_room || row.assigned_user || "Unassigned"; }
 function deviceName(row) { return row.device_name || row.brand_model || row.device_type || ""; }
 
-function goHome() { window.location.href = "/index-platform.html"; }
-function openReports() { window.location.href = "/audit-reports.html"; }
+function goHome() { window.location.href = "/"; }
+function openReports() { window.location.href = "/mission/audit-reports.html"; }
 
 function setSaveStatus(message, type) {
   const el = document.getElementById("saveStatus");
@@ -391,17 +389,28 @@ function renderDashboard(summary) {
 }
 
 async function loadSites() {
-  const res = await fetch(`${API}/sites`);
-  const sites = await res.json();
-  const select = document.getElementById("siteSelect");
-  select.innerHTML = "";
-  sites.forEach(site => {
-    const option = document.createElement("option");
-    option.value = site.site_id;
-    option.textContent = site.site_name;
-    select.appendChild(option);
-  });
-  document.getElementById("siteStatus").textContent = `Sites loaded: ${sites.length}`;
+  const status = document.getElementById("siteStatus");
+  try {
+    const res = await fetch(`${API}/sites`);
+    if (!res.ok) {
+      status.textContent = `Error: API returned ${res.status}`;
+      console.error("loadSites: HTTP", res.status, res.statusText);
+      return;
+    }
+    const sites = await res.json();
+    const select = document.getElementById("siteSelect");
+    select.innerHTML = "";
+    sites.forEach(site => {
+      const option = document.createElement("option");
+      option.value = site.site_id;
+      option.textContent = site.site_name;
+      select.appendChild(option);
+    });
+    status.textContent = `Sites loaded: ${sites.length}`;
+  } catch (err) {
+    status.textContent = "Failed to load sites. Check console.";
+    console.error("loadSites error:", err);
+  }
 }
 
 async function loadResumeAudits() {
@@ -409,9 +418,16 @@ async function loadResumeAudits() {
   const panel = document.getElementById("resumePanel");
   const list = document.getElementById("resumeList");
   if (!siteId) { panel.style.display = "none"; return; }
-
-  const res = await fetch(`${API}/audit-batches/resume/${encodeURIComponent(siteId)}`);
-  const batches = await res.json();
+  let batches;
+  try {
+    const res = await fetch(`${API}/audit-batches/resume/${encodeURIComponent(siteId)}`);
+    if (!res.ok) { panel.style.display = "none"; return; }
+    batches = await res.json();
+  } catch (err) {
+    panel.style.display = "none";
+    console.error("loadResumeAudits error:", err);
+    return;
+  }
 
   if (!batches || batches.length === 0) {
     panel.style.display = "none";
@@ -582,7 +598,7 @@ async function loadAudit() {
       <td>${escHtml(resultLabel)}</td>
       <td style="${dataStyle}">${dataLabel}</td>
       <td class="readonly-cell room-col">${escHtml(roomName(rowData))}</td>
-      <td class="readonly-cell device-col">${rowData.device_id ? `<a href="/device-update.html?device_id=${encodeURIComponent(rowData.device_id)}" style="color:#93c5fd;text-decoration:underline;" target="_blank">${escHtml(deviceName(rowData))}</a>` : escHtml(deviceName(rowData))}</td>
+      <td class="readonly-cell device-col">${rowData.device_id ? `<a href="/mission/device-update.html?device_id=${encodeURIComponent(rowData.device_id)}" style="color:#93c5fd;text-decoration:underline;" target="_blank">${escHtml(deviceName(rowData))}</a>` : escHtml(deviceName(rowData))}</td>
       <td class="readonly-cell">${escHtml(rowData.serial_number)}</td>
       <td class="readonly-cell">${escHtml(rowData.device_type)}</td>
       <td class="issue-col">${escHtml(reasons.join(", "))}</td>
@@ -685,21 +701,25 @@ async function saveAllRows() {
 }
 
 async function initPage() {
-  const params = new URLSearchParams(window.location.search);
-  const batchIdParam = params.get("audit_batch_id");
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const batchIdParam = params.get("audit_batch_id");
 
-  if (batchIdParam) {
-    batchId = batchIdParam;
-    const res = await fetch(`${API}/audit-batch/${batchId}`);
-    if (res.ok) {
-      const batch = await res.json();
-      const siteName = batch.site_name || "Unknown";
-      document.getElementById("auditStatus").textContent = `Editing audit: ${siteName} | Batch: ${batchId}`;
-      document.getElementById("siteStatus").style.display = "none";
-      document.querySelector(".card:first-child .actions").style.display = "none";
-      await loadAudit();
-      return;
+    if (batchIdParam) {
+      batchId = batchIdParam;
+      const res = await fetch(`${API}/audit-batch/${batchId}`);
+      if (res.ok) {
+        const batch = await res.json();
+        const siteName = batch.site_name || "Unknown";
+        document.getElementById("auditStatus").textContent = `Editing audit: ${siteName} | Batch: ${batchId}`;
+        document.getElementById("siteStatus").style.display = "none";
+        document.querySelector(".card:first-child .actions").style.display = "none";
+        await loadAudit();
+        return;
+      }
     }
+  } catch (err) {
+    console.error("initPage error:", err);
   }
 
   loadSites();
