@@ -3,13 +3,13 @@
     {
       "user_id": "0f65b046-fca4-4386-a8cd-fbcf021c3dec",
       "username": "admin",
-      "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+      "password_hash": "ad1c23d68c5f939091167346bf9ae50687fa58e322ad7a4e3c0399bcd2abe794",
       "full_name": "Administrator",
       "role": "admin",
       "custom_pages": null,
       "active": true,
       "created_at": "2026-06-03T03:20:02.277613+00:00",
-      "totp_secret": null,
+      "totp_secret": "",
       "totp_enabled": false
     }
   ]

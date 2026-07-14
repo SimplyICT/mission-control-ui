@@ -34,8 +34,8 @@ pre{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:14
 </head>
 <body>
 <div class="topbar">
+  <a class="nav-btn-home" href="/">&#9664; Home</a>
   <h1>Developer Documentation</h1>
-  <a class="nav-btn-home" href="/mission/index-platform.html">&#9664; Home</a> <a class="nav-btn" href="/mission/help.html">? Help</a>
 </div>
 <div class="wrap">
   <div class="section">
@@ -44,7 +44,7 @@ pre{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:14
     <p>Mission Control runs on <strong>208.87.135.84</strong> (Ubuntu). Two main stacks:</p>
     <h3>Audit & Compliance Stack</h3>
     <ul>
-      <li><code>mission-control-ui</code> (Flask, port 8095) — Auth proxy, session management, serves HTML pages</li>
+      <li><code>mission-control-ui</code> (FastAPI, port 8095) — Serves HTML pages, API proxy to audit and monitoring backends</li>
       <li><code>device-audit-api</code> (FastAPI, port 8096) — Audit CRUD, classification, PDF reports, governance API</li>
       <li><strong>DB:</strong> Supabase (PostgreSQL) — <code>sites</code>, <code>devices</code>, <code>device_audits</code>, <code>audit_entries</code>, <code>remediation_actions</code>, <code>incidents</code></li>
     </ul>
@@ -81,11 +81,42 @@ pre{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:14
   <div class="section">
     <span class="tag tag-green">Deploy</span>
     <h2>Service Management</h2>
-    <pre>sudo systemctl restart mission-control-ui   # Auth proxy (port 8095)
+    <pre>sudo systemctl restart mission-control-ui   # UI server (port 8095)
 sudo systemctl restart device-audit-api     # Audit API (port 8096)
 sudo systemctl restart backend-api          # Monitoring API (port 8000)</pre>
+    <h3>Reverse Proxy &amp; Path Convention</h3>
+    <p>The app is served behind nginx at the <code>/mission/</code> path prefix. All page navigation and API calls must use <code>/mission/</code> prefixed paths:</p>
+    <ul>
+      <li><code>/mission/audit-reports.html</code> — Audit reports page</li>
+      <li><code>/mission/audit-api/...</code> — Audit API proxy (port 8096)</li>
+      <li><code>/mission/monitoring-api/...</code> — Monitoring API proxy (port 8000)</li>
+      <li><code>/mission/wazuh-api/...</code> — Wazuh SOC API proxy</li>
+    </ul>
+    <p>Auth is handled at the edge by <strong>Cloudflare Access</strong>. The app no longer has its own login page, session management, or 2FA — all requests pass through without server-side auth checks.</p>
+
     <h3>Probe Agent Install (Windows)</h3>
     <pre>.\install.ps1 -ApiKey &lt;key&gt; -SiteId &lt;id&gt; -SiteName "Name" -AgentId &lt;agent&gt; -Subnet "192.168.1.0/24"</pre>
+  </div>
+
+  <div class="section">
+    <span class="tag tag-purple">SSH</span>
+    <h2>Remote Site ProxyJump (ECCM Interrogate)</h2>
+    <p>ECCM interrogate reaches switches at remote sites through the site NUC as a jump host:</p>
+    <ul>
+      <li><strong>Convention:</strong> <code>Nuc-&lt;SITE_ABBREV&gt;</code> in <code>~/.ssh/config</code></li>
+      <li><strong>Key:</strong> <code>~/.ssh/eccm_nuc_key</code> — public key must be in NUC's <code>~/.ssh/authorized_keys</code></li>
+      <li><strong>Benowa Hills ELC (BHELC) example:</strong></li>
+    </ul>
+    <pre>Host Nuc-BHELC
+    HostName 10.121.16.250
+    Port 22
+    User aiagent
+    IdentityFile ~/.ssh/eccm_nuc_key
+    StrictHostKeyChecking no
+Host 192.168.1.2 192.168.1.3 192.168.1.4 192.168.1.5
+    ProxyJump Nuc-BHELC
+    StrictHostKeyChecking no</pre>
+    <p>Switches use Grandstream GSW CLI (<code>enable</code> → username/password). Credentials stored encrypted in <code>eccm.db</code>.</p>
   </div>
 
   <div class="section">

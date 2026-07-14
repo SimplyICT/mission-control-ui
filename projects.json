@@ -1477,6 +1477,40 @@
         "review",
         "done"
       ]
+    },
+    {
+      "id": "0608382d0847",
+      "name": "DirectTest",
+      "description": "testing direct api",
+      "folder": "/tmp/test-wiz/directtest",
+      "repo_url": "",
+      "created_at": "2026-07-11T00:23:44.154893+00:00",
+      "updated_at": "2026-07-11T00:23:44.154893+00:00",
+      "tasks": [],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    {
+      "id": "4130b73e9a16",
+      "name": "FinalTest",
+      "description": "final verification",
+      "folder": "/tmp/final-test/finaltest",
+      "repo_url": "",
+      "created_at": "2026-07-11T00:24:36.328764+00:00",
+      "updated_at": "2026-07-11T00:24:36.328764+00:00",
+      "tasks": [],
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ]
     }
   ]
 }

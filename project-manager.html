@@ -111,25 +111,17 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 <body>
 <div class="topbar">
     <div class="brand">
-      <h1>📁 
+      <h1>📁 <span id="viewLabel">Projects</span></h1>
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
+      <a class="btn btn-sm" href="/hub/" style="color:var(--accent)">&#8599; Project Hub</a>
+      <button class="btn btn-sm btn-primary" id="btnNewProject">+ New Project</button>
+      <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
+      <button class="btn btn-sm" id="btnExportCSV" onclick="exportCSV()" style="display:none">CSV</button>
+      <button class="btn btn-sm" onclick="window.open('/mission/api/backup/projects')">Backup</button>
     </div>
-  </div>  <div class="topbar-actions">
-    <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-    <a class="btn btn-sm" href="/hub/" style="color:var(--accent)">&#8599; Project Hub</a>
-    <button class="btn btn-sm btn-primary" id="btnNewProject">+ New Project</button>
-    <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
-    <button class="btn btn-sm" id="btnExportCSV" onclick="exportCSV()" style="display:none">CSV</button>
-    <button class="btn btn-sm" onclick="window.open('/mission/api/backup/projects')">Backup</button>
-  
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
-</div>
 </div>
 <div class="wrap" id="content"></div>
 

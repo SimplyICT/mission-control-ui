@@ -4,3 +4,11 @@ __pycache__/
 .env
 generated_reports/
 ui.log
+
+__pycache__/
+*.pyc
+venv/
+.env
+.DS_Store
+*.log
+dist/

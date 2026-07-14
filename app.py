@@ -1,20 +1,17 @@
-import io
 import logging
 import re
 from datetime import datetime, timezone
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import hashlib
-import hmac as _hmac
 import json
 import uuid
 import os
 import time
-import base64
-import pyotp
-import qrcode as _qrcode
+
+
 import subprocess
 import shlex
 import requests
@@ -42,72 +39,7 @@ _COOKIE_MAX_AGE = 86400 * 7  # 7 days
 _serializer     = URLSafeTimedSerializer(_SESSION_SECRET or "insecure-no-secret-set")
 _USERS_FILE     = BASE_DIR / "users.json"
 
-_PUBLIC_PATHS = {"/health", "/login", "/logout", "/2fa-verify", "/api/services-health", "/agent/install", "/help.html", "/devdocs.html"}
-
-# ── TOTP 2FA helpers ──────────────────────────────────────────────────────────
-_2FA_PENDING_COOKIE  = "mc_2fa_pending"
-_2FA_PENDING_MAX_AGE = 300  # 5 minutes
-
-def _totp_make_secret() -> str:
-    return pyotp.random_base32()
-
-def _totp_check(secret: str, code: str) -> bool:
-    try:
-        return pyotp.TOTP(secret).verify(str(code).strip(), valid_window=1)
-    except Exception:
-        return False
-
-def _totp_uri(secret: str, username: str) -> str:
-    return pyotp.TOTP(secret).provisioning_uri(name=username, issuer_name="Mission Control")
-
-def _totp_qr_b64(uri: str) -> str:
-    img = _qrcode.make(uri)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode()
-
-def _get_2fa_pending_user(request) -> str:
-    """Return username from pending-2FA cookie, or empty string if invalid/expired."""
-    token = request.cookies.get(_2FA_PENDING_COOKIE, "")
-    if not token:
-        return ""
-    try:
-        data = _serializer.loads(token, max_age=_2FA_PENDING_MAX_AGE)
-        return data.get("pending_2fa", "")
-    except Exception:
-        return ""
-
-# ── Brute-force protection ────────────────────────────────────────────────────
-_BF_MAX_ATTEMPTS = 5
-_BF_LOCKOUT_SECS = 15 * 60   # 15 minutes
-_bf_log: dict = {}            # ip -> {"count": int, "locked_until": float}
-
-def _get_client_ip(request) -> str:
-    xff = request.headers.get("X-Forwarded-For", "")
-    if xff:
-        return xff.split(",")[0].strip()
-    return (request.client.host if request.client else "unknown")
-
-def _bf_is_locked(ip: str):
-    """Returns (locked: bool, seconds_remaining: int)."""
-    entry = _bf_log.get(ip)
-    if not entry or entry["count"] < _BF_MAX_ATTEMPTS:
-        return False, 0
-    remaining = entry["locked_until"] - time.time()
-    if remaining > 0:
-        return True, int(remaining)
-    _bf_log.pop(ip, None)
-    return False, 0
-
-def _bf_fail(ip: str):
-    entry = _bf_log.setdefault(ip, {"count": 0, "locked_until": 0.0})
-    entry["count"] += 1
-    if entry["count"] >= _BF_MAX_ATTEMPTS:
-        entry["locked_until"] = time.time() + _BF_LOCKOUT_SECS
-        logger.warning("Brute-force lockout triggered for IP %s", ip)
-
-def _bf_clear(ip: str):
-    _bf_log.pop(ip, None)
+_PUBLIC_PATHS = {"/health", "/api/services-health", "/agent/install", "/help.html", "/devdocs.html"}
 
 
 
@@ -217,8 +149,7 @@ def _forbidden_html(user: dict, path: str) -> str:
         "<div class='code'>403</div>"
         "<h2>Access Denied</h2>"
         "<p>Hi " + name + ", you don't have permission to view <code>" + path + "</code>.</p>"
-        "<p><a href='/index-platform.html'>&#9664; Platform Home</a> &nbsp; "
-        "<a href='/logout'>Sign Out</a></p>"
+        "<p><a href='/index-platform.html'>&#9664; Platform Home</a></p>"
         "</div></body></html>"
     )
 # ─────────────────────────────────────────────────────────────────────────────
@@ -270,106 +201,7 @@ def run_cmd(cmd, server):
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    path = request.url.path
-    # Allow public paths by exact match
-    if path in _PUBLIC_PATHS:
-        return await call_next(request)
-    # Allow SimplyClik web app paths without mission-control auth
-    if path.startswith("/admin") or path.startswith("/portal") or path.startswith("/static"):
-        return await call_next(request)
-    # Allow monitoring API access without auth (backend handles auth via API key)
-    if path.startswith("/monitoring-api/"):
-        return await call_next(request)
-    user = _get_authenticated_user(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-    if path.endswith(".html") or path == "/":
-        if not _user_can_access(user, path):
-            return HTMLResponse(content=_forbidden_html(user, path), status_code=403)
     return await call_next(request)
-
-
-@app.get("/login", response_class=HTMLResponse)
-def login_get():
-    page = read_html("login.html")
-    if isinstance(page, HTMLResponse):
-        html = page.body.decode()
-        html = html.replace("__ERROR_CLASS__", "").replace("__ERROR__", "")
-        return HTMLResponse(content=html)
-    return page
-
-
-@app.post("/login")
-async def login_post(request: Request):
-    ip = _get_client_ip(request)
-    locked, secs = _bf_is_locked(ip)
-    if locked:
-        mins = secs // 60 + 1
-        page = read_html("login.html")
-        if isinstance(page, HTMLResponse):
-            html = page.body.decode()
-            html = html.replace("__ERROR_CLASS__", "visible")
-            html = html.replace("__ERROR__", f"Too many failed attempts. Try again in {mins} minute(s).")
-            return HTMLResponse(content=html, status_code=429)
-        return page
-
-    form = await request.form()
-    username = str(form.get("username", "")).strip()
-    password = str(form.get("password", ""))
-    pw_hash  = hashlib.sha256(password.encode()).hexdigest()
-
-    matched = None
-    for u in _load_users():
-        if u.get("username") == username and u.get("active", True):
-            if _hmac.compare_digest(pw_hash, u.get("password_hash", "")):
-                matched = u
-                break
-
-    if matched:
-        _bf_clear(ip)
-        # If 2FA is enabled, redirect to verification step
-        if matched.get("totp_enabled"):
-            pending_token = _serializer.dumps({"pending_2fa": username})
-            resp = RedirectResponse(url="/2fa-verify", status_code=302)
-            resp.set_cookie(
-                _2FA_PENDING_COOKIE, pending_token,
-                max_age=_2FA_PENDING_MAX_AGE,
-                httponly=True,
-                samesite="lax"
-            )
-            return resp
-        token    = _serializer.dumps({"user": username})
-        response = RedirectResponse(url="/index-platform.html", status_code=302)
-        response.set_cookie(
-            _COOKIE_NAME, token,
-            max_age=_COOKIE_MAX_AGE,
-            httponly=True,
-            samesite="lax"
-        )
-        return response
-
-    _bf_fail(ip)
-    locked2, secs2 = _bf_is_locked(ip)
-    entry = _bf_log.get(ip, {})
-    attempts_left = max(0, _BF_MAX_ATTEMPTS - entry.get("count", 0))
-
-    page = read_html("login.html")
-    if isinstance(page, HTMLResponse):
-        html = page.body.decode()
-        html = html.replace("__ERROR_CLASS__", "visible")
-        if locked2:
-            html = html.replace("__ERROR__", f"Too many failed attempts. Account locked for 15 minutes.")
-        else:
-            html = html.replace("__ERROR__", f"Invalid username or password. {attempts_left} attempt(s) remaining.")
-        return HTMLResponse(content=html, status_code=401)
-    return page
-
-
-@app.get("/logout")
-def logout():
-    response = RedirectResponse(url="/login", status_code=302)
-    response.delete_cookie(_COOKIE_NAME)
-    return response
 
 
 # ── User Management API (admin only) ─────────────────────────────────────────
@@ -582,7 +414,7 @@ function generateCmd() {
   var q = String.fromCharCode(39);
   var dq = String.fromCharCode(34);
   var cmd = "powershell -ExecutionPolicy Bypass -Command " + dq +
-    "Invoke-WebRequest -Uri " + q + "https://audit.simplyict.com.au/monitoring-api/agent/install.ps1" + q +
+    "Invoke-WebRequest -Uri " + q + "https://mc.simplyict.com.au/monitoring-api/agent/install.ps1" + q +
     " -OutFile " + dq + "$env:TEMP\\\\install-mp.ps1" + dq + "; " +
     "& " + dq + "$env:TEMP\\\\install-mp.ps1" + dq +
     " -ApiKey " + q + apiKey + q +
@@ -590,7 +422,7 @@ function generateCmd() {
     " -SiteName " + q + siteName + q +
     " -AgentId " + q + agentId + q +
     " -Subnet " + q + subnet + q +
-    " -ApiBase " + q + "https://audit.simplyict.com.au/monitoring-api" + q +
+    " -ApiBase " + q + "https://mc.simplyict.com.au/monitoring-api" + q +
     dq;
 
   document.getElementById('cmdOutput').textContent = cmd;
@@ -1894,144 +1726,7 @@ async def proxy_request(base_url: str, path: str, request: Request, error_messag
         )
 
 
-# ── 2FA Routes ────────────────────────────────────────────────────────────────
 
-@app.get("/2fa-verify", response_class=HTMLResponse)
-def twofa_verify_get(request: Request):
-    if not _get_2fa_pending_user(request):
-        return RedirectResponse(url="/login", status_code=302)
-    page = read_html("2fa-verify.html")
-    if isinstance(page, HTMLResponse):
-        html = page.body.decode()
-        html = html.replace("__ERROR_CLASS__", "").replace("__ERROR__", "")
-        return HTMLResponse(content=html)
-    return page
-
-
-@app.post("/2fa-verify")
-async def twofa_verify_post(request: Request):
-    pending_user = _get_2fa_pending_user(request)
-    if not pending_user:
-        return RedirectResponse(url="/login", status_code=302)
-
-    form = await request.form()
-    code = str(form.get("code", "")).strip()
-
-    user = next((u for u in _load_users() if u.get("username") == pending_user and u.get("active", True)), None)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-
-    if _totp_check(user.get("totp_secret", ""), code):
-        token = _serializer.dumps({"user": pending_user})
-        resp = RedirectResponse(url="/index-platform.html", status_code=302)
-        resp.delete_cookie(_2FA_PENDING_COOKIE)
-        resp.set_cookie(_COOKIE_NAME, token, max_age=_COOKIE_MAX_AGE, httponly=True, samesite="lax")
-        return resp
-
-    page = read_html("2fa-verify.html")
-    if isinstance(page, HTMLResponse):
-        html = page.body.decode()
-        html = html.replace("__ERROR_CLASS__", "visible")
-        html = html.replace("__ERROR__", "Invalid code. Please try again.")
-        return HTMLResponse(content=html, status_code=401)
-    return page
-
-
-@app.get("/2fa-setup.html", response_class=HTMLResponse)
-def twofa_setup_page():
-    return read_html("2fa-setup.html")
-
-
-@app.get("/api/2fa/status")
-def twofa_status(request: Request):
-    user = _get_authenticated_user(request)
-    if not user:
-        return JSONResponse({"error": "not authenticated"}, status_code=401)
-    return {"enabled": bool(user.get("totp_enabled")), "has_secret": bool(user.get("totp_secret"))}
-
-
-@app.post("/api/2fa/generate")
-def twofa_generate(request: Request):
-    user = _get_authenticated_user(request)
-    if not user:
-        return JSONResponse({"error": "not authenticated"}, status_code=401)
-    secret = _totp_make_secret()
-    uri    = _totp_uri(secret, user["username"])
-    qr_b64 = _totp_qr_b64(uri)
-    # Store pending secret (not yet active)
-    users = _load_users()
-    for u in users:
-        if u["user_id"] == user["user_id"]:
-            u["totp_secret_pending"] = secret
-            break
-    _save_users(users)
-    return {"secret": secret, "qr_code": f"data:image/png;base64,{qr_b64}", "uri": uri}
-
-
-@app.post("/api/2fa/activate")
-async def twofa_activate(request: Request):
-    user = _get_authenticated_user(request)
-    if not user:
-        return JSONResponse({"error": "not authenticated"}, status_code=401)
-    body = await request.json()
-    code = str(body.get("code", "")).strip()
-    pending_secret = user.get("totp_secret_pending", "")
-    if not pending_secret:
-        raise HTTPException(status_code=400, detail="No pending setup. Click Enable 2FA first.")
-    if not _totp_check(pending_secret, code):
-        raise HTTPException(status_code=400, detail="Invalid code. Try again.")
-    users = _load_users()
-    for u in users:
-        if u["user_id"] == user["user_id"]:
-            u["totp_secret"]  = pending_secret
-            u["totp_enabled"] = True
-            u.pop("totp_secret_pending", None)
-            break
-    _save_users(users)
-    return {"success": True}
-
-
-@app.post("/api/2fa/disable")
-async def twofa_disable(request: Request):
-    user = _get_authenticated_user(request)
-    if not user:
-        return JSONResponse({"error": "not authenticated"}, status_code=401)
-    body = await request.json()
-    code = str(body.get("code", "")).strip()
-    if not user.get("totp_enabled") or not user.get("totp_secret"):
-        raise HTTPException(status_code=400, detail="2FA is not enabled on this account.")
-    if not _totp_check(user["totp_secret"], code):
-        raise HTTPException(status_code=400, detail="Invalid code.")
-    users = _load_users()
-    for u in users:
-        if u["user_id"] == user["user_id"]:
-            u["totp_enabled"] = False
-            u.pop("totp_secret", None)
-            u.pop("totp_secret_pending", None)
-            break
-    _save_users(users)
-    return {"success": True}
-
-
-@app.delete("/api/2fa/{user_id}")
-def twofa_reset_user(user_id: str, request: Request):
-    """Admin only: reset another user's 2FA."""
-    caller = _get_authenticated_user(request)
-    if not caller or caller.get("role") != "admin":
-        return JSONResponse({"error": "admin only"}, status_code=403)
-    users = _load_users()
-    found = False
-    for u in users:
-        if u["user_id"] == user_id:
-            u["totp_enabled"] = False
-            u.pop("totp_secret", None)
-            u.pop("totp_secret_pending", None)
-            found = True
-            break
-    if not found:
-        raise HTTPException(status_code=404, detail="User not found")
-    _save_users(users)
-    return {"success": True}
 
 # ── Project Manager API ─────────────────────────────────────────────────────
 PROJECTS_FILE = BASE_DIR / "projects.json"
@@ -2066,7 +1761,7 @@ def _make_id() -> str:
 def api_list_projects(request: Request):
     user = _get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=302)
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
     data = _load_projects()
     # Return summary (no task details) for list view
     summary = []
@@ -2115,7 +1810,7 @@ async def api_create_project(request: Request):
 def api_get_project(project_id: str, request: Request):
     user = _get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=302)
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
     project = _get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -2197,6 +1892,166 @@ def api_delete_task(task_id: str, request: Request):
                 _save_projects(data)
                 return {"status": "ok", "deleted": task_id}
     raise HTTPException(status_code=404, detail="Task not found")
+
+
+# ── Project Wizard API ─────────────────────────────────────────────────────────
+WIZARD_BASE_PATH = os.getenv("WIZARD_BASE_PATH", str(BASE_DIR / "projects"))
+
+
+def _slugify(name: str) -> str:
+    s = name.lower().strip()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    return s.strip("-")
+
+
+@app.post("/api/wizard/create-project")
+async def api_wizard_create_project(request: Request):
+    user = _get_authenticated_user(request)
+    if not user:
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
+    body = await request.json()
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name is required")
+    description = (body.get("description") or "").strip()
+    base_path = (body.get("base_path") or WIZARD_BASE_PATH).strip()
+    do_create_folder = body.get("create_folder", True)
+    do_create_repo = body.get("create_repo", False)
+    do_init_git = body.get("init_git", True)
+    scaffold_type = body.get("scaffold", "basic")
+
+    slug = _slugify(name)
+    project_dir = Path(base_path) / slug
+    results = {"folder": None, "git": None, "github": None, "project_record": None}
+    errors = []
+
+    # 1. Create folder
+    if do_create_folder:
+        try:
+            project_dir.mkdir(parents=True, exist_ok=False)
+            results["folder"] = str(project_dir)
+        except FileExistsError:
+            errors.append(f"Folder already exists: {project_dir}")
+        except Exception as e:
+            errors.append(f"Failed to create folder: {e}")
+
+    # 2. Scaffold basic files
+    if do_create_folder and results["folder"] and scaffold_type == "basic":
+        try:
+            readme = project_dir / "README.md"
+            if not readme.exists():
+                readme.write_text(f"# {name}\n\n{description}\n\n## Getting Started\n\n<!-- TODO -->\n")
+            gitignore = project_dir / ".gitignore"
+            if not gitignore.exists():
+                gitignore.write_text(
+                    "# OS\n.DS_Store\nThumbs.db\n\n# Environment\n.env\n.env.*\n\n# IDE\n.vscode/\n.idea/\n\n"
+                    "# Python\n__pycache__/\n*.pyc\nvenv/\n.venv/\n\n# Node\nnode_modules/\n"
+                )
+        except Exception as e:
+            errors.append(f"Failed to scaffold: {e}")
+
+    # 3. Init git
+    if do_init_git and results["folder"]:
+        try:
+            r = subprocess.run(
+                ["git", "init"],
+                cwd=str(project_dir),
+                capture_output=True, text=True, timeout=15,
+            )
+            if r.returncode == 0:
+                results["git"] = r.stdout.strip()
+                # Set git user config for commit
+                git_user = os.getenv("GIT_USER_NAME", "Mission Control")
+                git_email = os.getenv("GIT_USER_EMAIL", "mc@simplyict.com.au")
+                subprocess.run(["git", "config", "user.name", git_user], cwd=str(project_dir), capture_output=True, timeout=15)
+                subprocess.run(["git", "config", "user.email", git_email], cwd=str(project_dir), capture_output=True, timeout=15)
+                # Stage and commit
+                subprocess.run(["git", "add", "-A"], cwd=str(project_dir), capture_output=True, timeout=15)
+                cr = subprocess.run(
+                    ["git", "commit", "-m", "Initial scaffold"],
+                    cwd=str(project_dir), capture_output=True, text=True, timeout=15,
+                )
+                if cr.returncode != 0:
+                    results["git"] += " (commit: " + cr.stderr.strip() + ")"
+            else:
+                errors.append(f"git init failed: {r.stderr.strip()}")
+        except FileNotFoundError:
+            errors.append("git not found on server")
+        except Exception as e:
+            errors.append(f"git init error: {e}")
+
+    # 4. Create GitHub repo
+    if do_create_repo:
+        gh_token = os.getenv("GITHUB_TOKEN", "")
+        gh_owner = os.getenv("GITHUB_OWNER", "")
+        if not gh_token:
+            errors.append("GitHub token not configured (set GITHUB_TOKEN env)")
+        else:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {gh_token}",
+                    "Accept": "application/vnd.github+json",
+                }
+                payload = {
+                    "name": slug,
+                    "description": description or name,
+                    "private": body.get("private_repo", True),
+                    "auto_init": False,
+                }
+                if gh_owner:
+                    url = f"https://api.github.com/orgs/{gh_owner}/repos"
+                else:
+                    url = "https://api.github.com/user/repos"
+                resp = requests.post(url, json=payload, headers=headers, timeout=30)
+                if resp.status_code in (200, 201):
+                    data = resp.json()
+                    results["github"] = data.get("html_url", "")
+                    # Add remote to local repo
+                    if results["folder"]:
+                        subprocess.run(
+                            ["git", "remote", "add", "origin", data.get("clone_url", "")],
+                            cwd=str(project_dir), capture_output=True, timeout=15,
+                        )
+                else:
+                    errors.append(f"GitHub API error: {resp.status_code} {resp.text[:200]}")
+            except Exception as e:
+                errors.append(f"GitHub request failed: {e}")
+
+    # 5. Add to projects.json
+    try:
+        data = _load_projects()
+        now = datetime.now(timezone.utc).isoformat()
+        project = {
+            "id": _make_id(),
+            "name": name,
+            "description": description,
+            "folder": str(project_dir) if results["folder"] else "",
+            "repo_url": results["github"] or "",
+            "created_at": now,
+            "updated_at": now,
+            "tasks": [],
+            "status_values": ["not_started", "in_progress", "blocked", "review", "done"],
+        }
+        data["projects"].append(project)
+        _save_projects(data)
+        results["project_record"] = {"id": project["id"], "name": project["name"]}
+    except Exception as e:
+        errors.append(f"Failed to save project record: {e}")
+
+    return {
+        "status": "ok" if not errors else "partial",
+        "results": results,
+        "errors": errors,
+    }
+
+
+@app.get("/wizard/", response_class=HTMLResponse)
+@app.get("/wizard", response_class=HTMLResponse)
+def wizard_page():
+    resp = read_html("wizard.html")
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
+
 
 
 @app.get("/project-manager.html", response_class=HTMLResponse)

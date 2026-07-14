@@ -119,17 +119,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>    <div class="subtitle">Track and resolve audit findings</div>
 
     
   </div>
   <div class="topbar-right">
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
   </div>
 </div>
 
@@ -173,12 +169,12 @@ const params = new URLSearchParams(window.location.search);
 const batchId = params.get("audit_batch_id");
 
 function goBack() {
-  window.location.href = "/audit-reports.html";
+  window.location.href = "/mission/audit-reports.html";
 }
 
 function goToReport() {
   if (batchId) {
-    window.location.href = `/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+    window.location.href = `/mission/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
   }
 }
 
@@ -308,7 +304,7 @@ function renderActions(containerId, items, isResolved) {
           </div>
           <div style="font-size:13px;margin-bottom:2px;">${escHtml(item.description)}</div>
           <div style="font-size:11px;color:#94a3b8;">
-            ${item.device_name ? `<a href="/device-update.html?device_id=${encodeURIComponent(item.device_id||"")}" class="device-link" target="_blank">${escHtml(item.device_name)}</a>` : ""}
+            ${item.device_name ? `<a href="/mission/device-update.html?device_id=${encodeURIComponent(item.device_id||"")}" class="device-link" target="_blank">${escHtml(item.device_name)}</a>` : ""}
             ${item.serial ? `<span style="margin-left:8px;">Serial: ${escHtml(item.serial)}</span>` : ""}
             ${item.room ? `<span style="margin-left:8px;">${escHtml(item.room)}</span>` : ""}
             ${item.device_type ? `<span style="margin-left:8px;">${escHtml(item.device_type)}</span>` : ""}

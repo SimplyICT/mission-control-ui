@@ -61,12 +61,10 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>  <div class="topbar-actions">
-    <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+    <a class="nav-btn-home" href="/">&#9664; Home</a>
     <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
   </div>
 </div>
@@ -99,7 +97,7 @@ function loadDashboard(){
       +'<div class="card"><h3>Escalations</h3><div class="val amber">'+(h.escalations||0)+'</div>'
       +'<div class="sub">'+((h.escalation_threshold||30)+' min threshold')+'</div></div>'
       +'<div class="card"><h3>Digest</h3><div class="val '+(h.last_digest?'green':'muted')+'">'+(h.last_digest||'Not sent today')+'</div>'
-      +'<div class="sub">Daily at '+h.digest_hour+':00 UTC</div></div>'
+      +'<div class="sub">Daily at '+(h.digest_hour||'09')+':00 UTC</div></div>'
       +'</div>';
 
     html+='<div class="card" style="margin-top:16px"><h3>Recent Alerts <span style="font-weight:400;color:var(--muted);font-size:12px">(click to expand)</span></h3>';
@@ -155,19 +153,19 @@ function timeAgo(iso){if(!iso)return"";var s=(Date.now()-new Date(iso).getTime()
 
 function triggerTriage(){
   var btn=event&&event.target;if(btn){btn.disabled=true;btn.textContent="Running..."}
-  fetch("/wazuh-api/soc-agent/triage",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+  fetch("/mission/wazuh-api/soc-agent/triage",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
     toast("Triage complete: "+(d.actions||[]).length+" actions",true);if(btn)btn.disabled=false;loadDashboard()
   }).catch(function(e){toast("Failed: "+e.message,false);if(btn)btn.disabled=false})
 }
 
 function sendTest(){
-  fetch("/wazuh-api/soc-agent/test",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+  fetch("/mission/wazuh-api/soc-agent/test",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
     toast(d.success?"Test sent to Telegram":"Telegram test failed",d.success);loadDashboard()
   }).catch(function(e){toast("Failed: "+e.message,false)})
 }
 
 function sendDigest(){
-  fetch("/wazuh-api/soc-agent/digest",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
+  fetch("/mission/wazuh-api/soc-agent/digest",{method:"POST"}).then(function(r){return r.json()}).then(function(d){
     toast(d.message||"Digest sent",true);loadDashboard()
   }).catch(function(e){toast("Failed: "+e.message,false)})
 }

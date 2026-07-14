@@ -6,81 +6,427 @@
 <title>Mission Control</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
-h1{font-size:28px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
-.sub{color:var(--muted);font-size:14px;margin-bottom:32px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;max-width:960px;width:100%}
-.card{background:var(--card);border:1px solid #2d2d3d;border-radius:10px;padding:20px;text-decoration:none;color:var(--text);transition:border-color .15s,transform .1s}
-.card:hover{border-color:var(--accent);transform:translateY(-2px)}
-.card h3{font-size:16px;margin-bottom:4px}
-.card p{color:var(--muted);font-size:12px;line-height:1.4}
-.card .path{color:var(--accent);font-size:11px;margin-top:8px;font-family:'SF Mono','Fira Code',monospace}
-.card .tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(0,180,216,.12);color:var(--accent);font-weight:600;margin-top:8px}
-footer{margin-top:40px;color:var(--muted);font-size:12px}
+:root{--bg:#0d1117;--panel:#161b22;--card:#1c2333;--hover:#252d3f;--text:#e6edf3;--muted:#8b949e;--accent:#00b4d8;--green:#00ff88;--red:#ff4757;--amber:#ff9500;--purple:#a78bfa;--pink:#f472b6}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh;padding:30px 20px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{font-size:26px;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+.section{margin-bottom:28px}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #1e293b}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.card{background:var(--card);border:1px solid #2d2d3d;border-radius:8px;padding:14px;text-decoration:none;color:var(--text);transition:border-color .15s,transform .1s;display:flex;flex-direction:column;gap:3px}
+.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card .name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.card .desc{color:var(--muted);font-size:11px;line-height:1.3}
+.card .meta{color:var(--accent);font-size:10px;font-family:'SF Mono','Fira Code',monospace;margin-top:auto}
+.tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:999px;font-weight:600;white-space:nowrap}
+.tag-green{background:rgba(0,255,136,.12);color:var(--green)}
+.tag-amber{background:rgba(255,149,0,.12);color:var(--amber)}
+.tag-purple{background:rgba(167,139,250,.12);color:var(--purple)}
+.tag-pink{background:rgba(244,114,182,.12);color:var(--pink)}
+.tag-accent{background:rgba(0,180,216,.12);color:var(--accent)}
+.tag-red{background:rgba(255,71,87,.12);color:var(--red)}
+footer{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+/* ── Launchpad Enhancements ── */
+.search-bar{width:100%;max-width:500px;padding:10px 16px;background:var(--card);border:1px solid #2d2d3d;border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s;font-family:inherit}
+.search-bar:focus{border-color:var(--accent)}
+.search-bar::placeholder{color:var(--muted)}
+.search-wrap{position:relative;margin-bottom:16px}
+.search-wrap .kbd-hint{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:10px;font-family:'SF Mono','Fira Code',monospace;background:#1e293b;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0.6}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.filter-pill{padding:4px 12px;border-radius:999px;border:1px solid #2d2d3d;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit}
+.filter-pill:hover{border-color:var(--accent);color:var(--text)}
+.filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.section.collapsed .grid{display:none!important}
+.section-toggle{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 8px;transition:transform .15s}
+.section-toggle.open{transform:rotate(180deg)}
+.fav-section{margin-bottom:20px}
+.fav-section .grid{gap:6px}
+.fav-section:empty{display:none}
+.fav-star{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;transition:color .15s;line-height:1;flex-shrink:0}
+.fav-star.active{color:var(--amber)}
+.card .name-wrap{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
+.card .name-wrap .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card.hidden-by-search{display:none!important}
 </style>
 </head>
 <body>
+<div class="wrap">
 <h1>&#128202; Mission Control</h1>
-<p class="sub">Simply ICT management dashboard</p>
+<p class="sub">Simply ICT unified management dashboard</p>
+
+<div class="search-wrap">
+  <input class="search-bar" id="search-bar" type="text" placeholder="Search apps, dashboards, tools..." autocomplete="off" spellcheck="false">
+  <span class="kbd-hint">⌘K</span>
+</div>
+<div class="filter-pills" id="filter-pills"></div>
+<div class="fav-section" id="fav-section" style="display:none">
+  <div class="section-title" style="color:var(--amber);">★ Pinned</div>
+  <div class="grid" id="fav-grid"></div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Core Platforms <button class="section-toggle open" data-section="core-platforms">▼</button></div>
 <div class="grid">
-  <a class="card" href="/mission/">
-    <h3>&#128200; Mission Control UI</h3>
-    <p>Main dashboard — devices, alerts, sites, reports</p>
-    <div class="path">/mission/</div>
+
+  <a class="card" href="/hub/" data-name="Project Hub" data-desc="Tracker panels, tasks, kanban, GitHub backup for all build projects" data-tags="Kanban">
+    <div class="name-wrap"><button class="fav-star" data-app="Project Hub">☆</button><span class="name">&#128203; Project Hub</span></div>
+    <div class="desc">Tracker panels, tasks, kanban, GitHub backup for all build projects</div>
+    <div class="meta">/hub/ <span class="tag tag-purple">Kanban</span></div>
   </a>
-  <a class="card" href="/hub/">
-    <h3>&#128203; Project Hub</h3>
-    <p>Tracker panels for all build projects</p>
-    <div class="path">/hub/</div>
-    <span class="tag">Kanban</span>
+  <a class="card" href="/credentials/" data-name="Credential System" data-desc="Multi-user credential manager with audit logs and encryption" data-tags="Vault">
+    <div class="name-wrap"><button class="fav-star" data-app="Credential System">☆</button><span class="name">&#128273; Credential System</span></div>
+    <div class="desc">Multi-user credential manager with audit logs and encryption</div>
+    <div class="meta">/credentials/ <span class="tag tag-accent">Vault</span></div>
   </a>
-  <a class="card" href="/credentials/">
-    <h3>&#128273; Credential System</h3>
-    <p>Multi-user credential manager with audit logs</p>
-    <div class="path">/credentials/</div>
-    <span class="tag">Vault</span>
+  <a class="card" href="/mc/" data-name="Agent Dashboard" data-desc="OpenCode mission control — agent logs, activity, heartbeat" data-tags="Dashboard">
+    <div class="name-wrap"><button class="fav-star" data-app="Agent Dashboard">☆</button><span class="name">&#128200; Agent Dashboard</span></div>
+    <div class="desc">OpenCode mission control — agent logs, activity, heartbeat</div>
+    <div class="meta">/mc/ <span class="tag tag-green">Dashboard</span></div>
   </a>
-  <a class="card" href="/network/">
-    <h3>&#128268; Network Infrastructure</h3>
-    <p>Sites, devices, ports, connections, audit</p>
-    <div class="path">/network/</div>
-    <span class="tag">API</span>
-  </a>
-  <a class="card" href="/devices/">
-    <h3>&#128187; Device Audit API</h3>
-    <p>Device audit and compliance checks</p>
-    <div class="path">/devices/</div>
-    <span class="tag">API</span>
-  </a>
-  <a class="card" href="/tracker/">
-    <h3>&#128204; MC Site Tracker</h3>
-    <p>Project tracker for mission control site</p>
-    <div class="path">/tracker/</div>
-  </a>
-  <a class="card" href="/mc/">
-    <h3>&#128200; Agent Dashboard</h3>
-    <p>OpenCode mission control — agent logs, activity</p>
-    <div class="path">/mc/</div>
-    <span class="tag">Dashboard</span>
-  </a>
-  <a class="card" href="/wizard/">
-    <h3>&#9889; Project Wizard</h3>
-    <p>Create new projects with scaffolding</p>
-    <div class="path">/wizard/</div>
-  </a>
-  <a class="card" href="https://pwa.simplyclik.com" target="_blank">
-    <h3>&#128241; SimplyClik PWA</h3>
-    <p>Client-facing mobile app and portal</p>
-    <span class="tag">External</span>
-  </a>
-  <a class="card" href="/api/">
-    <h3>&#128295; MC Site API</h3>
-    <p>Backend API for mission control</p>
-    <div class="path">/api/</div>
-    <span class="tag">API</span>
+  <a class="card" href="/wizard/" data-name="Project Wizard" data-desc="Create new projects with scaffolding and deploy tracker" data-tags="Tool">
+    <div class="name-wrap"><button class="fav-star" data-app="Project Wizard">☆</button><span class="name">&#9889; Project Wizard</span></div>
+    <div class="desc">Create new projects with scaffolding and deploy tracker</div>
+    <div class="meta">/wizard/ <span class="tag tag-purple">Tool</span></div>
   </a>
 </div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Network Design <button class="section-toggle open" data-section="network-design">▼</button></div>
+<div class="grid">
+  <a class="card" href="/network/" data-name="ECCM Manager" data-desc="Sites, devices, ports, connections, switch interrogation, LLDP discovery" data-tags="App">
+    <div class="name-wrap"><button class="fav-star" data-app="ECCM Manager">☆</button><span class="name">&#128268; ECCM Manager</span></div>
+    <div class="desc">Sites, devices, ports, connections, switch interrogation, LLDP discovery</div>
+    <div class="meta">/network/ <span class="tag tag-accent">App</span></div>
+  </a>
+  <a class="card" href="/network/provision.html" data-name="Provisioning Wizard" data-desc="Blueprint-driven site setup — NUC, router, switches, APs, speakers" data-tags="Tool">
+    <div class="name-wrap"><button class="fav-star" data-app="Provisioning Wizard">☆</button><span class="name">&#128295; Provisioning Wizard</span></div>
+    <div class="desc">Blueprint-driven site setup — NUC, router, switches, APs, speakers</div>
+    <div class="meta">/network/provision.html <span class="tag tag-purple">Tool</span></div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Network Monitoring <button class="section-toggle open" data-section="network-monitoring">▼</button></div>
+<div class="grid">
+  <a class="card" href="/dash/mission_control_live_dashboard_v2.html" data-name="Live Dashboard" data-desc="Real-time device status, latency, KPIs for a selected site" data-tags="Dashboard">
+    <div class="name-wrap"><button class="fav-star" data-app="Live Dashboard">☆</button><span class="name">&#128200; Live Dashboard</span></div>
+    <div class="desc">Real-time device status, latency, KPIs for a selected site</div>
+    <div class="meta">Live <span class="tag tag-green">v2</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_all_sites_dashboard_v1.html" data-name="All Sites Overview" data-desc="Bird's-eye view of all monitored sites with device counts" data-tags="Dashboard">
+    <div class="name-wrap"><button class="fav-star" data-app="All Sites Overview">☆</button><span class="name">&#127758; All Sites Overview</span></div>
+    <div class="desc">Bird's-eye view of all monitored sites with device counts</div>
+    <div class="meta">Overview <span class="tag tag-accent">v1</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_alert_intelligence_v1.html" data-name="Alert Intelligence" data-desc="Categorised alert feed — active problems, recovered, suppressed" data-tags="Alerts">
+    <div class="name-wrap"><button class="fav-star" data-app="Alert Intelligence">☆</button><span class="name">&#129504; Alert Intelligence</span></div>
+    <div class="desc">Categorised alert feed — active problems, recovered, suppressed</div>
+    <div class="meta">Alerts <span class="tag tag-red">v1</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_alerts_v1.html" data-name="Alert Management" data-desc="View, acknowledge, resolve and suppress alerts across all sites" data-tags="Alerts">
+    <div class="name-wrap"><button class="fav-star" data-app="Alert Management">☆</button><span class="name">&#128680; Alert Management</span></div>
+    <div class="desc">View, acknowledge, resolve and suppress alerts across all sites</div>
+    <div class="meta">Alerts <span class="tag tag-amber">v1</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_device_admin_v1.html" data-name="Device Admin" data-desc="Manage device names, types, criticality and expected-online" data-tags="Admin">
+    <div class="name-wrap"><button class="fav-star" data-app="Device Admin">☆</button><span class="name">&#128295; Device Admin</span></div>
+    <div class="desc">Manage device names, types, criticality and expected-online</div>
+    <div class="meta">Admin <span class="tag tag-purple">v1</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_classification_workbench_v25_4.html" data-name="Classification Workbench" data-desc="Classify and label network devices with suggested types" data-tags="Admin">
+    <div class="name-wrap"><button class="fav-star" data-app="Classification Workbench">☆</button><span class="name">&#9968;&#65039; Classification Workbench</span></div>
+    <div class="desc">Classify and label network devices with suggested types</div>
+    <div class="meta">Admin <span class="tag tag-pink">v25.4</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_audit_monitor_links_v1.html" data-name="Audit-Monitoring Links" data-desc="Link network-discovered devices to audit asset records" data-tags="Bridge">
+    <div class="name-wrap"><button class="fav-star" data-app="Audit-Monitoring Links">☆</button><span class="name">&#128279; Audit-Monitoring Links</span></div>
+    <div class="desc">Link network-discovered devices to audit asset records</div>
+    <div class="meta">Bridge <span class="tag tag-accent">v1</span></div>
+  </a>
+  <a class="card" href="/dash/mission_control_executive_dashboard_v24_1.html" data-name="Executive Dashboard" data-desc="Fleet availability, risk scoring, critical device status" data-tags="Dashboard">
+    <div class="name-wrap"><button class="fav-star" data-app="Executive Dashboard">☆</button><span class="name">&#128202; Executive Dashboard</span></div>
+    <div class="desc">Fleet availability, risk scoring, critical device status</div>
+    <div class="meta">Executive <span class="tag tag-purple">v24.1</span></div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Device Auditing <button class="section-toggle open" data-section="device-auditing">▼</button></div>
+<div class="grid">
+  <a class="card" href="/mission/device-audit.html" data-name="Device Audit Form" data-desc="Per-device audit entry — security, photos, sync, issues" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Device Audit Form">☆</button><span class="name">&#128187; Device Audit Form</span></div>
+    <div class="desc">Per-device audit entry — security, photos, sync, issues</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/device-records.html" data-name="Device Records" data-desc="View, search, and manage device records" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Device Records">☆</button><span class="name">&#128196; Device Records</span></div>
+    <div class="desc">View, search, and manage device records</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/device-update.html" data-name="Device Update" data-desc="Update device information in bulk" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Device Update">☆</button><span class="name">&#128260; Device Update</span></div>
+    <div class="desc">Update device information in bulk</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/audit-reports.html" data-name="Audit Reports" data-desc="View and finalise audit reports" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Audit Reports">☆</button><span class="name">&#128202; Audit Reports</span></div>
+    <div class="desc">View and finalise audit reports</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/audit-cleanup.html" data-name="Audit Cleanup" data-desc="Clean up audit data and manage orphaned records" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Audit Cleanup">☆</button><span class="name">&#128465;&#65039; Audit Cleanup</span></div>
+    <div class="desc">Clean up audit data and manage orphaned records</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/active-device-register.html" data-name="Active Device Register" data-desc="Register of all active devices across sites" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Active Device Register">☆</button><span class="name">&#128203; Active Device Register</span></div>
+    <div class="desc">Register of all active devices across sites</div>
+    <div class="meta">/mission/</div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Executive &amp; Compliance <button class="section-toggle open" data-section="executive-compliance">▼</button></div>
+<div class="grid">
+  <a class="card" href="/mission/director-view.html" data-name="Director View" data-desc="Compliance overview — site risk labels, audit scores, report status" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Director View">☆</button><span class="name">&#128200; Director View</span></div>
+    <div class="desc">Compliance overview — site risk labels, audit scores, report status</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/remediation.html" data-name="Remediation Tracker" data-desc="Track and manage remediation actions from audit findings" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Remediation Tracker">☆</button><span class="name">&#128295; Remediation Tracker</span></div>
+    <div class="desc">Track and manage remediation actions from audit findings</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/incident-register.html" data-name="Incident Register" data-desc="Log and track security and compliance incidents" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Incident Register">☆</button><span class="name">&#128680; Incident Register</span></div>
+    <div class="desc">Log and track security and compliance incidents</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/agent-status.html" data-name="Agent Status Monitor" data-desc="Monitor probe agent health and connectivity" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Agent Status Monitor">☆</button><span class="name">&#128737;&#65039; Agent Status Monitor</span></div>
+    <div class="desc">Monitor probe agent health and connectivity</div>
+    <div class="meta">/mission/</div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Administration <button class="section-toggle open" data-section="administration">▼</button></div>
+<div class="grid">
+  <a class="card" href="/mission/site-onboarding.html" data-name="Site Onboarding" data-desc="Onboard new sites with SharePoint config" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Site Onboarding">☆</button><span class="name">&#127963; Site Onboarding</span></div>
+    <div class="desc">Onboard new sites with SharePoint config</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/admin-users.html" data-name="User Management" data-desc="Manage users, roles, and page permissions" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="User Management">☆</button><span class="name">&#128101; User Management</span></div>
+    <div class="desc">Manage users, roles, and page permissions</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/user-guide.html" data-name="User Guide" data-desc="Full documentation and usage guide" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="User Guide">☆</button><span class="name">&#128214; User Guide</span></div>
+    <div class="desc">Full documentation and usage guide</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/mission/devdocs.html" data-name="DevDocs" data-desc="Developer documentation and API reference" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="DevDocs">☆</button><span class="name">&#128221; DevDocs</span></div>
+    <div class="desc">Developer documentation and API reference</div>
+    <div class="meta">/mission/</div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">Projects <button class="section-toggle open" data-section="projects">▼</button></div>
+<div class="grid">
+  <a class="card" href="/mission/project_tracker.html" data-name="SEO Project Tracker" data-desc="Track SEO implementation tasks and milestones" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="SEO Project Tracker">☆</button><span class="name">&#128203; SEO Project Tracker</span></div>
+    <div class="desc">Track SEO implementation tasks and milestones</div>
+    <div class="meta">/mission/</div>
+  </a>
+  <a class="card" href="/hub/" data-name="Project Hub" data-desc="Project management, tasks, SSH deploy, trackers" data-tags="">
+    <div class="name-wrap"><button class="fav-star" data-app="Project Hub">☆</button><span class="name">&#128202; Project Hub</span></div>
+    <div class="desc">Project management, tasks, SSH deploy, trackers</div>
+    <div class="meta">/hub/</div>
+  </a>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">External <button class="section-toggle open" data-section="external">▼</button></div>
+<div class="grid">
+  <a class="card" href="https://pwa.simplyclik.com" target="_blank" data-name="SimplyClik PWA" data-desc="Client-facing mobile app and portal" data-tags="Link">
+    <div class="name-wrap"><button class="fav-star" data-app="SimplyClik PWA">☆</button><span class="name">&#128241; SimplyClik PWA</span></div>
+    <div class="desc">Client-facing mobile app and portal</div>
+    <div class="meta">External <span class="tag tag-accent">Link</span></div>
+  </a>
+  <a class="card" href="/mission/wazuh-soc.html" data-name="Wazuh SOC" data-desc="Full Wazuh security operations centre with agents, compliance, vulnerability management, threat intel" data-tags="SOC">
+    <div class="name-wrap"><button class="fav-star" data-app="Wazuh SOC">☆</button><span class="name">&#128737;&#65039; Wazuh SOC</span></div>
+    <div class="desc">Full Wazuh security operations centre with agents, compliance, vulnerability management, threat intel</div>
+    <div class="meta">/mission/ <span class="tag tag-red">SOC</span></div>
+  </a>
+</div>
+</div>
+
 <footer>mc.simplyict.com.au</footer>
+</div>
+<script>
+(function() {
+  document.querySelectorAll('.card').forEach(function(card) {
+    var tags = [];
+    card.querySelectorAll('.tag').forEach(function(t) {
+      var txt = t.textContent.trim();
+      if (txt) tags.push(txt);
+    });
+    card.setAttribute('data-tags', tags.join(','));
+    var nameEl = card.querySelector('.name');
+    if (nameEl && !card.getAttribute('data-name'))
+      card.setAttribute('data-name', nameEl.textContent.trim());
+    var descEl = card.querySelector('.desc');
+    if (descEl && !card.getAttribute('data-desc'))
+      card.setAttribute('data-desc', descEl.textContent.trim());
+  });
+})();
+
+(function() {
+  var sections = ['All', 'Core Platforms', 'Network Design', 'Network Monitoring', 'Device Auditing', 'Executive & Compliance', 'Administration', 'Projects', 'External'];
+  var container = document.getElementById('filter-pills');
+  sections.forEach(function(name) {
+    var btn = document.createElement('button');
+    btn.className = 'filter-pill' + (name === 'All' ? ' active' : '');
+    btn.textContent = name;
+    btn.onclick = function() {
+      document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      applyFilters();
+    };
+    container.appendChild(btn);
+  });
+})();
+
+function applyFilters() {
+  var query = (document.getElementById('search-bar').value || '').toLowerCase().trim();
+  var activePill = document.querySelector('.filter-pill.active');
+  var sectionFilter = activePill ? activePill.textContent : 'All';
+  
+  document.querySelectorAll('.card').forEach(function(card) {
+    var name = (card.getAttribute('data-name') || '').toLowerCase();
+    var desc = (card.getAttribute('data-desc') || '').toLowerCase();
+    var tags = (card.getAttribute('data-tags') || '').toLowerCase();
+    var matchesSearch = !query || name.includes(query) || desc.includes(query) || tags.includes(query);
+    var cardSection = card.closest('.section');
+    var sectionTitle = cardSection ? cardSection.querySelector('.section-title').textContent.replace('▼', '').trim() : '';
+    var matchesSection = sectionFilter === 'All' || sectionTitle === sectionFilter;
+    card.classList.toggle('hidden-by-search', !(matchesSearch && matchesSection));
+  });
+  
+  document.querySelectorAll('.section').forEach(function(s) {
+    var visible = s.querySelectorAll('.card:not(.hidden-by-search)').length > 0;
+    if (!visible) s.classList.add('collapsed');
+    else s.classList.remove('collapsed');
+  });
+}
+
+document.getElementById('search-bar').addEventListener('input', applyFilters);
+document.getElementById('search-bar').addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { this.value = ''; applyFilters(); this.blur(); }
+});
+document.addEventListener('keydown', function(e) {
+  if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !e.target.closest('input,textarea'))) {
+    e.preventDefault();
+    document.getElementById('search-bar').focus();
+  }
+});
+
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('mc-favs') || '[]'); } catch(e) { return []; }
+}
+function setFavs(favs) {
+  localStorage.setItem('mc-favs', JSON.stringify(favs));
+}
+function toggleFav(appName) {
+  var favs = getFavs();
+  var idx = favs.indexOf(appName);
+  if (idx >= 0) { favs.splice(idx, 1); } else { favs.push(appName); }
+  setFavs(favs);
+  renderFavs();
+  updateStarUI();
+}
+function updateStarUI() {
+  var favs = getFavs();
+  document.querySelectorAll('.fav-star').forEach(function(star) {
+    var name = star.getAttribute('data-app');
+    star.textContent = favs.includes(name) ? '\u2605' : '\u2606';
+    star.classList.toggle('active', favs.includes(name));
+  });
+}
+function renderFavs() {
+  var favGrid = document.getElementById('fav-grid');
+  var favSection = document.getElementById('fav-section');
+  var favs = getFavs();
+  if (!favs.length) { favSection.style.display = 'none'; return; }
+  favSection.style.display = '';
+  favGrid.innerHTML = '';
+  favs.forEach(function(name) {
+    var original = document.querySelector('.card[data-name="' + CSS.escape(name) + '"]');
+    if (!original) return;
+    var clone = original.cloneNode(true);
+    clone.querySelector('.fav-star').onclick = function(e) {
+      e.preventDefault(); e.stopPropagation();
+      toggleFav(clone.getAttribute('data-name'));
+    };
+    clone.querySelector('.fav-star').textContent = '\u2605';
+    clone.querySelector('.fav-star').classList.add('active');
+    clone.classList.remove('hidden-by-search');
+    favGrid.appendChild(clone);
+  });
+}
+
+document.querySelectorAll('.fav-star').forEach(function(star) {
+  star.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFav(star.getAttribute('data-app'));
+  });
+});
+
+(function() {
+  function getCollapsed() {
+    try { return JSON.parse(localStorage.getItem('mc-collapsed') || '{}'); } catch(e) { return {}; }
+  }
+  function setCollapsed(name, val) {
+    var state = getCollapsed();
+    state[name] = val;
+    localStorage.setItem('mc-collapsed', JSON.stringify(state));
+  }
+  document.querySelectorAll('.section-toggle').forEach(function(btn) {
+    var secName = btn.getAttribute('data-section');
+    var section = btn.closest('.section');
+    var saved = getCollapsed();
+    if (saved[secName]) {
+      section.classList.add('collapsed');
+      btn.classList.remove('open');
+    }
+    btn.addEventListener('click', function() {
+      var isCollapsed = section.classList.toggle('collapsed');
+      btn.classList.toggle('open', !isCollapsed);
+      setCollapsed(secName, isCollapsed);
+    });
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateStarUI();
+  renderFavs();
+  applyFilters();
+});
+</script>
 </body>
 </html>

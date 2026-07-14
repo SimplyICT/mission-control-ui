@@ -257,9 +257,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>  <div class="subtitle">Executive Summary · Compliance Findings · Audit Evidence</div>
 </div>
@@ -297,7 +295,7 @@ function auDate(v){
   return text;
 }
 function dateOnly(v){ return auDate(v); }
-function goReports(){ window.location.href="/audit-reports.html"; }
+function goReports(){ window.location.href="/mission/audit-reports.html"; }
 function getId(){ const p = new URLSearchParams(window.location.search); return p.get("id") || p.get("audit_batch_id"); }
 function downloadPdf(){ if(currentId) window.location.href = `${API}/audit-report/executive-pdf/${encodeURIComponent(currentId)}`; }
 function refreshReport(){ loadReport(true); }
@@ -503,7 +501,7 @@ async function loadRemediation(batchId) {
     const total = data.actions_total || 0;
 
     if (total === 0) {
-      container.innerHTML = "<p class='muted'>No remediation actions recorded for this audit.</p><p style='margin-top:8px;'><a href='/audit-remediation.html?audit_batch_id=" + encodeURIComponent(batchId) + "' style='color:#8b5cf6;'>Manage Remediation</a></p>";
+      container.innerHTML = "<p class='muted'>No remediation actions recorded for this audit.</p><p style='margin-top:8px;'><a href='/mission/audit-remediation.html?audit_batch_id=" + encodeURIComponent(batchId) + "' style='color:#8b5cf6;'>Manage Remediation</a></p>";
       return;
     }
 
@@ -511,7 +509,7 @@ async function loadRemediation(batchId) {
       <span style="background:#1e293b;padding:4px 12px;border-radius:6px;font-size:12px;">Total Actions: <b>${data.actions_total}</b></span>
       <span style="background:#3b2e1a;padding:4px 12px;border-radius:6px;font-size:12px;">Open: <b>${data.actions_open}</b></span>
       <span style="background:#1a2e1a;padding:4px 12px;border-radius:6px;font-size:12px;">Resolved: <b>${data.actions_resolved}</b></span>
-      <a href='/audit-remediation.html?audit_batch_id=${encodeURIComponent(batchId)}' style="color:#8b5cf6;font-size:12px;padding:4px 12px;">Manage &rarr;</a>
+      <a href='/mission/audit-remediation.html?audit_batch_id=${encodeURIComponent(batchId)}' style="color:#8b5cf6;font-size:12px;padding:4px 12px;">Manage &rarr;</a>
     </div>`;
 
     if (findings.length > 0) {

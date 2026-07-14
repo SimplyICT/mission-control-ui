@@ -352,8 +352,6 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
         <input type="file" id="importCsvInput" accept=".csv" style="display:none;" onchange="importDevices(this)">
       </label>
     
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
 </div>
   </div>
 
@@ -525,7 +523,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     }
 
     function goHome() {
-      window.location.href = "/index-platform.html";
+      window.location.href = "/";
     }
 
     function updateKpis(devices) {
@@ -605,7 +603,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
         devices.forEach(device => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td><button onclick="editDevice('${escapeHtml(device.device_id)}')">Edit</button></td>
+            <td><button onclick="editDevice('${escapeHtml(device.device_id)}')">Edit</button> <button class="small-btn" onclick="archiveDevice('${escapeHtml(device.device_id)}')" style="background:#92400e;">Archive</button> <button class="small-btn" onclick="deleteDevice('${escapeHtml(device.device_id)}')" style="background:#991b1b;">Delete</button></td>
             <td>${activeBadge(device.is_active)}</td>
             <td class="serial-col">${escapeHtml(device.serial_number)}</td>
             <td>${escapeHtml(device.device_type)}</td>
@@ -626,7 +624,33 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
         showError("Missing device ID.");
         return;
       }
-      window.location.href = `/device-update.html?device_id=${encodeURIComponent(deviceId)}`;
+      window.location.href = `/mission/device-update.html?device_id=${encodeURIComponent(deviceId)}`;
+    }
+
+    async function archiveDevice(deviceId) {
+      if (!deviceId) { showError("Missing device ID."); return; }
+      if (!confirm("Archive this device? It will be hidden from reports.")) return;
+      try {
+        const res = await fetch(`${API}/devices/${deviceId}/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: false })
+        });
+        if (!res.ok) { showError("Archive failed"); return; }
+        alert("Device archived.");
+        loadDevices();
+      } catch (err) { showError("Archive error: " + err.message); }
+    }
+
+    async function deleteDevice(deviceId) {
+      if (!deviceId) { showError("Missing device ID."); return; }
+      if (!confirm("Permanently delete this device? This cannot be undone.")) return;
+      try {
+        const res = await fetch(`${API}/devices/${deviceId}`, { method: "DELETE" });
+        if (!res.ok) { showError("Delete failed"); return; }
+        alert("Device deleted.");
+        loadDevices();
+      } catch (err) { showError("Delete error: " + err.message); }
     }
 
     function openAddDevice() {

@@ -210,9 +210,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>  <div class="subtitle">Operational Compliance & Active Asset Register</div>
 </div>
@@ -226,6 +224,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
   <p id="status" class="status-line">
     Loading active device register...
   </p>
+  <div id="sitePicker" style="display:none;margin-top:12px">
+    <label for="siteSelect" style="margin-right:8px;color:#94a3b8">Select Site:</label>
+    <select id="siteSelect" style="background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:6px;padding:8px 12px;font-size:14px;min-width:250px">
+      <option value="">-- Choose a site --</option>
+    </select>
+    <button onclick="goSite()" style="margin-left:8px;background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:600">Go</button>
+  </div>
 </div>
 
 <div id="content"></div>
@@ -249,7 +254,32 @@ function getSiteId() {
 }
 
 function goReports() {
-  window.location.href = "/audit-reports.html";
+  window.location.href = "/mission/audit-reports.html";
+}
+
+async function loadSites() {
+  try {
+    const res = await fetch(API + "/sites");
+    const data = await res.json();
+    const select = document.getElementById("siteSelect");
+    if (data.sites) {
+      data.sites.forEach(function(s) {
+        const opt = document.createElement("option");
+        opt.value = s.site_code || s.id;
+        opt.textContent = s.site_name || s.site_code || s.id;
+        select.appendChild(opt);
+      });
+    }
+  } catch(e) {
+    document.getElementById("status").textContent = "Could not load sites.";
+  }
+}
+
+function goSite() {
+  const siteId = document.getElementById("siteSelect").value;
+  if (siteId) {
+    window.location.href = "/mission/active-device-register.html?site_id=" + encodeURIComponent(siteId);
+  }
 }
 
 function complianceClass(value) {
@@ -278,7 +308,9 @@ async function loadRegister() {
 
   if (!siteId) {
     document.getElementById("status").textContent =
-      "Missing site_id.";
+      "Select a site below to view its active device register.";
+    document.getElementById("sitePicker").style.display = "block";
+    loadSites();
     return;
   }
 
@@ -296,7 +328,15 @@ async function loadRegister() {
     return;
   }
 
-  const report = await res.json();
+  let report;
+  try {
+    report = await res.json();
+  } catch (e) {
+    console.error("Failed to parse API response:", e);
+    document.getElementById("status").textContent =
+      "Could not load Active Device Register — invalid response.";
+    return;
+  }
   const rows = report.rows || [];
 
   let compliant = 0;

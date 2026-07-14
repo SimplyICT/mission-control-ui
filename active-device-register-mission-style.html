@@ -209,17 +209,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>    <div class="subtitle">Operational Compliance & Active Asset Register</div>
 
     
   </div>
   <div class="topbar-right">
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
   </div>
 </div>
 
@@ -255,7 +251,7 @@ function getSiteId() {
 }
 
 function goReports() {
-  window.location.href = "/audit-reports.html";
+  window.location.href = "/mission/audit-reports.html";
 }
 
 function complianceClass(value) {
@@ -302,7 +298,15 @@ async function loadRegister() {
     return;
   }
 
-  const report = await res.json();
+  let report;
+  try {
+    report = await res.json();
+  } catch (e) {
+    console.error("Failed to parse API response:", e);
+    document.getElementById("status").textContent =
+      "Could not load Active Device Register — invalid response.";
+    return;
+  }
   const rows = report.rows || [];
 
   let compliant = 0;

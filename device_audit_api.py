@@ -1433,6 +1433,26 @@ def update_device(device_id: str, payload: Dict[str, Any]):
     return {"success": True, "device": result.data[0]}
 
 
+@app.delete("/devices/{device_id}")
+def delete_device(device_id: str):
+    try:
+        device = supabase.table("devices").select("serial_number").eq("device_id", device_id).limit(1).execute()
+        serial = device.data[0].get("serial_number") if device.data else None
+        if serial:
+            supabase.table("audit_entries").delete().eq("serial_number", serial).execute()
+        result = (
+            supabase.table("devices")
+            .delete()
+            .eq("device_id", device_id)
+            .execute()
+        )
+        if not result.data:
+            return {"success": True, "message": f"Device {device_id} deleted (no rows returned)"}
+        return {"success": True, "message": f"Device {device_id} deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Delete failed: {str(e)}")
+
+
 @app.post("/audits/start")
 def start_audit(req: AuditStartRequest):
     site = resolve_site(req.site_id, req.site_name)

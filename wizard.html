@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Project Wizard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
+body{background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.topbar h1{font-size:18px;font-weight:600}.topbar span{color:var(--muted);font-size:13px}
+.topbar-actions{display:flex;gap:8px}
+.wrap{max-width:760px;margin:0 auto;padding:32px 24px}
+.btn{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;text-decoration:none;display:inline-block;white-space:nowrap}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--cyan);color:#000;border-color:var(--cyan)}
+.btn-primary:hover{background:#00c4e0}
+.btn-secondary{background:#334155;color:#e2e8f0;border:1px solid #475569}
+.btn-success{background:var(--green);color:#000;border-color:var(--green)}
+.btn-danger{background:var(--red);color:#fff;border-color:var(--red)}
+.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+/* Steps indicator */
+.steps{display:flex;gap:0;margin-bottom:32px;position:relative}
+.steps::before{content:'';position:absolute;top:18px;left:0;right:0;height:2px;background:#2d2d3d;z-index:0}
+.step{flex:1;text-align:center;position:relative;z-index:1}
+.step-num{width:36px;height:36px;border-radius:50%;background:#1a1a2e;border:2px solid #2d2d3d;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-bottom:6px;transition:all .2s}
+.step.active .step-num{background:var(--cyan);color:#000;border-color:var(--cyan)}
+.step.done .step-num{background:var(--green);color:#000;border-color:var(--green)}
+.step-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.step.active .step-label{color:var(--text)}
+.step.done .step-label{color:var(--green)}
+
+/* Panels */
+.panel{display:none;background:var(--panel);border:1px solid #2d2d3d;border-radius:12px;padding:28px}
+.panel.active{display:block}
+.panel h2{font-size:20px;margin-bottom:4px}
+.panel .subtitle{color:var(--muted);font-size:13px;margin-bottom:20px}
+
+/* Form */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;background:var(--bg);color:var(--text);border:1px solid #2d2d3d;border-radius:6px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--cyan)}
+.form-group textarea{resize:vertical;min-height:70px}
+.form-group .hint{font-size:11px;color:var(--muted);margin-top:4px}
+.form-group .preview{font-size:12px;color:var(--cyan);margin-top:2px;font-family:monospace}
+
+/* Toggle switches */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{flex:1}
+.toggle-label strong{display:block;font-size:14px}
+.toggle-label span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;margin-left:12px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;cursor:pointer;background:#2d2d3d;border-radius:999px;transition:.2s}
+.toggle .slider::before{content:'';position:absolute;left:3px;bottom:3px;width:18px;height:18px;background:#64748b;border-radius:50%;transition:.2s}
+.toggle input:checked+.slider{background:rgba(0,229,255,.35)}
+.toggle input:checked+.slider::before{background:var(--cyan);transform:translateX(20px)}
+
+/* Results */
+.result-card{background:var(--bg);border:1px solid #2d2d3d;border-radius:8px;padding:16px;margin-bottom:12px}
+.result-card .label{font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.result-card .value{font-size:14px;word-break:break-all}
+.result-card .value a{color:var(--cyan);text-decoration:none}
+.result-card .value a:hover{text-decoration:underline}
+.result-card.success{border-color:rgba(0,230,118,.3)}
+.result-card.error{border-color:rgba(255,23,68,.3)}
+.result-card .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.result-card .status-dot.ok{background:var(--green)}
+.result-card .status-dot.fail{background:var(--red)}
+.result-card .status-dot.skip{background:var(--muted)}
+
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid #2d2d3d;border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:var(--red);font-size:13px}
+.error-box li{margin-left:16px;margin-bottom:4px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>&#9889; Project Wizard</h1>
+  <div class="topbar-actions">
+    <a class="nav-btn-home" href="/">&#9664; Home</a>
+    <a class="btn btn-sm" href="/project-manager.html">&#8599; Project Manager</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- Steps indicator -->
+  <div class="steps" id="steps">
+    <div class="step active" data-step="1">
+      <div class="step-num">1</div>
+      <div class="step-label">Details</div>
+    </div>
+    <div class="step" data-step="2">
+      <div class="step-num">2</div>
+      <div class="step-label">Options</div>
+    </div>
+    <div class="step" data-step="3">
+      <div class="step-num">3</div>
+      <div class="step-label">Review</div>
+    </div>
+    <div class="step" data-step="4">
+      <div class="step-num">4</div>
+      <div class="step-label">Result</div>
+    </div>
+  </div>
+
+  <!-- Step 1: Project Details -->
+  <div class="panel active" id="panel1">
+    <h2>Project Details</h2>
+    <p class="subtitle">Tell us about the project you want to create.</p>
+    <div class="form-group">
+      <label>Project Name</label>
+      <input id="fldName" placeholder="e.g. SOC Automation Platform" oninput="updatePreview()">
+      <div class="preview">Folder: <span id="folderPreview">soc-automation-platform</span></div>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="fldDesc" placeholder="What is this project about?"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="nextStep()">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Options -->
+  <div class="panel" id="panel2">
+    <h2>Project Options</h2>
+    <p class="subtitle">Customise how the project is set up.</p>
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <strong>Create Folder</strong>
+        <span>Create project directory and scaffold files</span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="optFolder" checked onchange="toggleScaffold()"><span class="slider"></span></label>
+    </div>
+    <div class="form-group" id="basePathGroup">
+      <label>Base Path</label>
+      <input id="fldBasePath" placeholder="/home/aiagent/projects" value="">
+      <div class="hint">Parent directory where the project folder will be created.</div>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <strong>Initialize Git</strong>
+        <span>Run <code>git init</code> and create initial commit</span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="optGit" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <strong>Create GitHub Repository</strong>
+        <span>Create a private repo and link it as a remote</span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="optRepo" onchange="toggleRepoOpts()"><span class="slider"></span></label>
+    </div>
+    <div id="repoOptions" style="display:none">
+      <div class="toggle-row" style="border-top:1px solid rgba(255,255,255,.04)">
+        <div class="toggle-label">
+          <strong>Private Repository</strong>
+          <span>Keep the repository private</span>
+        </div>
+        <label class="toggle"><input type="checkbox" id="optPrivate" checked><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="prevStep()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="nextStep()">Review &rarr;</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Review -->
+  <div class="panel" id="panel3">
+    <h2>Review</h2>
+    <p class="subtitle">Check the details before creating the project.</p>
+    <div id="reviewContent"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="prevStep()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="createProject()" id="btnCreate">&#9889; Create Project</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Result -->
+  <div class="panel" id="panel4">
+    <div id="resultContent"></div>
+    <div class="form-actions">
+      <a class="btn btn-primary" href="/project-manager.html">&#8599; Open Project Manager</a>
+      <button class="btn btn-secondary" onclick="resetWizard()">Create Another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_PREFIX = "/mission";
+var currentStep = 1;
+
+function $(id){return document.getElementById(id)}
+
+function slugify(s){
+  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+
+function updatePreview(){
+  var name = $("fldName").value.trim();
+  $("folderPreview").textContent = slugify(name) || "project-name";
+}
+
+function showStep(n){
+  for(var i=1;i<=4;i++){
+    var p = $("panel"+i);
+    p.classList.toggle("active", i===n);
+    var s = document.querySelector('.step[data-step="'+i+'"]');
+    s.classList.toggle("active", i===n);
+    s.classList.toggle("done", i<n);
+  }
+  currentStep = n;
+}
+
+function nextStep(){
+  if(currentStep===1){
+    var name = $("fldName").value.trim();
+    if(!name){alert("Project name is required.");$("fldName").focus();return}
+    // Set default base path
+    if(!$("fldBasePath").value){
+      $("fldBasePath").value = "/home/aiagent/projects";
+    }
+    showStep(2);
+  } else if(currentStep===2){
+    buildReview();
+    showStep(3);
+  }
+}
+
+function prevStep(){
+  if(currentStep===2) showStep(1);
+  else if(currentStep===3) showStep(2);
+}
+
+function toggleScaffold(){
+  var on = $("optFolder").checked;
+  $("basePathGroup").style.display = on ? "block" : "none";
+}
+
+function toggleRepoOpts(){
+  $("repoOptions").style.display = $("optRepo").checked ? "block" : "none";
+}
+
+function buildReview(){
+  var name = $("fldName").value.trim();
+  var desc = $("fldDesc").value.trim();
+  var slug = slugify(name);
+  var basePath = $("fldBasePath").value.trim();
+  var folder = basePath + "/" + slug;
+
+  var h = '<div class="result-card"><div class="label">Project Name</div><div class="value">'+esc(name)+'</div></div>';
+  if(desc) h += '<div class="result-card"><div class="label">Description</div><div class="value">'+esc(desc)+'</div></div>';
+  h += '<div class="result-card"><div class="label">Folder</div><div class="value">'+esc(folder)+'</div></div>';
+
+  var opts = [];
+  if($("optFolder").checked) opts.push("Create folder + scaffold");
+  if($("optGit").checked) opts.push("Initialize git");
+  if($("optRepo").checked) opts.push("Create GitHub repo ("+($("optPrivate").checked?"private":"public")+")");
+
+  h += '<div class="result-card"><div class="label">Actions</div><div class="value">'+opts.join(" &middot; ")+'</div></div>';
+  $("reviewContent").innerHTML = h;
+}
+
+function esc(v){
+  var d=document.createElement("div");
+  d.textContent=v;
+  return d.innerHTML;
+}
+
+function createProject(){
+  var btn = $("btnCreate");
+  btn.disabled = true;
+  btn.textContent = "Creating...";
+
+  var name = $("fldName").value.trim();
+  var desc = $("fldDesc").value.trim();
+  var basePath = $("fldBasePath").value.trim();
+
+  var body = {
+    name: name,
+    description: desc,
+    base_path: basePath,
+    create_folder: $("optFolder").checked,
+    init_git: $("optGit").checked,
+    create_repo: $("optRepo").checked,
+    private_repo: $("optPrivate").checked,
+    scaffold: "basic"
+  };
+
+  // Show loading in panel 4
+  showStep(4);
+  $("resultContent").innerHTML =
+    '<div class="loading"><div class="spinner"></div><div>Creating project...</div></div>';
+
+  fetch(API_PREFIX+"/api/wizard/create-project", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)
+  })
+  .then(function(r){return r.json()})
+  .then(function(d){
+    renderResult(d);
+  })
+  .catch(function(e){
+    $("resultContent").innerHTML =
+      '<div class="error-box">Request failed: '+esc(e.message)+'</div>';
+  })
+  .finally(function(){
+    btn.disabled = false;
+    btn.textContent = "&#9889; Create Project";
+  });
+}
+
+function renderResult(d){
+  var html = '<h2 style="margin-bottom:12px">'+(d.status==="ok"?"&#9989; Project Created":"&#9888; Partial Success")+'</h2>';
+  html += '<p class="subtitle" style="margin-bottom:20px">'+
+    (d.status==="ok"?"All steps completed successfully.":"Some steps had issues. Check the details below.")+
+    '</p>';
+
+  var r = d.results || {};
+
+  // Folder result
+  if(r.folder){
+    html += '<div class="result-card success"><span class="status-dot ok"></span><div class="label">Folder</div><div class="value">'+esc(r.folder)+'</div></div>';
+  } else {
+    html += '<div class="result-card error"><span class="status-dot fail"></span><div class="label">Folder</div><div class="value">Not created</div></div>';
+  }
+
+  // Git result
+  if(r.git){
+    html += '<div class="result-card success"><span class="status-dot ok"></span><div class="label">Git</div><div class="value">'+esc(r.git)+'</div></div>';
+  } else {
+    html += '<div class="result-card"><span class="status-dot skip"></span><div class="label">Git</div><div class="value">Skipped</div></div>';
+  }
+
+  // GitHub result
+  if(r.github){
+    html += '<div class="result-card success"><span class="status-dot ok"></span><div class="label">GitHub Repository</div><div class="value"><a href="'+esc(r.github)+'" target="_blank">'+esc(r.github)+'</a></div></div>';
+  } else {
+    html += '<div class="result-card"><span class="status-dot skip"></span><div class="label">GitHub Repository</div><div class="value">Skipped</div></div>';
+  }
+
+  // Project record
+  if(r.project_record){
+    html += '<div class="result-card success"><span class="status-dot ok"></span><div class="label">Project Record</div><div class="value"><a href="/project-manager.html" style="color:var(--cyan)">'+esc(r.project_record.name)+'</a></div></div>';
+  }
+
+  // Errors
+  if(d.errors && d.errors.length){
+    html += '<div class="error-box" style="margin-top:16px"><strong>Warnings / Errors:</strong><ul>';
+    d.errors.forEach(function(e){html += '<li>'+esc(e)+'</li>'});
+    html += '</ul></div>';
+  }
+
+  html += '<div style="margin-top:16px;padding:12px;background:var(--bg);border:1px solid #2d2d3d;border-radius:8px;font-size:12px;color:var(--muted)">' +
+    'Next steps: <a href="/project-manager.html" style="color:var(--cyan)">Open Project Manager</a> to add tasks and track progress.' +
+    '</div>';
+
+  $("resultContent").innerHTML = html;
+}
+
+function resetWizard(){
+  $("fldName").value = "";
+  $("fldDesc").value = "";
+  $("fldBasePath").value = "";
+  $("optFolder").checked = true;
+  $("optGit").checked = true;
+  $("optRepo").checked = false;
+  $("optPrivate").checked = true;
+  $("repoOptions").style.display = "none";
+  $("basePathGroup").style.display = "block";
+  toggleScaffold();
+  showStep(1);
+  $("resultContent").innerHTML = "";
+  $("folderPreview").textContent = "project-name";
+}
+
+// Enter key in name field advances
+$("fldName").addEventListener("keydown", function(e){
+  if(e.key === "Enter") nextStep();
+});
+$("fldDesc").addEventListener("keydown", function(e){
+  if(e.key === "Enter" && !e.shiftKey){e.preventDefault();nextStep()}
+});
+
+// Init: check folder path default
+if(!$("fldBasePath").value){
+  $("fldBasePath").value = "/home/aiagent/projects";
+}
+</script>
+</body>
+</html>

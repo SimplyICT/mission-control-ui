@@ -128,17 +128,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>  <div style="display:flex;gap:8px">
-    <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+    <a class="nav-btn-home" href="/">&#9664; Home</a>
     <a class="btn btn-sm" href="/hub/">Project Hub</a>
     <button class="btn btn-sm" onclick="location.reload()">Refresh</button>
   
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
 </div>
 </div>
 
@@ -183,7 +179,7 @@ const TECH_CHECKLIST = [
 ];
 
 function render(){
-  fetch("/mission/api/projects/"+PROJECT_ID)
+  fetch("/hub/api/projects/"+PROJECT_ID)
     .then(function(r){return r.json()})
     .then(function(p){
       var tasks = p.tasks || [];
@@ -194,7 +190,6 @@ function render(){
       var inProgress = tasks.filter(function(t){return t.status==="in_progress"}).length;
       var review = tasks.filter(function(t){return t.status==="review"}).length;
       var pct = total ? Math.round(done/total*100) : 0;
-      $("progressLabel").textContent = done+"/"+total+" complete ("+pct+"%)";
 
       var phases = {
         "Phase 1": tasks.filter(function(t){return t.phase==="Phase 1" || (!t.phase && t.title.includes("Rewrite") || t.title.includes("Deduplicate") || t.title.includes("Hotjar") || t.title.includes("Verify") || t.title.includes("Alt text") || t.title.includes("JSON-LD") || t.title.includes("blog title"));}),

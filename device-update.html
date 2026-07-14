@@ -265,13 +265,11 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span id="subtitle">Audit device register · edit active device metadata</span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
       
 <button class="secondary" onclick="goBack()">Back</button>
       <button onclick="saveDevice()">Save Device</button>
     
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
 </div>
   </div>
 
@@ -389,8 +387,8 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     async function loadDevice(){
       const id=getDeviceId();
       if(!id){
-        setPageStatus("Missing device_id", "error");
-        alert("Missing device_id");
+        setPageStatus("No device selected — redirecting...", "status");
+        window.location.href = "/mission/device-records.html";
         return;
       }
 
@@ -455,7 +453,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     }
 
     function goBack(){
-      window.location.href="/device-records.html";
+      window.location.href="/mission/device-records.html";
     }
 
     loadDevice();

@@ -292,7 +292,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span id="subtitle">Single-site detail view</span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
       
 <a class="button" href="mission_control_all_sites_dashboard_v1.html">🌐 All Sites</a>
       <select id="siteSelect"></select>
@@ -301,8 +301,6 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <button onclick="saveSettingsAndRefresh()">Connect</button>
       <button onclick="refreshDashboard()">Refresh</button>
     
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
 </div>
   </div>
 
@@ -462,11 +460,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 
     async function fetchDashboard() {
       const siteCode = selectedSiteCode();
-      const url = siteCode
-        ? `${apiBase()}/api/v1/dashboard/summary?site_code=${encodeURIComponent(siteCode)}`
-        : `${apiBase()}/api/v1/dashboard/summary`;
+      const params = new URLSearchParams();
+      if (apiKey()) params.set("api_key", apiKey());
+      if (siteCode) params.set("site_code", siteCode);
+      const qs = params.toString();
+      const url = `${apiBase()}/api/v1/dashboard/summary${qs ? "?" + qs : ""}`;
 
-      const res = await fetch(url, { headers: headers() });
+      const res = await fetch(url);
       const text = await res.text();
 
       if (!res.ok) {

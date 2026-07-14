@@ -84,11 +84,9 @@
 
 <div class="topbar">
   <div>
-    <div class="title">Mission Control — User Guide  <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a></div>
     <div class="subtitle">Platform how-to, workflows and reference</div>
   </div>
-  <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
+  <a class="nav-btn-home" href="/">&#9664; Home</a>
 </div>
 
 <div class="doc-meta">
@@ -645,46 +643,10 @@
 
     <!-- ── TWO-FACTOR AUTH ── -->
     <div id="two-factor-auth" class="section-anchor">
-      <h2><span class="badge tools">Admin</span> Two-Factor Authentication (2FA)</h2>
-      <p>Mission Control uses Time-based One-Time Passwords (TOTP) for two-factor authentication, compatible with any authenticator app (Google Authenticator, Microsoft Authenticator, Aegis, etc.).</p>
-
-      <h3>Login flow</h3>
-      <ol class="steps">
-        <li>Enter your username and password on the login page. Click <strong>Sign In</strong>.</li>
-        <li>If 2FA is enabled on your account, you are redirected to the <strong>Verification</strong> page.</li>
-        <li>Open your authenticator app and enter the current 6-digit code.</li>
-        <li>Click <strong>Verify</strong>. Codes expire every 30 seconds — if the code is rejected, wait for the next one.</li>
-      </ol>
-
-      <div class="callout warning">After <strong>5 consecutive failed login attempts</strong> (wrong password or wrong 2FA code), your IP address is locked out for 15 minutes. Wait before trying again. If you are locked out and cannot wait, contact an IT admin to clear the lockout.</div>
-
-      <h3>Setting up 2FA on your account</h3>
-      <ol class="steps">
-        <li>Log in and navigate to <strong>2FA Setup</strong> from the Administration section of Platform Home.</li>
-        <li>Click <strong>Generate QR Code</strong>. A QR code and a text secret are displayed.</li>
-        <li>Open your authenticator app, tap <strong>+</strong> or <strong>Add account</strong>, and scan the QR code. Alternatively, enter the secret key manually.</li>
-        <li>Enter the 6-digit code currently shown in your app into the <strong>Activation Code</strong> field.</li>
-        <li>Click <strong>Activate 2FA</strong>. A confirmation message confirms 2FA is now active.</li>
-        <li>From this point, every login will require the 6-digit code from your app.</li>
-      </ol>
-
-      <div class="callout tip">Store your authenticator app backup codes or secret key in a secure password manager in case you lose access to your phone.</div>
-
-      <h3>Disabling 2FA</h3>
-      <ol class="steps">
-        <li>Go to <strong>2FA Setup</strong>.</li>
-        <li>Scroll to <strong>Disable Two-Factor Authentication</strong>.</li>
-        <li>Enter a valid current 6-digit code to confirm it is you.</li>
-        <li>Click <strong>Disable 2FA</strong>. Your account will use password-only login from the next session.</li>
-      </ol>
-
-      <h3>Admin: resetting another user&#39;s 2FA</h3>
-      <ol class="steps">
-        <li>Log in as an admin account.</li>
-        <li>Go to <strong>2FA Setup</strong> and scroll to the <strong>Admin: Reset User 2FA</strong> section.</li>
-        <li>Enter the User ID of the affected account.</li>
-        <li>Click <strong>Reset 2FA for User</strong>. Their 2FA is cleared — they can log in with password only until they set up 2FA again.</li>
-      </ol>
+      <h2>Authentication</h2>
+      <p>This platform is secured by <strong>Cloudflare Access</strong>. You are automatically authenticated via your Cloudflare login — no separate username, password, or two-factor codes are required.</p>
+      <p>If you can see this page, you are already signed in. For access issues, contact your Cloudflare Access administrator.</p>
+    </div>
     </div>
 
 
@@ -962,9 +924,7 @@
           <tr><td>Governance tiles show dashes</td><td>No remediation/incident data yet</td><td>Generate remediation actions from an audit first, or log an incident.</td></tr>
           <tr><td>SharePoint upload fails</td><td>Expired client secret or incorrect permissions</td><td>Use Test Connection in Site Onboarding to diagnose which step fails.</td></tr>
           <tr><td>Services not reachable</td><td>Services stopped after server restart</td><td>Run: <span class="tag">sudo systemctl restart device-audit-api mission-control-ui</span></td></tr>
-          <tr><td>Locked out — too many login attempts</td><td>Brute-force protection triggered after 5 failed attempts</td><td>Wait 15 minutes for the lockout to expire, then try again. IT admins can restart mission-control-ui to clear all lockouts immediately.</td></tr>
-          <tr><td>2FA code rejected at login</td><td>Clock skew on phone or wrong account in authenticator app</td><td>Ensure your phone clock is set to automatic/network time. Confirm you are scanning the correct QR code for this platform. If still failing, ask an IT admin to reset your 2FA.</td></tr>
-          <tr><td>Lost authenticator app / new phone</td><td>TOTP secrets not backed up</td><td>Contact an IT admin to reset your 2FA via the 2FA Setup admin panel. You can then re-enrol with your new device.</td></tr>
+          <tr><td>Can't access the platform</td><td>Cloudflare Access authentication issue</td><td>Contact your Cloudflare Access administrator to verify you have been granted access to this application.</td></tr>
           <tr><td>Governance tiles show Loading indefinitely</td><td>governance-summary API not responding</td><td>Check that device-audit-api service is active. Try clicking Refresh All. If still loading, check service logs.</td></tr>
           <tr><td>Audit Recency table is empty</td><td>No completed audits exist for any site yet</td><td>Complete at least one audit batch per site. The table is populated from audit_date records in the device_audits table.</td></tr>
         </tbody>

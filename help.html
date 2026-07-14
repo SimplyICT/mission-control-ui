@@ -95,12 +95,12 @@
     <div class="title">Mission Control — Help Guide</div>
     <div class="subtitle">Complete user reference for the platform</div>
   </div>
-  <a class="nav-btn-home" href="/mission/index-platform.html">&#9664; Home</a>
+  <a class="nav-btn-home" href="/">&#9664; Home</a>
 </div>
 
 <div class="doc-meta">
-  <span>&#9881; Version 1.1</span>
-  <span>&#128197; Last updated 20 June 2026</span>
+  <span>&#9881; Version 1.2</span>
+  <span>&#128197; Last updated 1 July 2026</span>
   <span>&#128214; <a href="/mission/user-guide.html" style="color:#4ade80">Full User Guide</a></span>
   <span>&#128187; <a href="/mission/devdocs.html" style="color:#4ade80">Developer Docs</a></span>
 </div>
@@ -110,7 +110,7 @@
     <div class="sidebar-group">
       <div class="sidebar-group-label">Getting Started</div>
       <a href="#overview">Platform Overview</a>
-      <a href="#login">Login &amp; 2FA</a>
+      <a href="#login">Authentication</a>
       <a href="#navigation">Navigating the Platform</a>
     </div>
     <div class="sidebar-group">
@@ -165,20 +165,14 @@
     <!-- ── Overview ── -->
     <div id="overview" class="section-anchor">
       <h1>Mission Control Platform</h1>
-      <p class="lead">Central operations platform for device audit, compliance management, network monitoring, and security operations. Accessible at <a href="https://audit.simplyict.com.au">audit.simplyict.com.au</a>.</p>
+      <p class="lead">Central operations platform for device audit, compliance management, network monitoring, and security operations. Accessible at <a href="https://mc.simplyict.com.au">mc.simplyict.com.au</a>.</p>
       <p>The platform serves early childhood education services across multiple sites, providing tools for ACECQA compliance auditing, network probe monitoring, and SOC threat detection.</p>
     </div>
 
     <div id="login" class="section-anchor">
-      <h2>Login &amp; 2FA</h2>
-      <p>All pages require authentication. The login system includes brute-force protection and optional two-factor authentication.</p>
-      <ol class="steps">
-        <li>Navigate to <a href="/mission/login">the login page</a> and enter your username and password.</li>
-        <li>If 2FA is enabled, you will be redirected to the verification page. Open your authenticator app and enter the 6-digit code.</li>
-        <li>If 2FA is not yet set up, go to <a href="/mission/2fa-setup.html">2FA Setup</a> to scan the QR code with Google Authenticator or Authy.</li>
-      </ol>
-      <div class="callout warning">After 5 failed login attempts, your account is locked for 15 minutes. Contact an admin if you are locked out.</div>
-      <p>Admins can reset 2FA for any user from the <a href="/mission/admin-users.html">User Management</a> page.</p>
+      <h2>Authentication</h2>
+      <p>This platform is secured by <strong>Cloudflare Access</strong>. You are automatically authenticated via your Cloudflare login — no separate username or password is required.</p>
+      <p>If you can see this page, you are already signed in. For access issues, contact your Cloudflare Access administrator.</p>
     </div>
 
     <div id="navigation" class="section-anchor">
@@ -190,7 +184,7 @@
         <li><strong>Compliance</strong> — Site onboarding, incident register, remediation tracking</li>
         <li><strong>Network Monitoring</strong> — Live dashboards, all-sites view, device classification, alerts</li>
         <li><strong>Security Operations</strong> — Wazuh SOC, SOC agent dashboard, Telegram integration</li>
-        <li><strong>Administration</strong> — User management, 2FA setup, user guide</li>
+        <li><strong>Administration</strong> — User management, user guide</li>
         <li><strong>Projects</strong> — Project Hub, project manager, project trackers</li>
       </ul>
       <p>Each page has a <strong>Home</strong> button to return to the platform home, and <strong>Help</strong> and <strong>DevDocs</strong> buttons for assistance.</p>
@@ -353,10 +347,10 @@
       <p>Probe agents run on Intel NUCs at client sites. They perform periodic ARP + ICMP discovery of the local subnet and report device state to the central backend.</p>
       <h3>Windows Install</h3>
       <p>Run as Administrator in PowerShell:</p>
-      <pre>.\install.ps1 -ApiKey &lt;key&gt; -ApiBase https://audit.simplyict.com.au/monitoring-api -SiteId &lt;id&gt; -SiteName "Name" -AgentId &lt;agent&gt; -Subnet "192.168.1.0/24"</pre>
+      <pre>.\install.ps1 -ApiKey &lt;key&gt; -ApiBase https://mc.simplyict.com.au/monitoring-api -SiteId &lt;id&gt; -SiteName "Name" -AgentId &lt;agent&gt; -Subnet "192.168.1.0/24"</pre>
       <h3>Linux Install</h3>
       <p>Run as root:</p>
-      <pre>sudo ./install.sh --api-key &lt;key&gt; --api-base https://audit.simplyict.com.au/monitoring-api --site-id &lt;id&gt; --site-name "Name" --agent-id &lt;agent&gt; --subnet 192.168.1.0/24</pre>
+      <pre>sudo ./install.sh --api-key &lt;key&gt; --api-base https://mc.simplyict.com.au/monitoring-api --site-id &lt;id&gt; --site-name "Name" --agent-id &lt;agent&gt; --subnet 192.168.1.0/24</pre>
       <h3>Diagnostics</h3>
       <p>On Windows, run <code>.\probe-diagnose.ps1</code> to check installation paths, Python environment, service status, log files, and API reachability.</p>
       <div class="callout warning">The installer uses embeddable Python (no system Python dependency). It downloads NSSM, Python, and the agent package automatically.</div>
@@ -452,9 +446,6 @@
     <div id="troubleshooting" class="section-anchor">
       <h2>Troubleshooting</h2>
 
-      <h3>Blank page after login</h3>
-      <p>Hard refresh (Ctrl+Shift+R on Windows/Linux, Cmd+Shift+R on Mac) or clear your browser cache. Also check your session hasn't expired.</p>
-
       <h3>Wazuh SOC pages not loading</h3>
       <p>Check that the Wazuh API proxy is running: <code>sudo systemctl status mission-control-ui</code>. The proxy at <code>/wazuh-api/{path}</code> forwards requests to the Wazuh SOC API on localhost:8000 and auto-retries on 401.</p>
 
@@ -464,14 +455,10 @@
       <h3>CSV export not working</h3>
       <p>Ensure your browser allows pop-ups for file downloads. The export creates a Blob download — if pop-ups are blocked, the download will be silently prevented.</p>
 
-      <h3>2FA code not working</h3>
-      <p>Ensure your device's time is correct (auto-sync recommended). TOTP codes are time-based — a clock drift of more than 30 seconds will cause codes to be rejected. Contact an admin to reset your 2FA if needed.</p>
-
       <h3>PDF report shows "N/A" for data</h3>
       <p>This usually means the audit batch doesn't have complete device entries, or the site doesn't have threshold settings configured. Check the Site Onboarding page for threshold values.</p>
 
-      <h3>Login returns "Invalid credentials"</h3>
-      <p>Check Caps Lock is off. If you've forgotten your password, contact an admin to reset it. Remember the 5-attempt lockout — wait 15 minutes if locked out.</p>
+
 
       <div class="callout warning">If you encounter persistent issues, check the system status at the <a href="/hub/" target="_blank">Project Hub</a> or contact SimplyICT support.</div>
     </div>

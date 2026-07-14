@@ -181,17 +181,13 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
       <span></span>
     </div>
     <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
+      <a class="nav-btn-home" href="/">&#9664; Home</a>
     </div>
   </div>    <div class="subtitle">Audit Reporting & Compliance Review</div>
 
     
   </div>
   <div class="topbar-right">
-    <a class="nav-btn" href="/help.html">? Help</a>
-    <a class="nav-btn" href="/devdocs.html">DevDocs</a>
   </div>
 </div>
 
@@ -258,7 +254,7 @@ function safe(v) {
 }
 
 function goHome() {
-  window.location.href = "/index-platform.html";
+  window.location.href = "/";
 }
 
 function openActiveDeviceRegister() {
@@ -270,7 +266,7 @@ function openActiveDeviceRegister() {
   }
 
   window.location.href =
-    `/active-device-register.html?site_id=${encodeURIComponent(siteId)}`;
+    `/mission/active-device-register.html?site_id=${encodeURIComponent(siteId)}`;
 }
 
 async function loadSites() {
@@ -445,7 +441,7 @@ function downloadReport(batchId) {
 
 function viewReport(batchId) {
   window.location.href =
-    `/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+    `/mission/audit-report-view.html?audit_batch_id=${encodeURIComponent(batchId)}`;
 }
 
 async function uploadSharePoint(batchId) {
@@ -496,11 +492,11 @@ async function reopenBatch(batchId) {
 }
 
 function editAudit(batchId) {
-  window.location.href = `/device-audit.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+  window.location.href = `/mission/device-audit.html?audit_batch_id=${encodeURIComponent(batchId)}`;
 }
 
 function openRemediation(batchId) {
-  window.location.href = `/audit-remediation.html?audit_batch_id=${encodeURIComponent(batchId)}`;
+  window.location.href = `/mission/audit-remediation.html?audit_batch_id=${encodeURIComponent(batchId)}`;
 }
 
 loadSites();
