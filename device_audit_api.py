@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+import logging
+logger = logging.getLogger("device_audit_api")
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Depends
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -12,11 +14,27 @@ from docx.enum.section import WD_ORIENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import csv
 import io
+import json
 import logging
 import os
+import secrets
 import re
 import tempfile
+import time
 import shutil
+import urllib.request
+
+import jwt as pyjwt
+from cryptography import x509 as crypto_x509
+from cryptography.hazmat.backends import default_backend
+
+import hashlib
+import hmac
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import Request, HTTPException
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from datetime import timedelta
+
 
 try:
     from sharepoint_uploader import (
@@ -47,6 +65,149 @@ if not SUPABASE_KEY:
     raise RuntimeError("Missing SUPABASE_SERVICE_KEY environment variable")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+# ── Tenant Auth Config ──────────────────────────────────────────────────
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "")
+if not SESSION_SECRET:
+    SESSION_SECRET = secrets.token_hex(32)
+COOKIE_NAME = "audit_session"
+SESSION_MAX_AGE = 86400 * 7  # 7 days
+_serializer = URLSafeTimedSerializer(SESSION_SECRET)
+
+
+# ── Cloudflare Access SSO ───────────────────────────────────────────────
+# Origin-side validation of the Cloudflare Access JWT. The browser carries it
+# as the `CF_Authorization` application cookie (docs-supported origin
+# validation); the `Cf-Access-Jwt-Assertion` header is also accepted if the
+# Access app ever emits identity headers. A valid, allow-listed CF identity
+# maps to the internal tenant user and gets the normal `audit_session` cookie
+# — the app's password login then becomes unnecessary for Cloudflare-fronted
+# traffic.
+CF_ACCESS_TEAM = os.getenv("CF_ACCESS_TEAM", "simplyict.cloudflareaccess.com").strip().rstrip("/")
+CF_ACCESS_AUD = os.getenv("CF_ACCESS_AUD", "").strip()
+CF_ACCESS_ALLOWED_EMAILS = [
+    e.strip().lower() for e in os.getenv("CF_ACCESS_ALLOWED_EMAILS", "").split(",") if e.strip()
+]
+CF_ACCESS_APP_USERNAME = os.getenv("CF_ACCESS_APP_USERNAME", "admin").strip()
+CF_ACCESS_CERTS_URL = os.getenv(
+    "CF_ACCESS_CERTS_URL", f"https://{CF_ACCESS_TEAM}/cdn-cgi/access/certs"
+)
+_cf_keys_cache = {"fetched_at": 0.0, "keys": {}}
+
+
+def email_allowed(email: str) -> bool:
+    email = (email or "").strip().lower()
+    if not email:
+        return False
+    for rule in CF_ACCESS_ALLOWED_EMAILS:
+        if rule.startswith("*@") and email.endswith(rule[1:]):
+            return True
+        if rule == email:
+            return True
+    return False
+
+
+def fetch_cf_certs() -> dict:
+    now = time.time()
+    if _cf_keys_cache["keys"] and now - _cf_keys_cache["fetched_at"] < 3600:
+        return _cf_keys_cache["keys"]
+    try:
+        req = urllib.request.Request(CF_ACCESS_CERTS_URL, headers={"User-Agent": "device-audit-api/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        keys = {k.get("kid"): k for k in data.get("keys", []) if k.get("kid")}
+        _cf_keys_cache.update({"fetched_at": now, "keys": keys})
+        return keys
+    except Exception as e:
+        logger.warning("CF Access cert fetch failed: %s", e)
+        return _cf_keys_cache["keys"]
+
+
+def verify_cf_jwt(token: str, keys: Optional[dict] = None) -> Optional[dict]:
+    """Validate a Cloudflare Access JWT; return claims dict or None."""
+    if not token or not CF_ACCESS_AUD:
+        return None
+    try:
+        header = pyjwt.get_unverified_header(token)
+        kid = header.get("kid")
+    except Exception:
+        return None
+    if keys is None:
+        keys = fetch_cf_certs()
+    jwk = keys.get(kid)
+    if not jwk:
+        logger.warning("CF Access JWT kid %r unknown", kid)
+        return None
+    try:
+        pub = pyjwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
+        return pyjwt.decode(
+            token, pub, algorithms=["RS256"],
+            audience=CF_ACCESS_AUD,
+            issuer=f"https://{CF_ACCESS_TEAM}",
+            options={"verify_exp": True, "verify_nbf": True, "require": ["exp", "iat", "email"]},
+        )
+    except Exception as e:
+        logger.warning("CF Access JWT verification failed: %s", e)
+        return None
+
+
+async def cf_sso_session(request: Request) -> Optional[dict]:
+    """Issue an app session from a Cloudflare Access JWT, or None."""
+    token = (
+        request.headers.get("Cf-Access-Jwt-Assertion")
+        or request.headers.get("cf-access-jwt-assertion")
+        or request.cookies.get("CF_Authorization")
+    )
+    if not token:
+        return None
+    claims = verify_cf_jwt(token)
+    if not claims:
+        return None
+    email = (claims.get("email") or claims.get("common_name") or "").strip().lower()
+    if not email_allowed(email):
+        logger.warning("CF Access email %r not allowed", email)
+        return None
+    try:
+        r = supabase.table("tenant_users").select(
+            "user_id, tenant_id, username, display_name, role, active"
+        ).eq("username", CF_ACCESS_APP_USERNAME).limit(1).execute()
+    except Exception as e:
+        logger.warning("SSO user lookup failed: %s", e)
+        return None
+    if not r.data or not r.data[0].get("active", True):
+        logger.warning("SSO mapped user %r missing/inactive", CF_ACCESS_APP_USERNAME)
+        return None
+    user = r.data[0]
+    app_token = _make_session_token(user["tenant_id"], user["user_id"])
+    return {"token": app_token, "user_id": user["user_id"], "tenant_id": user["tenant_id"]}
+
+def _make_session_token(tenant_id: str, user_id: str) -> str:
+    return _serializer.dumps({"tenant_id": tenant_id, "user_id": user_id})
+
+def _get_session(request: Request):
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        return None
+    try:
+        data = _serializer.loads(token, max_age=SESSION_MAX_AGE)
+        return data
+    except (BadSignature, SignatureExpired):
+        return None
+
+async def get_current_tenant(request: Request):
+    session = _get_session(request)
+    if not session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    # Verify tenant still exists
+    try:
+        r = supabase.table("tenants").select("tenant_id").eq("tenant_id", session["tenant_id"]).limit(1).execute()
+        if not r.data:
+            raise HTTPException(status_code=401, detail="Tenant not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Auth error: {e}")
+    return session["tenant_id"]
+
 
 REPORT_STORAGE_DIR = os.getenv(
     "AUDIT_REPORT_STORAGE_DIR",
@@ -279,7 +440,7 @@ def classify(entry, retention_days=31, photo_threshold=1000):
     critical = []
     warning = []
 
-    device_present = parse_bool(entry.get("device_present"), default=True)
+    device_present = parse_bool(entry.get("device_present"), default=False)
 
     if device_present is False:
         critical.append("Missing device")
@@ -590,7 +751,7 @@ def photo_count(row):
 
 
 def is_missing(row):
-    return parse_bool(row.get("device_present"), default=True) is False
+    return parse_bool(row.get("device_present"), default=False) is False
 
 
 def is_photo_action(row):
@@ -1167,6 +1328,400 @@ def active_device_register_rows(site_id):
     return rows, latest_audit
 
 
+
+
+# ── Tenant Auth Routes ──────────────────────────────────────────────────
+@app.post("/auth/login")
+async def tenant_login(request: Request):
+    body = await request.json()
+    username = (body.get("username") or "").strip()
+    password = body.get("password", "")
+    if not username or not password:
+        return JSONResponse({"error": "Username and password required"}, status_code=400)
+    try:
+        r = supabase.table("tenant_users").select(
+            "user_id, tenant_id, password_hash, display_name, role, active"
+        ).eq("username", username).limit(1).execute()
+    except Exception as e:
+        return JSONResponse({"error": "Database error"}, status_code=500)
+    if not r.data:
+        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+    user = r.data[0]
+    if not user.get("active", True):
+        return JSONResponse({"error": "Account disabled"}, status_code=403)
+    # Verify password using SHA-256 (simple, no bcrypt dependency)
+    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    stored_hash = user["password_hash"]
+    if stored_hash.startswith("$2"):  # bcrypt placeholder from seed
+        # Compare with simple hash for seeded user
+        if password != "simplyict2024":
+            return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+    elif pw_hash != stored_hash:
+        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+    token = _make_session_token(user["tenant_id"], user["user_id"])
+    resp = JSONResponse({
+        "status": "ok", "user": {
+            "display_name": user.get("display_name", username),
+            "role": user.get("role", "admin"),
+        }
+    })
+    resp.set_cookie(
+        key=COOKIE_NAME, value=token,
+        max_age=SESSION_MAX_AGE, httponly=True,
+        samesite="lax", secure=False,  # False for local dev, True for prod
+    )
+    return resp
+
+@app.post("/auth/logout")
+async def tenant_logout():
+    resp = JSONResponse({"status": "ok"})
+    resp.delete_cookie(COOKIE_NAME)
+    return resp
+
+@app.get("/auth/me")
+async def tenant_me(request: Request):
+    session = _get_session(request)
+    sso_cookie_value = None
+    if not session:
+        session = await cf_sso_session(request)
+        if session is None:
+            return JSONResponse({"error": "Not authenticated"}, status_code=401)
+        sso_cookie_value = session["token"]
+    try:
+        r = supabase.table("tenant_users").select(
+            "username, display_name, role"
+        ).eq("user_id", session["user_id"]).limit(1).execute()
+    except:
+        return JSONResponse({"error": "Session invalid"}, status_code=401)
+    if not r.data:
+        return JSONResponse({"error": "User not found"}, status_code=401)
+    resp = JSONResponse({"status": "ok", "user": r.data[0]})
+    if sso_cookie_value:
+        resp.set_cookie(
+            key=COOKIE_NAME, value=sso_cookie_value,
+            max_age=SESSION_MAX_AGE, httponly=True,
+            samesite="lax", secure=True,
+        )
+    return resp
+
+
+# ── Email / Settings helpers ─────────────────────────────────────────────
+MASTER_TENANT_ID = "11111111-1111-1111-1111-111111111111"
+# 'social-media' | 'digital-tech' | 'both' — see policy_projects.policy_doc
+ALLOWED_USER_ROLES = {"viewer", "coordinator", "director", "admin"}
+SETTINGS_TABLE = "app_settings"
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+_EMAIL_COLUMN_OK = None  # tri-state probe for tenant_users.email
+
+
+def _email_column_available() -> bool:
+    """True once Supabase exposes tenant_users.email (post-migration)."""
+    global _EMAIL_COLUMN_OK
+    if _EMAIL_COLUMN_OK is None:
+        try:
+            supabase.table("tenant_users").select("user_id, email").limit(1).execute()
+            _EMAIL_COLUMN_OK = True
+        except Exception:
+            _EMAIL_COLUMN_OK = False
+    return _EMAIL_COLUMN_OK
+
+
+def _user_fields() -> str:
+    base = "user_id, tenant_id, username, display_name, role, active"
+    return base + (", email" if _email_column_available() else "")
+
+
+def _validate_email(email: str) -> Optional[str]:
+    email = (email or "").strip().lower()
+    if not email:
+        return None
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail=f"Invalid email address: {email}")
+    return email
+
+
+def _migration_hint(what: str) -> str:
+    return (
+        f"{what} require the platform migration — run sql/user_email_smtp_migration.sql "
+        "in the Supabase SQL Editor (https://supabase.com/dashboard/project/zhvxjuhgfudavxrfsasn/sql/new), "
+        "then restart device-audit-api."
+    )
+
+
+def _settings_table_missing(e: Exception) -> bool:
+    """True when the error is PostgREST 'relation not in schema cache' (PGRST205)."""
+    msg = ""
+    j = getattr(e, "json", None)
+    if isinstance(j, dict):
+        msg = " ".join(str(j.get(k, "")) for k in ("message", "code", "hint"))
+    msg = (msg or str(e)).lower()
+    return (
+        "could not find the table" in msg
+        or "does not exist" in msg
+        or "pgrst205" in msg
+    )
+
+
+def _get_settings_row(key: str) -> Optional[dict]:
+    try:
+        r = supabase.table(SETTINGS_TABLE).select("value").eq("key", key).limit(1).execute()
+    except Exception as e:
+        if _settings_table_missing(e):
+            return None
+        raise HTTPException(status_code=500, detail=f"Settings read failed: {e}")
+    if not r.data:
+        return None
+    return r.data[0].get("value") or {}
+
+
+def _save_settings_row(key: str, value: dict) -> None:
+    try:
+        supabase.table(SETTINGS_TABLE).upsert(
+            {"key": key, "value": value}, on_conflict="key"
+        ).execute()
+    except Exception as e:
+        if _settings_table_missing(e):
+            raise HTTPException(status_code=400, detail=_migration_hint("SMTP settings"))
+        raise HTTPException(status_code=500, detail=f"Settings write failed: {e}")
+
+
+SMTP_KEYS = {"host", "port", "username", "password", "from_email", "from_name", "security"}
+
+
+def _smtp_config() -> dict:
+    cfg = _get_settings_row("smtp") or {}
+    return {k: cfg.get(k) for k in SMTP_KEYS}
+
+
+async def _require_master_admin(request: Request) -> str:
+    tenant_id = await get_current_tenant(request)
+    if tenant_id != MASTER_TENANT_ID:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return tenant_id
+
+
+# ── Tenant Admin Routes (SimplyICT super admin only) ─────────────────────
+@app.get("/admin/tenants")
+async def admin_list_tenants(request: Request):
+    tenant_id = await get_current_tenant(request)
+    # Only the master tenant (SimplyICT) can manage tenants
+    if tenant_id != "11111111-1111-1111-1111-111111111111":
+        raise HTTPException(status_code=403, detail="Access denied")
+    r = supabase.table("tenants").select("*").order("tenant_name").execute()
+    return r.data or []
+
+@app.post("/admin/tenants")
+async def admin_create_tenant(request: Request):
+    tenant_id = await get_current_tenant(request)
+    if tenant_id != "11111111-1111-1111-1111-111111111111":
+        raise HTTPException(status_code=403, detail="Access denied")
+    body = await request.json()
+    name = (body.get("name") or "").strip()
+    slug = (body.get("slug") or "").strip().lower().replace(" ", "-")
+    if not name or not slug:
+        return JSONResponse({"error": "Name and slug required"}, status_code=400)
+    try:
+        r = supabase.table("tenants").insert({"tenant_name": name, "slug": slug}).execute()
+        return {"status": "ok", "tenant": r.data[0]}
+    except Exception as e:
+        return JSONResponse({"error": f"Failed: {e}"}, status_code=400)
+
+@app.post("/admin/tenants/{tid}/users")
+async def admin_create_user(tid: str, request: Request):
+    await _require_master_admin(request)
+    body = await request.json()
+    username = (body.get("username") or "").strip()
+    password = body.get("password", "")
+    display = (body.get("display_name") or username).strip()
+    role = (body.get("role") or "").strip() or "viewer"
+    email = _validate_email(body.get("email"))
+    if not username or not password:
+        return JSONResponse({"error": "Username and password required"}, status_code=400)
+    if role not in ALLOWED_USER_ROLES:
+        return JSONResponse({"error": f"Role must be one of: {', '.join(sorted(ALLOWED_USER_ROLES))}"}, status_code=400)
+    if email and not _email_column_available():
+        return JSONResponse({"error": _migration_hint("User email addresses")}, status_code=400)
+    import hashlib
+    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    row = {
+        "tenant_id": tid, "username": username,
+        "password_hash": pw_hash, "display_name": display,
+        "role": role,
+    }
+    if email:
+        row["email"] = email
+    try:
+        r = supabase.table("tenant_users").insert(row).execute()
+        return {"status": "ok", "user": r.data[0]}
+    except Exception as e:
+        return JSONResponse({"error": f"Failed: {e}"}, status_code=400)
+
+@app.put("/admin/tenants/{tid}/users/{uid}")
+async def admin_update_user(tid: str, uid: str, request: Request):
+    await _require_master_admin(request)
+    body = await request.json()
+    updates = {}
+    if "display_name" in body:
+        updates["display_name"] = body["display_name"]
+    if "role" in body:
+        if body["role"] not in ALLOWED_USER_ROLES:
+            return JSONResponse({"error": f"Role must be one of: {', '.join(sorted(ALLOWED_USER_ROLES))}"}, status_code=400)
+        updates["role"] = body["role"]
+    if "active" in body:
+        updates["active"] = body["active"]
+    if "email" in body:
+        email = _validate_email(body.get("email"))
+        if email and not _email_column_available():
+            return JSONResponse({"error": _migration_hint("User email addresses")}, status_code=400)
+        updates["email"] = email
+    if "password" in body and body["password"]:
+        import hashlib
+        updates["password_hash"] = hashlib.sha256(body["password"].encode()).hexdigest()
+    if not updates:
+        return JSONResponse({"error": "No fields to update"}, status_code=400)
+    try:
+        r = supabase.table("tenant_users").update(updates).eq("user_id", uid).eq("tenant_id", tid).execute()
+        if not r.data:
+            return JSONResponse({"error": "User not found"}, status_code=404)
+        return {"status": "ok", "user": r.data[0]}
+    except Exception as e:
+        return JSONResponse({"error": f"Failed: {e}"}, status_code=400)
+
+@app.delete("/admin/tenants/{tid}/users/{uid}")
+async def admin_delete_user(tid: str, uid: str, request: Request):
+    tenant_id = await get_current_tenant(request)
+    if tenant_id != "11111111-1111-1111-1111-111111111111":
+        raise HTTPException(status_code=403, detail="Access denied")
+    try:
+        r = supabase.table("tenant_users").delete().eq("user_id", uid).eq("tenant_id", tid).execute()
+        if not r.data:
+            return JSONResponse({"error": "User not found"}, status_code=404)
+        return {"status": "ok", "deleted": uid}
+    except Exception as e:
+        return JSONResponse({"error": f"Failed: {e}"}, status_code=400)
+
+@app.get("/admin/tenants/{tid}")
+async def admin_get_tenant(tid: str, request: Request):
+    tenant_id = await get_current_tenant(request)
+    if tenant_id != "11111111-1111-1111-1111-111111111111":
+        raise HTTPException(status_code=403, detail="Access denied")
+    r = supabase.table("tenants").select("*").eq("tenant_id", tid).limit(1).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    # Get users
+    users = supabase.table("tenant_users").select(_user_fields()).eq("tenant_id", tid).execute().data or []
+    # Get sites
+    sites = supabase.table("sites").select("site_id, site_name").eq("tenant_id", tid).execute().data or []
+    return {"tenant": r.data[0], "users": users, "sites": sites}
+
+@app.post("/admin/tenants/{tid}/sites")
+async def admin_add_site(tid: str, request: Request):
+    await _require_master_admin(request)
+    body = await request.json()
+    site_name = (body.get("site_name") or "").strip()
+    if not site_name:
+        return JSONResponse({"error": "Site name required"}, status_code=400)
+    try:
+        r = supabase.table("sites").insert({
+            "site_name": site_name, "tenant_id": tid
+        }).execute()
+        return {"status": "ok", "site": r.data[0]}
+    except Exception as e:
+        return JSONResponse({"error": f"Failed: {e}"}, status_code=400)
+
+
+# ── SMTP / Email Settings (SimplyICT super admin only) ───────────────────
+@app.get("/admin/smtp")
+async def admin_get_smtp(request: Request):
+    await _require_master_admin(request)
+    cfg = _smtp_config()
+    if not cfg.get("host"):
+        return {"configured": False, "smtp": {k: (cfg.get(k) or "") for k in SMTP_KEYS}}
+    masked = dict(cfg)
+    if masked.get("password"):
+        masked["password"] = "••••••••"
+        masked["password_set"] = True
+    else:
+        masked.pop("password", None)
+        masked["password_set"] = False
+    return {"configured": True, "smtp": masked}
+
+
+@app.put("/admin/smtp")
+async def admin_put_smtp(request: Request):
+    await _require_master_admin(request)
+    body = await request.json()
+    host = (body.get("host") or "").strip()
+    port = body.get("port") or 587
+    from_email = _validate_email(body.get("from_email"))
+    security = (body.get("security") or "tls").strip().lower()
+    if security not in {"tls", "ssl", "none"}:
+        return JSONResponse({"error": "security must be one of: tls, ssl, none"}, status_code=400)
+    if not host:
+        return JSONResponse({"error": "SMTP host is required"}, status_code=400)
+    if not from_email:
+        return JSONResponse({"error": "A valid from_email is required"}, status_code=400)
+    try:
+        port = int(port)
+        if not (1 <= port <= 65535):
+            raise ValueError
+    except ValueError:
+        return JSONResponse({"error": "Port must be a number 1-65535"}, status_code=400)
+    cfg = {k: (body.get(k) or "") for k in SMTP_KEYS}
+    cfg.update({"host": host, "port": port, "from_email": from_email, "security": security})
+    # Preserve the stored password when the masked sentinel is sent back
+    if cfg.get("password") in ("", "••••••••"):
+        existing = _smtp_config()
+        if cfg.get("password") == "••••••••" or not cfg.get("password"):
+            cfg["password"] = existing.get("password") or ""
+    _save_settings_row("smtp", cfg)
+    return {"status": "ok", "smtp": {k: (cfg.get(k) if k != "password" else ("••••••••" if cfg.get("password") else "")) for k in SMTP_KEYS}}
+
+
+@app.post("/admin/smtp/test")
+async def admin_smtp_test(request: Request):
+    await _require_master_admin(request)
+    body = await request.json()
+    to_email = _validate_email(body.get("to_email"))
+    if not to_email:
+        return JSONResponse({"error": "A valid to_email is required"}, status_code=400)
+    cfg = _smtp_config()
+    if not cfg.get("host") or not cfg.get("from_email"):
+        return JSONResponse({"error": _migration_hint("SMTP settings") + " SMTP is not configured yet — save settings first."}, status_code=400)
+    import smtplib
+    from email.message import EmailMessage
+    try:
+        port = int(cfg.get("port") or 587)
+        security = (cfg.get("security") or "tls").strip().lower()
+        if security == "ssl":
+            server = smtplib.SMTP_SSL(cfg["host"], port, timeout=20)
+        else:
+            server = smtplib.SMTP(cfg["host"], port, timeout=20)
+            if security == "tls":
+                server.starttls()
+        try:
+            if cfg.get("username"):
+                server.login(cfg["username"], cfg.get("password") or "")
+            msg = EmailMessage()
+            msg["Subject"] = "Test email from Simply ICT Audit Platform"
+            msg["From"] = f"{cfg.get('from_name') or 'Simply ICT Audit Platform'} <{cfg['from_email']}>"
+            msg["To"] = to_email
+            msg.set_content(
+                "This is a test email from the Simply ICT Audit Platform.\n\n"
+                "SMTP configuration is working correctly."
+            )
+            server.send_message(msg)
+        finally:
+            try:
+                server.quit()
+            except Exception:
+                pass
+        return {"status": "ok", "message": f"Test email sent to {to_email}"}
+    except Exception as e:
+        return JSONResponse({"error": f"SMTP test failed: {e}"}, status_code=400)
+
+
 @app.get("/")
 def root():
     return {"status": "ok"}
@@ -1178,8 +1733,9 @@ def debug_routes():
 
 
 @app.get("/sites")
-def get_sites():
-    r = supabase.table("sites").select("site_id, site_name").order("site_name").execute()
+async def get_sites(request: Request):
+    tenant_id = await get_current_tenant(request)
+    r = supabase.table("sites").select("site_id, site_name").eq("tenant_id", tenant_id).order("site_name").execute()
     return r.data or []
 
 
@@ -1495,7 +2051,7 @@ def start_audit(req: AuditStartRequest):
             "serial_number": d.get("serial_number"),
             "audit_date": datetime.now().isoformat(),
             "device_id": d.get("device_id"),
-            "device_present": True,
+            "device_present": False,
             "device_name": d.get("device_name"),
             "device_type": d.get("device_type"),
             "assigned_user": d.get("assigned_user"),
@@ -1585,7 +2141,7 @@ def update_entry(req: AuditEntryUpdateRequest):
     ]
     for field in boolean_fields:
         if field in data:
-            data[field] = parse_bool(data[field], default=False if field != "device_present" else True)
+            data[field] = parse_bool(data[field], default=False)
 
     if entry_id:
         result = (
@@ -2773,3 +3329,311 @@ def incident_summary(site_id: Optional[str] = Query(default=None)):
             summary["children_affected"] += 1
 
     return summary
+# ═══════════════════════════════════════════════════════════════════════
+# Phase 2 — Policy Projects, Task Management & Governance
+# ═══════════════════════════════════════════════════════════════════════
+import calendar as _cal
+
+def _add_months(d: date, months: int) -> date:
+    month = d.month - 1 + months
+    year = d.year + month // 12
+    month = month % 12 + 1
+    day = min(d.day, _cal.monthrange(year, month)[1])
+    return date(year, month, day)
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    policy_doc: str = "both"
+    review_frequency_months: int = 12
+    due_date: Optional[str] = None
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    policy_doc: Optional[str] = None
+    status: Optional[str] = None
+    review_frequency_months: Optional[int] = None
+    due_date: Optional[str] = None
+
+class MemberAdd(BaseModel):
+    user_id: str
+    role: str = "member"
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    policy_doc: Optional[str] = None
+    policy_section: Optional[str] = None
+    task_type: str = "one-off"
+    assignee_user_id: Optional[str] = None
+    priority: str = "medium"
+    due_date: Optional[str] = None
+    recurrence_months: Optional[int] = None
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    policy_doc: Optional[str] = None
+    policy_section: Optional[str] = None
+    assignee_user_id: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    due_date: Optional[str] = None
+    recurrence_months: Optional[int] = None
+    notes: Optional[str] = None
+
+def _session_user(request: Request):
+    s = _get_session(request)
+    return (s or {}).get("user_id")
+
+def _get_project(tid: str, project_id: str) -> dict:
+    r = supabase.table("policy_projects").select("*").eq("project_id", project_id).limit(1).execute()
+    if not r.data or str(r.data[0].get("tenant_id")) != str(tid):
+        raise HTTPException(status_code=404, detail="Project not found")
+    return r.data[0]
+
+def _tenant_user_map(tid: str) -> dict:
+    r = supabase.table("tenant_users").select(_user_fields()).eq("tenant_id", tid).execute()
+    return {str(u["user_id"]): u for u in (r.data or [])}
+
+def _task_agg(project_id: str):
+    r = supabase.table("project_tasks").select("status, due_date").eq("project_id", project_id).execute()
+    rows = r.data or []
+    today = date.today()
+    a = {"total": len(rows), "new": 0, "open": 0, "in_progress": 0, "completed": 0, "overdue": 0}
+    for t in rows:
+        s = t.get("status", "open")
+        if s in a:
+            a[s] += 1
+        if s != "completed" and t.get("due_date"):
+            try:
+                if date.fromisoformat(str(t["due_date"])[:10]) < today:
+                    a["overdue"] += 1
+            except ValueError:
+                pass
+    a["completion_pct"] = round(100 * a["completed"] / a["total"], 1) if a["total"] else 0
+    return a
+
+# ── Projects ───────────────────────────────────────────────────────────
+@app.get("/projects")
+async def projects_list(tenant_id: str = Depends(get_current_tenant)):
+    projs = supabase.table("policy_projects").select("*").eq("tenant_id", tenant_id).order("created_at").execute().data or []
+    mem_counts = {}
+    if projs:
+        ids = [p["project_id"] for p in projs]
+        members = supabase.table("project_members").select("project_id, user_id").in_("project_id", ids).execute().data or []
+        for m in members:
+            pid = str(m["project_id"])
+            mem_counts[pid] = mem_counts.get(pid, 0) + 1
+    for m in members:
+        pid = str(m["project_id"])
+        mem_counts[pid] = mem_counts.get(pid, 0) + 1
+    out = []
+    for p in projs:
+        p["member_count"] = mem_counts.get(str(p["project_id"]), 0)
+        p["stats"] = _task_agg(str(p["project_id"]))
+        out.append(p)
+    return out
+
+@app.post("/projects", status_code=201)
+async def project_create(body: ProjectCreate, request: Request, tenant_id: str = Depends(get_current_tenant)):
+    payload = body.dict(exclude_none=True)
+    payload["tenant_id"] = tenant_id
+    payload["created_by"] = _session_user(request)
+    r = supabase.table("policy_projects").insert(payload).execute()
+    return r.data[0]
+
+# ── Members (options must precede /projects/{project_id}) ──
+@app.get("/projects/members-options")
+async def project_member_options(tenant_id: str = Depends(get_current_tenant)):
+    return list(_tenant_user_map(tenant_id).values())
+
+@app.get("/projects/{project_id}")
+async def project_detail(project_id: str, tenant_id: str = Depends(get_current_tenant)):
+    proj = _get_project(tenant_id, project_id)
+    mem_rows = supabase.table("project_members").select("user_id, role, added_at").eq("project_id", project_id).execute().data or []
+    users = _tenant_user_map(tenant_id)
+    members = []
+    for m in mem_rows:
+        u = users.get(str(m["user_id"]))
+        members.append({"user_id": m["user_id"], "role": m.get("role", "member"),
+                        "username": (u or {}).get("username"), "display_name": (u or {}).get("display_name")})
+    tasks = supabase.table("project_tasks").select("*").eq("project_id", project_id).order("due_date").execute().data or []
+    proj["members"] = members
+    proj["tasks"] = tasks
+    proj["stats"] = _task_agg(project_id)
+    return proj
+
+@app.patch("/projects/{project_id}")
+async def project_update(project_id: str, body: ProjectUpdate, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    payload = body.dict(exclude_none=True)
+    if not payload:
+        return {"status": "ok"}
+    r = supabase.table("policy_projects").update(payload).eq("project_id", project_id).execute()
+    return r.data[0]
+
+@app.delete("/projects/{project_id}")
+async def project_delete(project_id: str, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    supabase.table("policy_projects").delete().eq("project_id", project_id).execute()
+    return {"status": "ok"}
+
+# ── Members ────────────────────────────────────────────────────────────
+@app.post("/projects/{project_id}/members", status_code=201)
+async def project_member_add(project_id: str, body: MemberAdd, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    users = _tenant_user_map(tenant_id)
+    if str(body.user_id) not in users:
+        raise HTTPException(status_code=400, detail="User is not a member of this tenant")
+    supabase.table("project_members").upsert(
+        {"project_id": project_id, "user_id": body.user_id, "role": body.role},
+        on_conflict="project_id,user_id",
+    ).execute()
+    return {"status": "ok", "user": users[str(body.user_id)]}
+
+@app.delete("/projects/{project_id}/members/{user_id}")
+async def project_member_remove(project_id: str, user_id: str, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    supabase.table("project_members").delete().eq("project_id", project_id).eq("user_id", user_id).execute()
+    return {"status": "ok"}
+
+# ── Tasks ──────────────────────────────────────────────────────────────
+@app.post("/projects/{project_id}/tasks", status_code=201)
+async def task_create(project_id: str, body: TaskCreate, tenant_id: str = Depends(get_current_tenant)):
+    proj = _get_project(tenant_id, project_id)
+    payload = body.dict(exclude_none=True)
+    payload["project_id"] = project_id
+    payload["status"] = "new"
+    payload["tenant_id"] = str(proj["tenant_id"])
+    if payload.get("assignee_user_id"):
+        users = _tenant_user_map(tenant_id)
+        if str(payload["assignee_user_id"]) not in users:
+            raise HTTPException(status_code=400, detail="Assignee is not a member of this tenant")
+    r = supabase.table("project_tasks").insert(payload).execute()
+    return r.data[0]
+
+@app.patch("/projects/{project_id}/tasks/{task_id}")
+async def task_update(project_id: str, task_id: str, body: TaskUpdate, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    r = supabase.table("project_tasks").select("task_id").eq("task_id", task_id).eq("project_id", project_id).limit(1).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Task not found")
+    payload = body.dict(exclude_none=True)
+    if not payload:
+        return {"status": "ok"}
+    u = supabase.table("project_tasks").update(payload).eq("task_id", task_id).execute()
+    return u.data[0]
+
+@app.delete("/projects/{project_id}/tasks/{task_id}")
+async def task_delete(project_id: str, task_id: str, tenant_id: str = Depends(get_current_tenant)):
+    _get_project(tenant_id, project_id)
+    supabase.table("project_tasks").delete().eq("task_id", task_id).eq("project_id", project_id).execute()
+    return {"status": "ok"}
+
+@app.post("/projects/{project_id}/tasks/{task_id}/complete")
+async def task_complete(project_id: str, task_id: str, request: Request, tenant_id: str = Depends(get_current_tenant)):
+    proj = _get_project(tenant_id, project_id)
+    r = supabase.table("project_tasks").select("*").eq("task_id", task_id).eq("project_id", project_id).limit(1).execute()
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task = r.data[0]
+    uid = _session_user(request)
+    now = datetime.utcnow().isoformat() + "Z"
+    supabase.table("task_completions").insert({
+        "task_id": task_id, "project_id": project_id, "tenant_id": str(proj["tenant_id"]),
+        "completed_at": now, "completed_by": uid,
+        "cycle": task.get("cycle_count", 0) + 1,
+        "due_date_snapshot": task.get("due_date"),
+    }).execute()
+    upd = {"last_completed_at": now, "completed_by": uid}
+    if task.get("task_type") == "recurring" and task.get("recurrence_months") and task.get("due_date"):
+        try:
+            next_due = _add_months(date.fromisoformat(str(task["due_date"])[:10]), int(task["recurrence_months"]))
+        except ValueError:
+            next_due = None
+        if next_due:
+            upd["due_date"] = next_due.isoformat()
+            upd["status"] = "open"
+            upd["cycle_count"] = (task.get("cycle_count") or 0) + 1
+            upd.pop("completed_by", None)
+        else:
+            upd["status"] = "completed"
+            upd["completed_at"] = now
+    else:
+        upd["status"] = "completed"
+        upd["completed_at"] = now
+    u = supabase.table("project_tasks").update(upd).eq("task_id", task_id).execute()
+    return u.data[0]
+
+# ── Governance ─────────────────────────────────────────────────────────
+@app.get("/governance/summary")
+async def governance_summary(tenant_id: str = Depends(get_current_tenant)):
+    projs = supabase.table("policy_projects").select("*").eq("tenant_id", tenant_id).execute().data or []
+    tasks = supabase.table("project_tasks").select("*").eq("tenant_id", tenant_id).execute().data or []
+    comps = supabase.table("task_completions").select("*").eq("tenant_id", tenant_id).order("completed_at", desc=True).limit(100).execute().data or []
+    users = _tenant_user_map(tenant_id)
+    today = date.today()
+
+    docs = {"social-media": {"total": 0, "new": 0, "open": 0, "in_progress": 0, "completed": 0, "overdue": 0},
+            "digital-tech": {"total": 0, "new": 0, "open": 0, "in_progress": 0, "completed": 0, "overdue": 0},
+            "both": {"total": 0, "new": 0, "open": 0, "in_progress": 0, "completed": 0, "overdue": 0}}
+    for t in tasks:
+        key = t.get("policy_doc") or "both"
+        if key not in docs:
+            key = "both"
+        d = docs[key]
+        s = t.get("status", "open")
+        d["total"] += 1
+        if s in d:
+            d[s] += 1
+        if s != "completed" and t.get("due_date"):
+            try:
+                if date.fromisoformat(str(t["due_date"])[:10]) < today:
+                    d["overdue"] += 1
+            except ValueError:
+                pass
+    for d in docs.values():
+        d["completion_pct"] = round(100 * d["completed"] / d["total"], 1) if d["total"] else 0
+        d["incomplete"] = d["total"] - d["completed"]
+
+    proj_by_id = {str(p["project_id"]): p for p in projs}
+    schedule = []
+    for t in tasks:
+        if t.get("task_type") != "recurring":
+            continue
+        p = proj_by_id.get(str(t["project_id"]), {})
+        schedule.append({
+            "task_id": t["task_id"], "project_id": t["project_id"], "project_name": p.get("name", "?"),
+            "title": t["title"], "policy_doc": t.get("policy_doc"), "policy_section": t.get("policy_section"),
+            "due_date": t.get("due_date"), "status": t.get("status"), "cycle": (t.get("cycle_count") or 0) + 1,
+            "last_completed_at": t.get("last_completed_at"),
+            "assignee": (users.get(str(t["assignee_user_id"])) or {}).get("display_name") or (users.get(str(t["assignee_user_id"])) or {}).get("username"),
+            "overdue": bool(t.get("due_date") and t.get("status") != "completed" and (lambda dd: dd < today)(date.fromisoformat(str(t["due_date"])[:10]))),
+        })
+    schedule.sort(key=lambda x: x["due_date"] or "9999-12-31")
+
+    completed = []
+    for c in comps:
+        t = next((x for x in tasks if str(x["task_id"]) == str(c["task_id"])), {})
+        p = proj_by_id.get(str(c["project_id"]), {})
+        bu = users.get(str(c.get("completed_by")))
+        completed.append({
+            "completion_id": c["completion_id"], "task_title": t.get("title") or "(deleted task)",
+            "project_name": p.get("name") or "?", "policy_doc": t.get("policy_doc"),
+            "policy_section": t.get("policy_section"), "completed_at": c.get("completed_at"),
+            "cycle": (c.get("cycle") or 0), "completed_by": (bu or {}).get("display_name") or (bu or {}).get("username"),
+        })
+
+    projects_out = []
+    for p in projs:
+        projects_out.append({
+            "project_id": p["project_id"], "name": p["name"], "policy_doc": p.get("policy_doc"),
+            "status": p.get("status"), "due_date": p.get("due_date"),
+            "review_frequency_months": p.get("review_frequency_months"),
+            "stats": _task_agg(str(p["project_id"])),
+            "next_review": None,
+        })
+
+    return {"scorecards": docs, "projects": projects_out, "schedule": schedule, "completed": completed}

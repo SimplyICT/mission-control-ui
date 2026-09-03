@@ -1,125 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
   <title>User Management - Mission Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>* { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
-    .topbar { background: #111827; padding: 16px 28px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
-    .topbar .title { font-size: 22px; font-weight: bold; color: #f8fafc; }
-    .topbar .subtitle { font-size: 13px; color: #94a3b8; margin-top: 3px; }
-    .home-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; }
-    .home-btn:hover { background: #334155; color: #f8fafc; }
-    .container { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
-    .card { background: #111827; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-    .card h2 { margin: 0 0 16px 0; font-size: 18px; color: #f8fafc; }
-    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-    button { padding: 9px 18px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; }
-    .btn-primary { background: #3b82f6; color: #fff; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-success { background: #22c55e; color: #fff; }
-    .btn-success:hover { background: #16a34a; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-    .btn-secondary:hover { background: #334155; color: #f8fafc; }
-    .btn-sm { padding: 5px 12px; font-size: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { background: #1e293b; color: #f8fafc; padding: 10px 12px; text-align: left; border-bottom: 2px solid #334155; }
-    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
-    tr:hover td { background: rgba(30,41,59,0.5); }
-    .role-badge { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-    .role-admin       { background: #1e3a5f; color: #60a5fa; }
-    .role-coordinator { background: #1a2e2e; color: #2dd4bf; }
-    .role-director    { background: #1a2e1a; color: #4ade80; }
-    .role-viewer      { background: #2d2305; color: #fbbf24; }
-    .active-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-    .dot-on  { background: #22c55e; }
-    .dot-off { background: #64748b; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
-    .form-group label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-group input, .form-group select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
-    .form-group input:focus, .form-group select:focus { border-color: #3b82f6; }
-    .form-group .hint { font-size: 11px; color: #475569; }
-    .toggle-row { display: flex; align-items: center; gap: 10px; }
-    .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
-    .toggle input { display: none; }
-    .toggle .slider { position: absolute; inset: 0; background: #334155; border-radius: 11px; transition: background 0.2s; }
-    .toggle .slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #e2e8f0; border-radius: 50%; transition: transform 0.2s; }
-    .toggle input:checked + .slider { background: #22c55e; }
-    .toggle input:checked + .slider::before { transform: translateX(18px); }
-    .toggle-label { font-size: 13px; color: #94a3b8; }
-    .status-msg { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
-    .status-msg.success { display: block; background: #052e16; color: #4ade80; border: 1px solid #166534; }
-    .status-msg.error   { display: block; background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
-    .panel { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #1e293b; }
-    .panel.open { display: block; }
-    .panel h3 { margin: 0 0 16px 0; font-size: 15px; color: #f8fafc; }
-    .section-heading { font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px 0; }
-    .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
-    .page-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; background: #1e293b; font-size: 13px; color: #94a3b8; }
-    .page-item input[type="checkbox"] { accent-color: #3b82f6; width: 14px; height: 14px; cursor: pointer; }
-    .page-item.role-default { color: #60a5fa; background: #0c1929; }
-    .page-item label { cursor: pointer; flex: 1; }
-    .divider { height: 1px; background: #1e293b; margin: 16px 0; }
-    .empty-state { text-align: center; color: #475569; padding: 24px; font-size: 13px; }
-    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #64748b; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #060608; font-family: Inter, sans-serif; color: #fff; margin: 0; min-height: 100vh; }
+    .container { width: 90%; max-width: 1200px; margin: 24px auto; padding: 0 4px; }
+    .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+    .card h2 { color: #fff; font-weight: 700; font-size: 1.1rem; margin: 0 0 16px; }
+    h1 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+    h3 { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { color: #ccc; font-size: 13px; line-height: 1.5; }
+    .sub { color: #999; font-size: 13px; }
+    .muted { color: #888; font-size: 12px; }
+    button, .btn { font-family: Inter, sans-serif; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); color: #fff; font-weight: 500; font-size: 13px; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: all 0.2s ease; }
+    button:hover, .btn:hover { border-color: rgba(255,107,0,0.3); background: rgba(255,255,255,0.07); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #FF6B00; border: none; color: #fff; font-weight: 600; }
+    .btn-primary:hover { opacity: 0.85; }
+    input, select, textarea { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 9px 14px; font-size: 13px; color: #fff; font-family: Inter, sans-serif; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #FF6B00; }
+    select option { background: #141414; color: #fff; }
+    label { font-size: 12px; color: #999; font-weight: 500; display: block; margin-bottom: 4px; }
+    table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: #888; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; white-space: nowrap; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .topbar-new { background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); position: sticky; top: 12px; z-index: 50; border-radius: 14px; width: 90%; max-width: 1600px; margin: 0 auto 20px; }
+    .topbar-inner { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px; }
+    .brand-title { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; font-size: 16px; text-decoration: none; }
+    .brand-logo { width: 30px; height: 30px; border-radius: 8px; background: #FF6B00; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 12px; }
+    .btn-home { background: #FF6B00; color: #fff; border: none; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-block; }
+    .btn-home:hover { opacity: 0.85; }
+    .controls-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .selector-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .form-group { margin-bottom: 4px; }
+    .btn-row { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+    .btn-success { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.2); color: #10B981; }
+    .btn-secondary { background: rgba(255,255,255,0.04); color: #999; border-color: rgba(255,255,255,0.08); }
+    .btn-danger { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.2); color: #EF4444; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge.role-admin { background: rgba(255,107,0,0.12); color: #FF6B00; }
+    .badge.role-coordinator { background: rgba(45,212,191,0.12); color: #2DD4BF; }
+    .badge.role-director { background: rgba(59,130,246,0.12); color: #3B82F6; }
+    .badge.role-viewer { background: rgba(255,255,255,0.08); color: #999; }
+    .role-badge { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .role-admin { background: rgba(255,107,0,0.12); color: #FF6B00; }
+    .role-coordinator { background: rgba(45,212,191,0.12); color: #2DD4BF; }
+    .role-director { background: rgba(59,130,246,0.12); color: #3B82F6; }
+    .role-viewer { background: rgba(255,255,255,0.08); color: #999; }
+    .status-msg { font-size: 12px; color: #999; margin-top: 8px; }
+    .status-msg.success { color: #10B981; }
+    .status-msg.error { color: #EF4444; }
+    .table-wrap { overflow-x: auto; margin-top: 12px; }
+    .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .section-heading { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .empty-state { text-align: center; padding: 40px 20px; color: #666; font-size: 13px; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.06); border-top-color: #FF6B00; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-  
-.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-
-.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
-.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-
-@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-
-
-/* Platform universal styles */
-:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
-*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
-.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
-.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
-button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
-.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-
-</style>
+    .toggle-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+    .toggle-label { font-size: 13px; color: #ccc; }
+    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider { position: absolute; inset: 0; background: rgba(255,255,255,0.09); border-radius: 999px; cursor: pointer; transition: 0.2s; }
+    .toggle .slider::before { content: ""; position: absolute; left: 3px; bottom: 3px; width: 16px; height: 16px; background: #888; border-radius: 50%; transition: 0.2s; }
+    .toggle input:checked + .slider { background: rgba(255,107,0,0.4); }
+    .toggle input:checked + .slider::before { background: #FF6B00; transform: translateX(18px); }
+    .active-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .dot-on { background: #10B981; }
+    .dot-off { background: #444; }
+    .hint { font-size: 12px; color: #666; margin-top: 4px; }
+  </style>
 </head>
 <body>
 
-<div class="topbar">
-    <div class="brand">
-      <h1>👥 
-      <span></span>
+<div style="height:6px;"></div>
+<div class="topbar-new">
+  <div class="topbar-inner">
+    <a href="/" class="brand-title">
+      <div class="brand-logo">A</div>
+      <span>Audit<span style="color:#FF6B00;">Centre</span></span>
+    </a>
+    <div class="controls-wrap">
+      <a href="/" class="btn-home">&#9664; Home</a>
+      <button type="button" onclick="logout()" style="padding:6px 14px; font-size:12px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.45); border-radius:10px; color:#ff6b6b; cursor:pointer; font-family:inherit;">Logout</button>
     </div>
-    <div class="controls">
-      <a class="nav-btn-home" href="/">&#9664; Home</a>
-    </div>
-  </div>    <div class="subtitle">Create and manage platform users, roles and page permissions</div>
   </div>
-  <a class="nav-btn-home" href="/">&#9664; Home</a>
 </div>
 
 <div class="container">
 
   <div class="card">
     <h2>Platform Users</h2>
-    <div class="btn-row">
-      <button class="btn-primary" onclick="openNewPanel()">+ New User</button>
-      <button class="btn-secondary" onclick="loadUsers()">Refresh</button>
+    <div class="selector-bar">
+      <div>
+        <label for="tenantSelect">Tenant</label>
+        <select id="tenantSelect" onchange="loadUsers()"><option value="">Loading tenants…</option></select>
+      </div>
+      <div style="align-self:flex-end;">
+        <button class="btn-primary" onclick="openNewPanel()">+ New User</button>
+        <button class="btn-secondary" onclick="loadUsers()">Refresh</button>
+      </div>
     </div>
     <div id="usersTableWrap">
       <div class="empty-state"><span class="spinner"></span>Loading...</div>
     </div>
 
     <!-- New user panel -->
-    <div class="panel" id="newPanel">
+    <div class="panel" id="newPanel" style="display:none;">
       <h3>Create New User</h3>
       <div class="form-grid">
         <div class="form-group">
@@ -131,32 +127,34 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
           <input type="text" id="newFullName" placeholder="e.g. Jane Smith">
         </div>
         <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="newEmail" placeholder="jane@school.edu.au" autocomplete="off">
+          <div class="hint">Used for notifications. Requires the email migration (see admin/smtp card).</div>
+        </div>
+        <div class="form-group">
           <label>Password *</label>
           <input type="password" id="newPassword" placeholder="Minimum 8 characters" autocomplete="new-password">
         </div>
         <div class="form-group">
           <label>Role</label>
-          <select id="newRole" onchange="updatePageDefaults('new')">
+          <select id="newRole">
             <option value="viewer">Viewer</option>
             <option value="coordinator">Coordinator</option>
             <option value="director">Director</option>
             <option value="admin">Admin</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Active</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="newActive" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Active</span>
+          </div>
+        </div>
       </div>
-
-      <div class="section-heading">Page Access</div>
-      <div class="toggle-row" style="margin-bottom:12px;">
-        <label class="toggle">
-          <input type="checkbox" id="newCustomPages" onchange="toggleCustomPages('new')">
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label" id="newCustomLabel">Use role defaults</span>
-      </div>
-      <div id="newPagePicker" style="display:none;">
-        <div id="newPageList" class="page-grid"></div>
-      </div>
-      <div id="newRoleDefaultsNote" style="font-size:12px;color:#475569;margin-bottom:12px;"></div>
 
       <div class="btn-row" style="margin-top:16px;">
         <button class="btn-success" onclick="createUser()">Create User</button>
@@ -166,7 +164,7 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
     </div>
 
     <!-- Edit user panel -->
-    <div class="panel" id="editPanel">
+    <div class="panel" id="editPanel" style="display:none;">
       <h3 id="editTitle">Edit User</h3>
       <input type="hidden" id="editUserId">
       <div class="form-grid">
@@ -179,12 +177,17 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
           <input type="text" id="editFullName">
         </div>
         <div class="form-group">
-          <label>New Password <span style="color:#475569;">(leave blank to keep)</span></label>
+          <label>Email</label>
+          <input type="email" id="editEmail" placeholder="jane@school.edu.au">
+          <div class="hint">Used for notifications.</div>
+        </div>
+        <div class="form-group">
+          <label>New Password <span class="muted">(leave blank to keep)</span></label>
           <input type="password" id="editPassword" autocomplete="new-password" placeholder="Leave blank to keep current">
         </div>
         <div class="form-group">
           <label>Role</label>
-          <select id="editRole" onchange="updatePageDefaults('edit')">
+          <select id="editRole">
             <option value="viewer">Viewer</option>
             <option value="coordinator">Coordinator</option>
             <option value="director">Director</option>
@@ -203,22 +206,9 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
         </div>
       </div>
 
-      <div class="section-heading">Page Access</div>
-      <div class="toggle-row" style="margin-bottom:12px;">
-        <label class="toggle">
-          <input type="checkbox" id="editCustomPages" onchange="toggleCustomPages('edit')">
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label" id="editCustomLabel">Use role defaults</span>
-      </div>
-      <div id="editPagePicker" style="display:none;">
-        <div id="editPageList" class="page-grid"></div>
-      </div>
-      <div id="editRoleDefaultsNote" style="font-size:12px;color:#475569;margin-bottom:12px;"></div>
-
       <div class="btn-row" style="margin-top:16px;">
         <button class="btn-success" onclick="saveUser()">Save Changes</button>
-        <button class="btn-danger btn-sm" onclick="deleteUser()">Delete User</button>
+        <button class="btn-danger" onclick="deleteUser()">Delete User</button>
         <button class="btn-secondary" onclick="closeEditPanel()">Cancel</button>
       </div>
       <div class="status-msg" id="editStatus"></div>
@@ -226,29 +216,82 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
   </div>
 
   <div class="card">
+    <h2>Email / SMTP Settings</h2>
+    <p class="sub">SMTP2Go or any SMTP provider. Used to send user notifications from the audit platform.</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>SMTP Host *</label>
+        <input type="text" id="smtpHost" placeholder="mail.smtp2go.com" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Port</label>
+        <input type="number" id="smtpPort" value="587">
+      </div>
+      <div class="form-group">
+        <label>Security</label>
+        <select id="smtpSecurity">
+          <option value="tls">STARTTLS (port 587)</option>
+          <option value="ssl">SSL/TLS (port 465)</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="smtpUsername" placeholder="SMTP API username" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="smtpPassword" placeholder="SMTP API key / password" autocomplete="new-password">
+        <div class="hint" id="smtpPasswordHint"></div>
+      </div>
+      <div class="form-group">
+        <label>From Email *</label>
+        <input type="email" id="smtpFromEmail" placeholder="audit@simplyict.com.au" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>From Name</label>
+        <input type="text" id="smtpFromName" placeholder="Simply ICT Audit Platform">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveSmtp()">Save SMTP Settings</button>
+      <button class="btn-secondary" onclick="loadSmtp()">Reload</button>
+    </div>
+    <div class="status-msg" id="smtpStatus"></div>
+
+    <div class="section-heading">Send Test Email</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Send test to</label>
+        <input type="email" id="smtpTestTo" placeholder="you@example.com" autocomplete="off">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-success" onclick="testSmtp()">Send Test Email</button>
+    </div>
+    <div class="status-msg" id="smtpTestStatus"></div>
+  </div>
+
+  <div class="card">
     <h2>Role Definitions</h2>
     <table>
-      <thead><tr><th>Role</th><th>Description</th><th>Default Page Access</th></tr></thead>
+      <thead><tr><th>Role</th><th>Description</th></tr></thead>
       <tbody>
         <tr>
           <td><span class="role-badge role-admin">Admin</span></td>
           <td>Full access to all pages and user management</td>
-          <td>All pages</td>
         </tr>
         <tr>
           <td><span class="role-badge role-coordinator">Coordinator</span></td>
           <td>Auditing, compliance, site onboarding and reports</td>
-          <td>Auditing + Compliance + Onboarding</td>
         </tr>
         <tr>
           <td><span class="role-badge role-director">Director</span></td>
           <td>Read-only executive view, reports and compliance overview</td>
-          <td>Director View + Reports + Compliance</td>
         </tr>
         <tr>
           <td><span class="role-badge role-viewer">Viewer</span></td>
           <td>Read-only access to dashboards and reports only</td>
-          <td>Director View + Reports</td>
         </tr>
       </tbody>
     </table>
@@ -257,20 +300,27 @@ button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,15
 </div>
 
 <script>
-var allPages = [];
-var rolePages = {};
+var API = "/mission/audit-api";
 var currentEditUser = null;
+var tenants = [];
+var currentTenantId = null;
+
+function logout() {
+  fetch(API + '/auth/logout', { method: 'POST' }).finally(function() {
+    window.location.href = '/login.html';
+  });
+}
 
 function safeJson(response) {
   return response.text().then(function(text) {
     try { return JSON.parse(text); }
-    catch(e) { return { detail: text || ('HTTP ' + response.status) }; }
+    catch (e) { return { detail: text || ('HTTP ' + response.status) }; }
   });
 }
 
 function showStatus(id, type, msg) {
   var el = document.getElementById(id);
-  el.className = 'status-msg ' + type;
+  el.className = 'status-msg' + (type ? ' ' + type : '');
   el.textContent = msg;
 }
 
@@ -280,51 +330,82 @@ function clearStatus(id) {
   el.textContent = '';
 }
 
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 function roleBadge(role) {
-  return '<span class="role-badge role-' + role + '">' + role + '</span>';
+  return '<span class="role-badge role-' + esc(role) + '">' + esc(role) + '</span>';
 }
 
-function loadPageList() {
-  return fetch('/mission/api/page-list')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      allPages = data.pages || [];
-      rolePages = data.role_pages || {};
-    })
-    .catch(function() {});
-}
-
-function loadUsers() {
-  var wrap = document.getElementById('usersTableWrap');
-  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span>Loading...</div>';
-
-  fetch('/mission/api/users')
+function loadTenants() {
+  return fetch(API + '/admin/tenants')
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
       if (!res.ok) {
-        wrap.innerHTML = '<div class="empty-state">Failed to load users.</div>';
+        var wrap = document.getElementById('usersTableWrap');
+        wrap.innerHTML = '<div class="empty-state">Failed to load tenants (' + res.data.detail + ').</div>';
         return;
       }
-      var users = res.data;
+      tenants = res.data || [];
+      var sel = document.getElementById('tenantSelect');
+      sel.innerHTML = '';
+      for (var i = 0; i < tenants.length; i++) {
+        var t = tenants[i];
+        var opt = document.createElement('option');
+        opt.value = t.tenant_id;
+        opt.textContent = t.tenant_name;
+        sel.appendChild(opt);
+      }
+      if (!tenants.length) {
+        var w = document.getElementById('usersTableWrap');
+        w.innerHTML = '<div class="empty-state">No tenants found. Create a tenant first.</div>';
+        return;
+      }
+      currentTenantId = sel.value;
+      loadUsers();
+    })
+    .catch(function() {
+      var wrap = document.getElementById('usersTableWrap');
+      wrap.innerHTML = '<div class="empty-state">Error loading tenants.</div>';
+    });
+}
+
+function loadUsers() {
+  var sel = document.getElementById('tenantSelect');
+  currentTenantId = sel.value;
+  var wrap = document.getElementById('usersTableWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="spinner"></span>Loading...</div>';
+  if (!currentTenantId) return;
+
+  fetch(API + '/admin/tenants/' + currentTenantId)
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) {
+        wrap.innerHTML = '<div class="empty-state">Failed to load users (' + res.data.detail + ').</div>';
+        return;
+      }
+      var users = res.data.users || [];
       if (!users.length) {
-        wrap.innerHTML = '<div class="empty-state">No users found.</div>';
+        wrap.innerHTML = '<div class="empty-state">No users in this tenant yet. Click "+ New User" to add one.</div>';
         return;
       }
-      var html = '<table><thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Page Access</th><th>Status</th><th></th></tr></thead><tbody>';
+      var html = '<div class="table-wrap"><table><thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>';
       for (var i = 0; i < users.length; i++) {
         var u = users[i];
         var active = u.active !== false;
-        var pageAccess = u.custom_pages ? 'Custom (' + u.custom_pages.length + ' pages)' : 'Role defaults';
         html += '<tr>';
-        html += '<td><strong>' + (u.username || '') + '</strong></td>';
-        html += '<td>' + (u.full_name || '<span style="color:#475569;">-</span>') + '</td>';
+        html += '<td><strong>' + esc(u.username) + '</strong></td>';
+        html += '<td>' + esc(u.display_name || '-') + '</td>';
+        html += '<td>' + (u.email ? esc(u.email) : '<span class="muted">-</span>') + '</td>';
         html += '<td>' + roleBadge(u.role || 'viewer') + '</td>';
-        html += '<td style="color:#64748b;font-size:12px;">' + pageAccess + '</td>';
         html += '<td><span class="active-dot ' + (active ? 'dot-on' : 'dot-off') + '"></span>' + (active ? 'Active' : 'Inactive') + '</td>';
-        html += '<td><button class="btn-secondary btn-sm" onclick="openEditPanel(' + JSON.stringify(u).replace(/"/g, '&quot;') + ')">Edit</button></td>';
+        html += '<td><button class="btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="openEditPanel(' + JSON.stringify(u).replace(/"/g, '&quot;') + ')">Edit</button></td>';
         html += '</tr>';
       }
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       wrap.innerHTML = html;
     })
     .catch(function() {
@@ -332,114 +413,32 @@ function loadUsers() {
     });
 }
 
-// ── Page picker helpers ────────────────────────────────────────────────────────
-
-function buildPageList(containerId, selectedPages, role) {
-  var container = document.getElementById(containerId);
-  var defaultSet = rolePages[role];
-  var sections = {};
-
-  for (var i = 0; i < allPages.length; i++) {
-    var p = allPages[i];
-    if (!sections[p.section]) sections[p.section] = [];
-    sections[p.section].push(p);
-  }
-
-  var html = '';
-  for (var section in sections) {
-    html += '<div class="section-heading">' + section + '</div><div class="page-grid">';
-    var pages = sections[section];
-    for (var j = 0; j < pages.length; j++) {
-      var page = pages[j];
-      var isDefault = defaultSet === null || (defaultSet && defaultSet.indexOf(page.path) !== -1);
-      var isChecked = selectedPages ? (selectedPages.indexOf(page.path) !== -1) : isDefault;
-      var cls = isDefault ? ' role-default' : '';
-      html += '<div class="page-item' + cls + '">';
-      html += '<input type="checkbox" id="pg_' + containerId + '_' + j + '" value="' + page.path + '"' + (isChecked ? ' checked' : '') + '>';
-      html += '<label for="pg_' + containerId + '_' + j + '">' + page.label + '</label>';
-      html += '</div>';
-    }
-    html += '</div>';
-  }
-  container.innerHTML = html;
-}
-
-function getSelectedPages(containerId) {
-  var checks = document.querySelectorAll('#' + containerId + ' input[type="checkbox"]');
-  var selected = [];
-  for (var i = 0; i < checks.length; i++) {
-    if (checks[i].checked) selected.push(checks[i].value);
-  }
-  return selected;
-}
-
-function updatePageDefaults(prefix) {
-  var role = document.getElementById(prefix + 'Role').value;
-  var customEnabled = document.getElementById(prefix + 'CustomPages').checked;
-  if (customEnabled) {
-    var currentSelected = getSelectedPages(prefix + 'PageList');
-    buildPageList(prefix + 'PageList', currentSelected, role);
-  }
-  var defaultSet = rolePages[role];
-  var noteEl = document.getElementById(prefix + 'RoleDefaultsNote');
-  if (!customEnabled) {
-    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
-    noteEl.textContent = 'Role default: ' + count + ' accessible.';
-  }
-}
-
-function toggleCustomPages(prefix) {
-  var enabled = document.getElementById(prefix + 'CustomPages').checked;
-  var picker = document.getElementById(prefix + 'PagePicker');
-  var label = document.getElementById(prefix + 'CustomLabel');
-  var note = document.getElementById(prefix + 'RoleDefaultsNote');
-  var role = document.getElementById(prefix + 'Role').value;
-
-  label.textContent = enabled ? 'Custom page list' : 'Use role defaults';
-  picker.style.display = enabled ? 'block' : 'none';
-
-  if (enabled) {
-    note.textContent = 'Blue items are in the role default. Check/uncheck to customise.';
-    var initSelected = prefix === 'edit' && currentEditUser && currentEditUser.custom_pages
-      ? currentEditUser.custom_pages
-      : null;
-    buildPageList(prefix + 'PageList', initSelected, role);
-  } else {
-    var defaultSet = rolePages[role];
-    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
-    note.textContent = 'Role default: ' + count + ' accessible.';
-  }
-}
-
 // ── New user ──────────────────────────────────────────────────────────────────
 
 function openNewPanel() {
-  document.getElementById('editPanel').classList.remove('open');
+  closeEditPanel();
   document.getElementById('newUsername').value = '';
   document.getElementById('newFullName').value = '';
+  document.getElementById('newEmail').value = '';
   document.getElementById('newPassword').value = '';
   document.getElementById('newRole').value = 'viewer';
-  document.getElementById('newCustomPages').checked = false;
-  document.getElementById('newPagePicker').style.display = 'none';
-  document.getElementById('newCustomLabel').textContent = 'Use role defaults';
-  var defaultSet = rolePages['viewer'];
-  var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
-  document.getElementById('newRoleDefaultsNote').textContent = 'Role default: ' + count + ' accessible.';
+  document.getElementById('newActive').checked = true;
   clearStatus('newStatus');
-  document.getElementById('newPanel').classList.add('open');
+  document.getElementById('newPanel').style.display = 'block';
+  document.getElementById('newPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('newUsername').focus();
 }
 
 function closeNewPanel() {
-  document.getElementById('newPanel').classList.remove('open');
+  document.getElementById('newPanel').style.display = 'none';
 }
 
 function createUser() {
   var username = document.getElementById('newUsername').value.trim();
   var password = document.getElementById('newPassword').value;
   var fullName = document.getElementById('newFullName').value.trim();
+  var email = document.getElementById('newEmail').value.trim();
   var role = document.getElementById('newRole').value;
-  var useCustom = document.getElementById('newCustomPages').checked;
 
   if (!username) { showStatus('newStatus', 'error', 'Username is required.'); return; }
   if (password.length < 8) { showStatus('newStatus', 'error', 'Password must be at least 8 characters.'); return; }
@@ -447,20 +446,20 @@ function createUser() {
   var payload = {
     username: username,
     password: password,
-    full_name: fullName,
+    display_name: fullName,
+    email: email,
     role: role,
-    custom_pages: useCustom ? getSelectedPages('newPageList') : null,
     active: true
   };
 
-  fetch('/mission/api/users', {
+  fetch(API + '/admin/tenants/' + currentTenantId + '/users', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
-      if (!res.ok) { showStatus('newStatus', 'error', res.data.detail || 'Create failed.'); return; }
+      if (!res.ok) { showStatus('newStatus', 'error', res.data.error || res.data.detail || 'Create failed.'); return; }
       showStatus('newStatus', 'success', 'User "' + username + '" created.');
       loadUsers();
       setTimeout(closeNewPanel, 1500);
@@ -471,68 +470,49 @@ function createUser() {
 // ── Edit user ─────────────────────────────────────────────────────────────────
 
 function openEditPanel(user) {
+  closeNewPanel();
   currentEditUser = user;
-  document.getElementById('newPanel').classList.remove('open');
   document.getElementById('editUserId').value = user.user_id;
   document.getElementById('editTitle').textContent = 'Edit User — ' + user.username;
   document.getElementById('editUsername').value = user.username || '';
-  document.getElementById('editFullName').value = user.full_name || '';
+  document.getElementById('editFullName').value = user.display_name || '';
+  document.getElementById('editEmail').value = user.email || '';
   document.getElementById('editPassword').value = '';
   document.getElementById('editRole').value = user.role || 'viewer';
   document.getElementById('editActive').checked = user.active !== false;
-
-  var hasCustom = user.custom_pages !== null && user.custom_pages !== undefined;
-  document.getElementById('editCustomPages').checked = hasCustom;
-  document.getElementById('editCustomLabel').textContent = hasCustom ? 'Custom page list' : 'Use role defaults';
-
-  var picker = document.getElementById('editPagePicker');
-  var note = document.getElementById('editRoleDefaultsNote');
-
-  if (hasCustom) {
-    picker.style.display = 'block';
-    note.textContent = 'Blue items are in the role default. Check/uncheck to customise.';
-    buildPageList('editPageList', user.custom_pages, user.role);
-  } else {
-    picker.style.display = 'none';
-    var defaultSet = rolePages[user.role];
-    var count = defaultSet === null ? 'All pages' : (defaultSet ? defaultSet.length + ' pages' : '0 pages');
-    note.textContent = 'Role default: ' + count + ' accessible.';
-  }
-
   clearStatus('editStatus');
-  document.getElementById('editPanel').classList.add('open');
+  document.getElementById('editPanel').style.display = 'block';
   document.getElementById('editPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function closeEditPanel() {
-  document.getElementById('editPanel').classList.remove('open');
+  document.getElementById('editPanel').style.display = 'none';
   currentEditUser = null;
 }
 
 function saveUser() {
   var userId = document.getElementById('editUserId').value;
   var password = document.getElementById('editPassword').value;
-  var useCustom = document.getElementById('editCustomPages').checked;
 
   var payload = {
-    full_name:    document.getElementById('editFullName').value.trim(),
-    role:         document.getElementById('editRole').value,
-    active:       document.getElementById('editActive').checked,
-    custom_pages: useCustom ? getSelectedPages('editPageList') : null
+    display_name: document.getElementById('editFullName').value.trim(),
+    email: document.getElementById('editEmail').value.trim(),
+    role: document.getElementById('editRole').value,
+    active: document.getElementById('editActive').checked
   };
   if (password) {
     if (password.length < 8) { showStatus('editStatus', 'error', 'Password must be at least 8 characters.'); return; }
     payload.password = password;
   }
 
-  fetch('/mission/api/users/' + userId, {
+  fetch(API + '/admin/tenants/' + currentTenantId + '/users/' + userId, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
-      if (!res.ok) { showStatus('editStatus', 'error', res.data.detail || 'Save failed.'); return; }
+      if (!res.ok) { showStatus('editStatus', 'error', res.data.error || res.data.detail || 'Save failed.'); return; }
       showStatus('editStatus', 'success', 'User saved.');
       loadUsers();
     })
@@ -544,20 +524,97 @@ function deleteUser() {
   if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
   var userId = document.getElementById('editUserId').value;
 
-  fetch('/mission/api/users/' + userId, { method: 'DELETE' })
+  fetch(API + '/admin/tenants/' + currentTenantId + '/users/' + userId, { method: 'DELETE' })
     .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
-      if (!res.ok) { showStatus('editStatus', 'error', res.data.detail || 'Delete failed.'); return; }
+      if (!res.ok) { showStatus('editStatus', 'error', res.data.error || res.data.detail || 'Delete failed.'); return; }
       closeEditPanel();
       loadUsers();
     })
     .catch(function() { showStatus('editStatus', 'error', 'Request failed.'); });
 }
 
+// ── SMTP / Email settings ─────────────────────────────────────────────────────
+
+function loadSmtp() {
+  clearStatus('smtpStatus');
+  return fetch(API + '/admin/smtp')
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('smtpStatus', 'error', res.data.detail || 'Failed to load SMTP settings.'); return; }
+      var s = (res.data.smtp || {});
+      document.getElementById('smtpHost').value = s.host || '';
+      document.getElementById('smtpPort').value = s.port || 587;
+      document.getElementById('smtpSecurity').value = s.security || 'tls';
+      document.getElementById('smtpUsername').value = s.username || '';
+      document.getElementById('smtpFromEmail').value = s.from_email || '';
+      document.getElementById('smtpFromName').value = s.from_name || '';
+      document.getElementById('smtpPassword').value = '';
+      document.getElementById('smtpPasswordHint').textContent = s.password_set ? 'Password is saved — leave blank to keep it.' : (res.data.configured ? '' : 'Not configured yet. Add SMTP2Go details and save.');
+    })
+    .catch(function() { showStatus('smtpStatus', 'error', 'Request failed.'); });
+}
+
+function saveSmtp() {
+  var payload = {
+    host: document.getElementById('smtpHost').value.trim(),
+    port: parseInt(document.getElementById('smtpPort').value, 10) || 587,
+    security: document.getElementById('smtpSecurity').value,
+    username: document.getElementById('smtpUsername').value.trim(),
+    password: document.getElementById('smtpPassword').value,
+    from_email: document.getElementById('smtpFromEmail').value.trim(),
+    from_name: document.getElementById('smtpFromName').value.trim()
+  };
+  if (!payload.host) { showStatus('smtpStatus', 'error', 'SMTP host is required.'); return; }
+  if (!payload.from_email) { showStatus('smtpStatus', 'error', 'From email is required.'); return; }
+
+  fetch(API + '/admin/smtp', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('smtpStatus', 'error', res.data.error || res.data.detail || 'Save failed.'); return; }
+      showStatus('smtpStatus', 'success', 'SMTP settings saved.');
+      document.getElementById('smtpPassword').value = '';
+      document.getElementById('smtpPasswordHint').textContent = 'Password is saved — leave blank to keep it.';
+    })
+    .catch(function() { showStatus('smtpStatus', 'error', 'Request failed.'); });
+}
+
+function testSmtp() {
+  var to = document.getElementById('smtpTestTo').value.trim();
+  if (!to) { showStatus('smtpTestStatus', 'error', 'Enter an email address to send the test to.'); return; }
+  showStatus('smtpTestStatus', '', 'Sending…');
+  fetch(API + '/admin/smtp/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to_email: to })
+  })
+    .then(function(r) { return safeJson(r).then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showStatus('smtpTestStatus', 'error', res.data.error || res.data.detail || 'Test failed.'); return; }
+      showStatus('smtpTestStatus', 'success', res.data.message || 'Test email sent.');
+    })
+    .catch(function() { showStatus('smtpTestStatus', 'error', 'Request failed.'); });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadPageList().then(function() {
-  loadUsers();
-});
+
+// Auth guard — same pattern as the other platform pages.
+fetch('/auth/me')
+  .then(function(r) {
+    if (!r.ok) {
+      window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    }
+  })
+  .catch(function() {
+    window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+  });
+
+loadTenants();
+loadSmtp();
 </script>
 
 </body>
