@@ -1443,8 +1443,9 @@ def _validate_email(email: str) -> Optional[str]:
 
 def _migration_hint(what: str) -> str:
     return (
-        f"{what} require the platform migration — run sql/user_email_smtp_migration.sql "
-        "in the Supabase SQL Editor (https://supabase.com/dashboard/project/zhvxjuhgfudavxrfsasn/sql/new), "
+        f"{what} require the platform migration — open /home/aiagent/device-audit/"
+        "user_email_smtp_migration.sql and run it in the Supabase SQL Editor "
+        "(https://supabase.com/dashboard/project/zhvxjuhgfudavxrfsasn/sql/new), "
         "then restart device-audit-api."
     )
 
