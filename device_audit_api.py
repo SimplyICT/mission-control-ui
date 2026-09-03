@@ -1689,7 +1689,10 @@ async def admin_smtp_test(request: Request):
         return JSONResponse({"error": "A valid to_email is required"}, status_code=400)
     cfg = _smtp_config()
     if not cfg.get("host") or not cfg.get("from_email"):
-        return JSONResponse({"error": _migration_hint("SMTP settings") + " SMTP is not configured yet — save settings first."}, status_code=400)
+        return JSONResponse(
+            {"error": "SMTP is not configured yet — save settings first."},
+            status_code=400,
+        )
     import smtplib
     from email.message import EmailMessage
     try:
