@@ -363,7 +363,7 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     user = _get_authenticated_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=302)
+        return _bounce_to_login(request)
     if path.endswith(".html") or path == "/":
         if not _user_can_access(user, path):
             return HTMLResponse(content=_forbidden_html(user, path), status_code=403)
@@ -420,13 +420,14 @@ async def login_post(request: Request):
             )
             return resp
         token    = _serializer.dumps({"user": username})
-        response = RedirectResponse(url="/index-platform.html", status_code=302)
+        response = RedirectResponse(url=_safe_next(request), status_code=302)
         response.set_cookie(
             _COOKIE_NAME, token,
             max_age=_COOKIE_MAX_AGE,
             httponly=True,
             samesite="lax"
         )
+        response.delete_cookie("mc_next")
         return response
 
     _bf_fail(ip)
@@ -932,6 +933,32 @@ async def audit_api_proxy(path: str, request: Request):
 @app.api_route("/monitoring-api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def monitoring_api_proxy(path: str, request: Request):
     return await proxy_request(MONITORING_API_BASE, path, request, "Monitoring API proxy error")
+
+
+def _safe_next(request: Request) -> str:
+    """Destination after login: the path the user was trying to reach
+    (mc_next cookie), validated to a local path. Defaults to the
+    mission-control platform page."""
+    target = request.cookies.get("mc_next", "")
+    if target.startswith("/") and not target.startswith("//") and "\n" not in target:
+        return target
+    return "/index-platform.html"
+
+
+def _bounce_to_login(request: Request) -> RedirectResponse:
+    """Redirect to /login remembering where the user was headed.
+
+    Only page navigations (Accept: text/html) record the destination —
+    API/XHR calls just get the plain redirect so the cookie isn't clobbered.
+    """
+    resp = RedirectResponse(url="/login", status_code=302)
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept or "text/plain" in accept:
+        next_path = request.url.path
+        if request.url.query:
+            next_path += f"?{request.url.query}"
+        resp.set_cookie("mc_next", next_path, max_age=3600, httponly=True, samesite="lax")
+    return resp
 
 
 # ── Wazuh SOC proxy with auto-auth ──────────────────────────────
@@ -2044,9 +2071,10 @@ async def twofa_verify_post(request: Request):
 
     if _totp_check(user.get("totp_secret", ""), code):
         token = _serializer.dumps({"user": pending_user})
-        resp = RedirectResponse(url="/index-platform.html", status_code=302)
+        resp = RedirectResponse(url=_safe_next(request), status_code=302)
         resp.delete_cookie(_2FA_PENDING_COOKIE)
         resp.set_cookie(_COOKIE_NAME, token, max_age=_COOKIE_MAX_AGE, httponly=True, samesite="lax")
+        resp.delete_cookie("mc_next")
         return resp
 
     page = read_html("2fa-verify.html")
