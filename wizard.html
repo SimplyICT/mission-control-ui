@@ -302,7 +302,7 @@ function createProject(){
   $("resultContent").innerHTML =
     '<div class="loading"><div class="spinner"></div><div>Creating project...</div></div>';
 
-  fetch(API_PREFIX+"/api/wizard/create-project", {
+  fetch(API_PREFIX+"/wizard/create-project", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify(body)

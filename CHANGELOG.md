@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 
 ---
 
+## [v1.3] — 2026-09-04
+
+### Added — Action Tier Engine (AI-Everywhere Phase 2)
+- Tier classification in `ai_remediate.py` (`ACTION_TIERS` + `classify_case`):
+  Tier 1 = reversible/contained/informational (notify, watchlist, suppress,
+  ping, review/investigate steps); Tier 2 = major change (block_ip, isolate,
+  revoke, MFA/tenant changes, deletes, patches). Unknown actions default to
+  Tier 2 (conservative). Informational step prefixes are Tier 1.
+- `execute_case(case, tier=None, dry_run=False)`: tier-filtered execution and
+  a dry-run preview with per-action rollback notes.
+- Autopilot scanner now auto-executes Tier-1 actions at case creation with an
+  audit trail (`tier1_auto_executed`); the old branch that auto-executed the
+  ENTIRE plan for level≥15/confidence≥0.9 (including destructive actions) is
+  removed. Tier-2 actions wait for human approval.
+- `POST /api/autopilot/cases/{id}/execute` is now a real background task:
+  gated to approved cases, returns a dry-run preview with rollback guidance,
+  runs the Tier-2 remainder after approval, and records results/events.
+- Unknown plan actions with a target are skipped with a human-review note
+  instead of silently pinging the target.
+
+### Fixed
+- `add_watchlist` plan actions were dropped by the executor (dispatch key
+  mismatch) — now executed.
+
+---
+
 ## [v1.0] — 2026-06-03
 
 ### Added
@@ -69,6 +95,15 @@ All notable changes to this project are documented here.
 - SSH deploy key at `~/.ssh/id_ed25519`
 
 ---
+
+## [v1.2] — 2026-09-02
+
+### Changed
+- Authentication now trusts Cloudflare Access at the edge: requests carrying a valid
+  `Cf-Access-Jwt-Assertion` (validated against the team JWKS, audience-checked for
+  audit/mc.simplyict.com.au) are authenticated automatically — no second app login.
+  Direct origin requests (e.g. `:8095`) that bypass Cloudflare still fall back to the
+  app login page until authenticated.
 
 ## [v1.1] — 2026-06-20
 

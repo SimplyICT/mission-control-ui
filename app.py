@@ -1,8 +1,9 @@
+import io
 import logging
 import re
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import hashlib
@@ -10,6 +11,11 @@ import json
 import uuid
 import os
 import time
+import hmac as _hmac
+import base64
+import pyotp
+import qrcode as _qrcode
+import jwt as pyjwt
 
 
 import subprocess
@@ -26,6 +32,12 @@ for env_path in [
         load_dotenv(env_path)
 
 app = FastAPI(title="Mission Control UI")
+import device_audit_api
+app.include_router(device_audit_api.app.router, prefix="", tags=["device-audit"])
+
+import soc_api
+app.include_router(soc_api.router, tags=["soc-api"])
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger("mission_control_ui")
@@ -39,9 +51,128 @@ _COOKIE_MAX_AGE = 86400 * 7  # 7 days
 _serializer     = URLSafeTimedSerializer(_SESSION_SECRET or "insecure-no-secret-set")
 _USERS_FILE     = BASE_DIR / "users.json"
 
-_PUBLIC_PATHS = {"/health", "/api/services-health", "/agent/install", "/help.html", "/devdocs.html"}
+_PUBLIC_PATHS = {"/health", "/login", "/logout", "/2fa-verify", "/api/services-health", "/agent/install", "/help.html", "/devdocs.html", "/proj-secure.html", "/sites", "/audit-batches"}
+
+# ── TOTP 2FA helpers ──────────────────────────────────────────────────────────
+_2FA_PENDING_COOKIE  = "mc_2fa_pending"
+_2FA_PENDING_MAX_AGE = 300  # 5 minutes
+
+def _totp_make_secret() -> str:
+    return pyotp.random_base32()
+
+def _totp_check(secret: str, code: str) -> bool:
+    try:
+        return pyotp.TOTP(secret).verify(str(code).strip(), valid_window=1)
+    except Exception:
+        return False
+
+def _totp_uri(secret: str, username: str) -> str:
+    return pyotp.TOTP(secret).provisioning_uri(name=username, issuer_name="Mission Control")
+
+def _totp_qr_b64(uri: str) -> str:
+    img = _qrcode.make(uri)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+def _get_2fa_pending_user(request) -> str:
+    """Return username from pending-2FA cookie, or empty string if invalid/expired."""
+    token = request.cookies.get(_2FA_PENDING_COOKIE, "")
+    if not token:
+        return ""
+    try:
+        data = _serializer.loads(token, max_age=_2FA_PENDING_MAX_AGE)
+        return data.get("pending_2fa", "")
+    except Exception:
+        return ""
+
+# ── Brute-force protection ────────────────────────────────────────────────────
+_BF_MAX_ATTEMPTS = 5
+_BF_LOCKOUT_SECS = 15 * 60   # 15 minutes
+_bf_log: dict = {}            # ip -> {"count": int, "locked_until": float}
+
+def _get_client_ip(request) -> str:
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return (request.client.host if request.client else "unknown")
+
+def _bf_is_locked(ip: str):
+    """Returns (locked: bool, seconds_remaining: int)."""
+    entry = _bf_log.get(ip)
+    if not entry or entry["count"] < _BF_MAX_ATTEMPTS:
+        return False, 0
+    remaining = entry["locked_until"] - time.time()
+    if remaining > 0:
+        return True, int(remaining)
+    _bf_log.pop(ip, None)
+    return False, 0
+
+def _bf_fail(ip: str):
+    entry = _bf_log.setdefault(ip, {"count": 0, "locked_until": 0.0})
+    entry["count"] += 1
+    if entry["count"] >= _BF_MAX_ATTEMPTS:
+        entry["locked_until"] = time.time() + _BF_LOCKOUT_SECS
+        logger.warning("Brute-force lockout triggered for IP %s", ip)
+
+def _bf_clear(ip: str):
+    _bf_log.pop(ip, None)
 
 
+# ── Cloudflare Access SSO ─────────────────────────────────────────────────────
+# The platform is fronted by Cloudflare Access (audit.simplyict.com.au and
+# mc.simplyict.com.au). Cloudflare validates the user at the edge and forwards a
+# signed JWT in the Cf-Access-Jwt-Assertion header. When that JWT validates, we
+# treat the request as authenticated — no second login needed. Requests that
+# bypass Cloudflare (e.g. direct origin access on :8095) still fall back to the
+# app login.
+_CF_TEAM_DOMAIN = "simplyict.cloudflareaccess.com"
+_CF_JWKS_URL = f"https://{_CF_TEAM_DOMAIN}/cdn-cgi/access/certs"
+# Access application AUD tags: audit.simplyict.com.au and mc.simplyict.com.au
+_CF_AUDS = {
+    "6ab8faa11e8a78b8ac3fd4b2312c21205b7d91bb084f450c432361d855019c00",
+    "63b7bb613ac463c075bd446b592da05c07af1bd963213c71caca42bd919cacd8",
+}
+_CF_JWT_HEADER = "Cf-Access-Jwt-Assertion"
+_CF_JWKS_TTL = 3600  # cache signing keys for 1h; Cloudflare rotates ~quarterly
+_cf_jwks_cache = {"fetched": 0.0, "keys": []}
+
+
+def _cf_get_jwks():
+    now = time.time()
+    if _cf_jwks_cache["keys"] and now - _cf_jwks_cache["fetched"] < _CF_JWKS_TTL:
+        return _cf_jwks_cache["keys"]
+    try:
+        r = requests.get(_CF_JWKS_URL, timeout=10)
+        r.raise_for_status()
+        _cf_jwks_cache["keys"] = r.json().get("keys", [])
+        _cf_jwks_cache["fetched"] = now
+    except Exception as e:
+        logger.warning("Cloudflare JWKS refresh failed: %s", e)
+    return _cf_jwks_cache["keys"]
+
+
+def _cf_authenticated_user(request: Request):
+    """Return {username, role} if request carries a valid Cloudflare Access JWT, else None."""
+    token = request.headers.get(_CF_JWT_HEADER, "")
+    if not token:
+        return None
+    try:
+        header = pyjwt.get_unverified_header(token)
+        kid = header.get("kid", "")
+        keys = _cf_get_jwks()
+        jwk = next((k for k in keys if k.get("kid") == kid), None)
+        if jwk is None:
+            return None
+        pubkey = pyjwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
+        claims = pyjwt.decode(
+            token, pubkey, algorithms=["RS256"], audience=list(_CF_AUDS)
+        )
+        email = claims.get("email", "cloudflare-user")
+        return {"username": email, "full_name": email, "role": "admin", "custom_pages": None, "active": True}
+    except Exception as e:
+        logger.info("Cloudflare Access JWT rejected: %s", e)
+        return None
 
 # All pages available for the permission picker
 ALL_PAGES = [
@@ -59,6 +190,7 @@ ALL_PAGES = [
     {"path": "/incident-register.html",        "label": "Incident Register",      "section": "Compliance"},
     {"path": "/site-onboarding.html",          "label": "Site Onboarding",        "section": "Administration"},
     {"path": "/admin-users.html",              "label": "User Management",        "section": "Administration"},
+    {"path": "/proj-secure.html",             "label": "Proj-Secure (admin)",    "section": "Administration"},
     {"path": "/help.html",                    "label": "? Help",                 "section": "Administration"},
     {"path": "/devdocs.html",                 "label": "DevDocs",                "section": "Administration"},
     {"path": "/user-guide.html",               "label": "User Guide",             "section": "Administration"},
@@ -106,6 +238,10 @@ def _save_users(users):
 
 
 def _get_authenticated_user(request: Request):
+    # Cloudflare Access (edge SSO) supersedes the app login for proxied traffic.
+    cf_user = _cf_authenticated_user(request)
+    if cf_user:
+        return cf_user
     if not _SESSION_SECRET:
         return None
     token = request.cookies.get(_COOKIE_NAME)
@@ -149,7 +285,8 @@ def _forbidden_html(user: dict, path: str) -> str:
         "<div class='code'>403</div>"
         "<h2>Access Denied</h2>"
         "<p>Hi " + name + ", you don't have permission to view <code>" + path + "</code>.</p>"
-        "<p><a href='/index-platform.html'>&#9664; Platform Home</a></p>"
+        "<p><a href='/index-platform.html'>&#9664; Platform Home</a> &nbsp; "
+        "<a href='/logout'>Sign Out</a></p>"
         "</div></body></html>"
     )
 # ─────────────────────────────────────────────────────────────────────────────
@@ -201,7 +338,119 @@ def run_cmd(cmd, server):
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
+    path = request.url.path
+    # Strip /mission/ prefix to support nginx-style paths locally
+    if path.startswith("/mission/") or path == "/mission":
+        new_path = path[8:] or "/"
+        request.scope["path"] = new_path
+        request.scope["raw_path"] = new_path.encode()
+        return await call_next(request)
+    # Allow public paths by exact match (POST too for the auth endpoints
+    # themselves — otherwise POST /login is redirect-looped by this middleware).
+    if (
+        path in _PUBLIC_PATHS
+        and (request.method == "GET" or path in ("/login", "/logout", "/2fa-verify", "/api/siem/ingest"))
+    ) or (request.method == "GET" and (path.startswith("/sites") or path.startswith("/audit-batches"))):
+        return await call_next(request)
+    # Allow SimplyClik web app paths without mission-control auth
+    if path.startswith("/admin") or path.startswith("/portal") or path.startswith("/static"):
+        return await call_next(request)
+    # Allow SOC agent + SIEM ingest endpoints without MC login (device auth)
+    if path.startswith("/api/agent/") or path.startswith("/api/edr/agent/") or path.startswith("/api/siem/ingest"):
+        return await call_next(request)
+    # Allow monitoring API access without auth (backend handles auth via API key)
+    if path.startswith("/monitoring-api/"):
+        return await call_next(request)
+    user = _get_authenticated_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    if path.endswith(".html") or path == "/":
+        if not _user_can_access(user, path):
+            return HTMLResponse(content=_forbidden_html(user, path), status_code=403)
     return await call_next(request)
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_get():
+    page = read_html("login.html")
+    if isinstance(page, HTMLResponse):
+        html = page.body.decode()
+        html = html.replace("__ERROR_CLASS__", "").replace("__ERROR__", "")
+        return HTMLResponse(content=html)
+    return page
+
+
+@app.post("/login")
+async def login_post(request: Request):
+    ip = _get_client_ip(request)
+    locked, secs = _bf_is_locked(ip)
+    if locked:
+        mins = secs // 60 + 1
+        page = read_html("login.html")
+        if isinstance(page, HTMLResponse):
+            html = page.body.decode()
+            html = html.replace("__ERROR_CLASS__", "visible")
+            html = html.replace("__ERROR__", f"Too many failed attempts. Try again in {mins} minute(s).")
+            return HTMLResponse(content=html, status_code=429)
+        return page
+
+    form = await request.form()
+    username = str(form.get("username", "")).strip()
+    password = str(form.get("password", ""))
+    pw_hash  = hashlib.sha256(password.encode()).hexdigest()
+
+    matched = None
+    for u in _load_users():
+        if u.get("username") == username and u.get("active", True):
+            if _hmac.compare_digest(pw_hash, u.get("password_hash", "")):
+                matched = u
+                break
+
+    if matched:
+        _bf_clear(ip)
+        # If 2FA is enabled, redirect to verification step
+        if matched.get("totp_enabled"):
+            pending_token = _serializer.dumps({"pending_2fa": username})
+            resp = RedirectResponse(url="/2fa-verify", status_code=302)
+            resp.set_cookie(
+                _2FA_PENDING_COOKIE, pending_token,
+                max_age=_2FA_PENDING_MAX_AGE,
+                httponly=True,
+                samesite="lax"
+            )
+            return resp
+        token    = _serializer.dumps({"user": username})
+        response = RedirectResponse(url="/index-platform.html", status_code=302)
+        response.set_cookie(
+            _COOKIE_NAME, token,
+            max_age=_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax"
+        )
+        return response
+
+    _bf_fail(ip)
+    locked2, secs2 = _bf_is_locked(ip)
+    entry = _bf_log.get(ip, {})
+    attempts_left = max(0, _BF_MAX_ATTEMPTS - entry.get("count", 0))
+
+    page = read_html("login.html")
+    if isinstance(page, HTMLResponse):
+        html = page.body.decode()
+        html = html.replace("__ERROR_CLASS__", "visible")
+        if locked2:
+            html = html.replace("__ERROR__", f"Too many failed attempts. Account locked for 15 minutes.")
+        else:
+            html = html.replace("__ERROR__", f"Invalid username or password. {attempts_left} attempt(s) remaining.")
+        return HTMLResponse(content=html, status_code=401)
+    return page
+
+
+@app.get("/logout")
+def logout():
+    response = RedirectResponse(url="/login", status_code=302)
+    response.delete_cookie(_COOKIE_NAME)
+    return response
 
 
 # ── User Management API (admin only) ─────────────────────────────────────────
@@ -546,6 +795,10 @@ def site_onboarding():
 @app.get("/user-guide.html", response_class=HTMLResponse)
 def user_guide():
     return read_html("user-guide.html")
+
+@app.get("/proj-secure.html", response_class=HTMLResponse)
+def proj_secure_page():
+    return read_html("proj-secure.html")
 
 @app.get("/help.html", response_class=HTMLResponse)
 def help_page():
@@ -1053,6 +1306,41 @@ def _fetch_processed_alert_ids() -> set:
     return processed
 
 
+def _run_tier1_actions(case_id: str, primary: dict, max_level: int, confidence: float):
+    """Action tier engine — auto-execute reversible Tier-1 actions at case
+    creation; Tier-2 (major change) stays human-gated via approve/execute.
+
+    Replaces the old level>=15 confidence>=0.9 behaviour that auto-executed
+    the ENTIRE plan (including destructive actions like block_ip) inline.
+    """
+    from ai_remediate import classify_case, execute_case
+    from ai_resolver import get_case, update_case, log_action as _log
+
+    new_case = get_case(case_id)
+    if not new_case:
+        return
+    tiers = classify_case(new_case)
+    if not tiers["tier1"]:
+        return
+    try:
+        results = execute_case(new_case, tier=1)
+    except Exception as e:
+        logger.error("Tier-1 execution failed for case %s: %s", case_id, e)
+        return
+    events = new_case.get("events", []) + [{
+        "type": "tier1_auto_executed",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "detail": ("Auto-executed %d reversible action(s); %d major action(s) "
+                   "await human approval" % (len(results), len(tiers["tier2"]))),
+    }]
+    update_case(case_id, {"tier1_actions": results, "events": events})
+    _log(primary.get("id", ""), primary.get("title", ""), max_level,
+         "tier1_auto_executed", confidence,
+         "Tier-1 auto-remediation: %d actions; %d gated" % (len(results), len(tiers["tier2"])))
+    logger.info("Case %s: %d tier-1 action(s) executed, %d tier-2 gated",
+                case_id, len(results), len(tiers["tier2"]))
+
+
 def ai_scan_and_generate():
     """AI-powered scan cycle — triages new alerts and routes to auto-resolve or case."""
     new_cases = 0
@@ -1147,6 +1435,7 @@ def ai_scan_and_generate():
                     cid = create_case(group, analysis)
                     if cid:
                         new_cases += 1
+                        _run_tier1_actions(cid, primary, max_level, confidence)
                 else:
                     for a in group:
                         from ai_resolver import log_action as _log
@@ -1157,20 +1446,9 @@ def ai_scan_and_generate():
                 cid = create_case(group, analysis)
                 if cid:
                     new_cases += 1
-                    # Auto-execute for critical alerts with high confidence
-                    if max_level >= 15 and confidence >= 0.9:
-                        from ai_remediate import execute_case
-                        new_case = get_case(cid)
-                        if new_case:
-                            results = execute_case(new_case)
-                            update_case(cid, {"status": "in_progress",
-                                              "actions": results})
-                            from ai_resolver import log_action as _log
-                            _log(primary.get("id", ""), primary.get("title", ""), max_level,
-                                 "auto_executed", confidence,
-                                 f"Auto-remediation: {len(results)} actions")
-                            logger.info("Auto-executed case %s (%d actions)",
-                                        cid, len(results))
+                    # Tier engine: reversible actions auto-execute now;
+                    # major-change actions wait for human approval.
+                    _run_tier1_actions(cid, primary, max_level, confidence)
 
         except Exception as e:
             logger.error("AI scan: error processing alert %s: %s",
@@ -1200,6 +1478,15 @@ def _start_autopilot_scanner():
     t = threading.Thread(target=_scanner_loop, daemon=True)
     t.start()
     logger.info("AI Autopilot scanner started (interval=%ds)", AUTOPILOT_SCAN_INTERVAL)
+
+    # Start M365 ITDR multi-tenant poller (per-tenant Graph polling loop)
+    try:
+        import itdr_poller
+        itdr_poller.start_poller()
+        logger.info("ITDR poller started (interval=%.0fm)",
+                    itdr_poller.POLL_INTERVAL_MIN)
+    except Exception as exc:
+        logger.error("ITDR poller failed to start: %s", exc)
 
     # Start SOC Agent daemon (Telegram + auto-triage)
     try:
@@ -1728,6 +2015,146 @@ async def proxy_request(base_url: str, path: str, request: Request, error_messag
 
 
 
+# ── 2FA Routes ────────────────────────────────────────────────────────────────
+
+@app.get("/2fa-verify", response_class=HTMLResponse)
+def twofa_verify_get(request: Request):
+    if not _get_2fa_pending_user(request):
+        return RedirectResponse(url="/login", status_code=302)
+    page = read_html("2fa-verify.html")
+    if isinstance(page, HTMLResponse):
+        html = page.body.decode()
+        html = html.replace("__ERROR_CLASS__", "").replace("__ERROR__", "")
+        return HTMLResponse(content=html)
+    return page
+
+
+@app.post("/2fa-verify")
+async def twofa_verify_post(request: Request):
+    pending_user = _get_2fa_pending_user(request)
+    if not pending_user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    form = await request.form()
+    code = str(form.get("code", "")).strip()
+
+    user = next((u for u in _load_users() if u.get("username") == pending_user and u.get("active", True)), None)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    if _totp_check(user.get("totp_secret", ""), code):
+        token = _serializer.dumps({"user": pending_user})
+        resp = RedirectResponse(url="/index-platform.html", status_code=302)
+        resp.delete_cookie(_2FA_PENDING_COOKIE)
+        resp.set_cookie(_COOKIE_NAME, token, max_age=_COOKIE_MAX_AGE, httponly=True, samesite="lax")
+        return resp
+
+    page = read_html("2fa-verify.html")
+    if isinstance(page, HTMLResponse):
+        html = page.body.decode()
+        html = html.replace("__ERROR_CLASS__", "visible")
+        html = html.replace("__ERROR__", "Invalid code. Please try again.")
+        return HTMLResponse(content=html, status_code=401)
+    return page
+
+
+@app.get("/2fa-setup.html", response_class=HTMLResponse)
+def twofa_setup_page():
+    return read_html("2fa-setup.html")
+
+
+@app.get("/api/2fa/status")
+def twofa_status(request: Request):
+    user = _get_authenticated_user(request)
+    if not user:
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
+    return {"enabled": bool(user.get("totp_enabled")), "has_secret": bool(user.get("totp_secret"))}
+
+
+@app.post("/api/2fa/generate")
+def twofa_generate(request: Request):
+    user = _get_authenticated_user(request)
+    if not user:
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
+    secret = _totp_make_secret()
+    uri    = _totp_uri(secret, user["username"])
+    qr_b64 = _totp_qr_b64(uri)
+    # Store pending secret (not yet active)
+    users = _load_users()
+    for u in users:
+        if u["user_id"] == user["user_id"]:
+            u["totp_secret_pending"] = secret
+            break
+    _save_users(users)
+    return {"secret": secret, "qr_code": f"data:image/png;base64,{qr_b64}", "uri": uri}
+
+
+@app.post("/api/2fa/activate")
+async def twofa_activate(request: Request):
+    user = _get_authenticated_user(request)
+    if not user:
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
+    body = await request.json()
+    code = str(body.get("code", "")).strip()
+    pending_secret = user.get("totp_secret_pending", "")
+    if not pending_secret:
+        raise HTTPException(status_code=400, detail="No pending setup. Click Enable 2FA first.")
+    if not _totp_check(pending_secret, code):
+        raise HTTPException(status_code=400, detail="Invalid code. Try again.")
+    users = _load_users()
+    for u in users:
+        if u["user_id"] == user["user_id"]:
+            u["totp_secret"]  = pending_secret
+            u["totp_enabled"] = True
+            u.pop("totp_secret_pending", None)
+            break
+    _save_users(users)
+    return {"success": True}
+
+
+@app.post("/api/2fa/disable")
+async def twofa_disable(request: Request):
+    user = _get_authenticated_user(request)
+    if not user:
+        return JSONResponse({"error": "not authenticated"}, status_code=401)
+    body = await request.json()
+    code = str(body.get("code", "")).strip()
+    if not user.get("totp_enabled") or not user.get("totp_secret"):
+        raise HTTPException(status_code=400, detail="2FA is not enabled on this account.")
+    if not _totp_check(user["totp_secret"], code):
+        raise HTTPException(status_code=400, detail="Invalid code.")
+    users = _load_users()
+    for u in users:
+        if u["user_id"] == user["user_id"]:
+            u["totp_enabled"] = False
+            u.pop("totp_secret", None)
+            u.pop("totp_secret_pending", None)
+            break
+    _save_users(users)
+    return {"success": True}
+
+
+@app.delete("/api/2fa/{user_id}")
+def twofa_reset_user(user_id: str, request: Request):
+    """Admin only: reset another user's 2FA."""
+    caller = _get_authenticated_user(request)
+    if not caller or caller.get("role") != "admin":
+        return JSONResponse({"error": "admin only"}, status_code=403)
+    users = _load_users()
+    found = False
+    for u in users:
+        if u["user_id"] == user_id:
+            u["totp_enabled"] = False
+            u.pop("totp_secret", None)
+            u.pop("totp_secret_pending", None)
+            found = True
+            break
+    if not found:
+        raise HTTPException(status_code=404, detail="User not found")
+    _save_users(users)
+    return {"success": True}
+
+
 # ── Project Manager API ─────────────────────────────────────────────────────
 PROJECTS_FILE = BASE_DIR / "projects.json"
 
@@ -2048,10 +2475,7 @@ async def api_wizard_create_project(request: Request):
 @app.get("/wizard/", response_class=HTMLResponse)
 @app.get("/wizard", response_class=HTMLResponse)
 def wizard_page():
-    resp = read_html("wizard.html")
-    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    return resp
-
+    return read_html("wizard.html")
 
 
 @app.get("/project-manager.html", response_class=HTMLResponse)
@@ -2078,11 +2502,187 @@ def project_tracker_tasks_json():
 
 SPA_DIR = Path("/home/aiagent/wazuh-soc/dist")
 if SPA_DIR.exists():
+    app.mount("/soc/assets", StaticFiles(directory=str(SPA_DIR / "assets")), name="soc_assets")
     app.mount("/wazuh-soc-v2/assets", StaticFiles(directory=str(SPA_DIR / "assets")), name="wazuh_soc_assets")
 
+    @app.get("/soc", response_class=HTMLResponse)
+    @app.get("/soc/", response_class=HTMLResponse)
     @app.get("/wazuh-soc-v2", response_class=HTMLResponse)
     @app.get("/wazuh-soc-v2/", response_class=HTMLResponse)
     @app.get("/wazuh-soc-v2.html", response_class=HTMLResponse)
     def wazuh_soc_v2_index():
         return HTMLResponse(content=(SPA_DIR / "index.html").read_text(encoding="utf-8"))
 
+
+
+# ── Agent Management (HTTP-only, no WebSocket) ────────────────────────────
+
+_agent_telemetry_file = Path(__file__).parent / "agent_telemetry.json"
+
+def _load_agents():
+    try:
+        if _agent_telemetry_file.exists():
+            return json.loads(_agent_telemetry_file.read_text())
+    except: pass
+    return {}
+
+@app.get("/api/agents/online")
+def api_agents_online():
+    """List agents that have checked in recently."""
+    telemetry = _load_agents()
+    agents = []
+    from datetime import datetime, timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
+    from soc_api import connected_agents
+    live = connected_agents()
+    for key, info in telemetry.items():
+        try:
+            connected = key in live
+            if connected or (info.get("data", {}).get("status") == "online"
+                             and datetime.fromisoformat(info.get("last_seen", "").replace("Z", "+00:00")) >= cutoff):
+                system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
+                agents.append({
+                    "id": key,
+                    "hostname": system.get("hostname", key.split("-", 1)[-1] if "-" in key else key),
+                    "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
+                    "version": system.get("agent_version", "?"),
+                    "last_seen": info.get("last_seen", ""),
+                    "status": "online" if connected else "online",
+                })
+        except:
+            if key in live:
+                system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
+                agents.append({"id": key,
+                               "hostname": system.get("hostname", key),
+                               "platform": system.get("platform", "unknown"),
+                               "version": system.get("agent_version", "?"),
+                               "last_seen": info.get("last_seen", ""),
+                               "status": "online"})
+    return {"count": len(agents), "agents": agents}
+
+@app.get("/api/agents/all")
+def api_agents_all():
+    """List all known agents."""
+    telemetry = _load_agents()
+    agents = []
+    for key, info in telemetry.items():
+        system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
+        agents.append({
+            "id": key,
+            "hostname": system.get("hostname", key),
+            "platform": system.get("platform", "unknown"),
+            "version": system.get("agent_version", "?"),
+            "last_seen": info.get("last_seen", ""),
+            "status": "offline",
+        })
+    return {"count": len(agents), "agents": agents}
+
+
+@app.post("/api/agent/{agent_id}/poll")
+async def agent_poll(agent_id: str, request: Request):
+    """Poll endpoint for agents — registers them as online, returns pending commands."""
+    try:
+        body = await request.json()
+        if body and body.get("type") in ("register", "heartbeat"):
+            info = body.get("data", {})
+            hostname = info.get("hostname", agent_id)
+            platform = info.get("platform", "unknown")
+            key = f"{platform}-{hostname}"
+            telemetry = _load_agents()
+            if key in telemetry and isinstance(telemetry[key].get("data"), dict):
+                telemetry[key]["data"]["status"] = "online"
+                telemetry[key]["data"]["system"] = info
+            else:
+                telemetry[key] = {"last_seen": datetime.now(timezone.utc).isoformat(), "data": {"system": info, "status": "online"}}
+            if isinstance(telemetry[key]["data"], dict):
+                xff = request.headers.get("X-Forwarded-For", "")
+                telemetry[key]["data"]["ip"] = (xff.split(",")[0].strip() if xff else
+                                                (request.client.host if request.client else ""))
+            telemetry[key]["last_seen"] = datetime.now(timezone.utc).isoformat()
+            import os as _os, tempfile as _tf
+            _fd, _tmp = _tf.mkstemp(dir=str(_agent_telemetry_file.parent), suffix=".tmp")
+            with _os.fdopen(_fd, "w", encoding="utf-8") as _f:
+                json.dump(telemetry, _f, indent=2, default=str)
+            _os.replace(_tmp, str(_agent_telemetry_file))
+            # Return first pending command (poll contract: top-level command/args/id).
+            from soc_store import pending_commands
+            cmds = pending_commands(key)
+            if cmds:
+                import json as _json
+                cmd = cmds[0]
+                return _json.loads(json.dumps({
+                    "type": "command",
+                    "id": cmd["id"],
+                    "command": cmd["command"],
+                    "args": _json.loads(cmd.get("args") or "{}"),
+                }))
+    except Exception as e:
+        logger.warning("agent_poll error: %s", e)
+    return {}
+
+
+@app.post("/api/agent/upload-exe")
+async def agent_upload_exe(request: Request):
+    """Upload compiled SOCAgent.exe from the build script."""
+    try:
+        form = await request.form()
+        file = form.get("file")
+        if file and hasattr(file, "read"):
+            content = await file.read()
+            exe_path = Path(__file__).parent / "SOCAgent.exe"
+            exe_path.write_bytes(content)
+            logger.info("Uploaded SOCAgent.exe (%d bytes)", len(content))
+            return {"status": "ok", "size": len(content)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    return {"status": "error", "message": "no file"}
+
+@app.get("/api/agent/download/exe")
+def agent_download_exe():
+    """Download standalone SOCAgent.exe (no Python needed)."""
+    exe_path = Path(__file__).parent / "SOCAgent.exe"
+    if exe_path.exists():
+        from fastapi.responses import Response
+        return Response(
+            content=exe_path.read_bytes(),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": "attachment; filename=SOCAgent.exe"},
+        )
+    # Fallback: serve the Python script with .py extension
+    script = Path(__file__).parent / "agent_unified.py"
+    if script.exists():
+        from fastapi.responses import Response
+        return Response(
+            content=script.read_bytes(),
+            media_type="text/x-python",
+            headers={"Content-Disposition": "attachment; filename=SOCAgent.py"},
+        )
+    return {"error": "Agent script not found"}, 404
+
+
+@app.get("/api/agent/build-exe-script")
+def agent_build_script():
+    """Download the Windows .exe build script."""
+    script = Path(__file__).parent / "build_windows_exe.ps1"
+    if script.exists():
+        from fastapi.responses import Response
+        return Response(
+            content=script.read_bytes(),
+            media_type="text/x-powershell",
+            headers={"Content-Disposition": "attachment; filename=build_windows_exe.ps1"},
+        )
+    return {"error": "script not found"}, 404
+
+
+@app.get("/api/agent/download/windows")
+def agent_download_win():
+    """Download the Windows agent script (for .exe build or direct use)."""
+    script = Path(__file__).parent / "agent_unified.py"
+    if script.exists():
+        from fastapi.responses import Response
+        return Response(
+            content=script.read_bytes(),
+            media_type="text/x-python",
+            headers={"Content-Disposition": "attachment; filename=agent_unified.py"},
+        )
+    return {"error": "script not found"}, 404

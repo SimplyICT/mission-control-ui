@@ -15,6 +15,106 @@ WAZUH_PASS = os.getenv("WAZUH_SOC_PASS", "admin123")
 _wazuh_token = {"value": ""}
 BASE_DIR = os.path.dirname(__file__)
 
+# ── Action tier classification (Phase 2 — AI-Everywhere engine) ────────────
+# Tier 1 = reversible / contained / informational → auto-executable by the
+#          AI autopilot at case creation, with full audit trail.
+# Tier 2 = major change (hardware/software/tenant/network-wide) → human-gated.
+# The user's line: humans stay in the loop for alerts that cause major change.
+
+ACTION_TIERS: dict[str, int] = {
+    # Tier 1 — reversible / contained / informational
+    "notify": 1, "notify_soc": 1, "alert": 1,
+    "add_watchlist": 1, "watchlist": 1, "ioc": 1,
+    "suppress": 1, "suppress_rule": 1, "mute": 1,
+    "ping": 1, "ping_device": 1, "check": 1,
+    "investigate": 1, "review": 1, "escalate": 1,
+    # Tier 2 — major change
+    "block": 2, "block_ip": 2,
+    "isolate": 2, "isolate_agent": 2, "quarantine": 2, "release": 2,
+    "revoke": 2, "revoke_session": 2, "revoke_token": 2,
+    "reset_password": 2, "disable_account": 2, "disable_user": 2,
+    "require_mfa": 2, "disable_mfa": 2, "enforce_mfa": 2,
+    "firewall_change": 2, "geo_block": 2, "offboard": 2, "offboard_domain": 2,
+    "delete": 2, "delete_data": 2, "remove": 2, "uninstall": 2,
+    "patch": 2, "update": 2, "remediate": 2, "reboot": 2, "firmware": 2,
+}
+DEFAULT_ACTION_TIER = 2  # unknown actions default to human-gated
+
+# Human-readable rollback guidance, surfaced when a case executes.
+ROLLBACK_NOTES: dict[str, str] = {
+    "block_ip": "Remove the iptables INPUT DROP rule for the address.",
+    "block": "Remove the iptables INPUT DROP rule for the address.",
+    "isolate": "Issue EDR release for the affected agent(s).",
+    "isolate_agent": "Issue EDR release for the affected agent(s).",
+    "quarantine": "Issue EDR release for the affected agent(s).",
+    "release": "Re-apply isolation if the host is still suspect.",
+    "suppress": "Remove the source entry from the soc_suppressions CDB list.",
+    "suppress_rule": "Remove the source entry from the soc_suppressions CDB list.",
+    "mute": "Remove the source entry from the soc_suppressions CDB list.",
+    "add_watchlist": "Remove the IOC entry from watchlist.json.",
+    "watchlist": "Remove the IOC entry from watchlist.json.",
+    "ioc": "Remove the IOC entry from watchlist.json.",
+    "revoke_session": "Re-issue the sign-in session via Microsoft 365 admin.",
+    "revoke_token": "Re-issue the token via Microsoft 365 admin.",
+    "reset_password": "Inform the user of the new credential; audit the reset.",
+    "disable_account": "Re-enable the account from Microsoft 365 admin.",
+    "disable_mfa": "Re-enable MFA requirements from Microsoft 365 admin.",
+    "require_mfa": "Roll back the MFA requirement if business impact is confirmed.",
+    "enforce_mfa": "Roll back the MFA requirement if business impact is confirmed.",
+}
+GENERIC_ROLLBACK = "Reversible via the SOC console or audit trail; verify after execution."
+
+
+def _normalize_action(action) -> tuple[str, str, dict]:
+    """Normalize a plan action (str or dict) → (action_type, target, params)."""
+    if isinstance(action, str):
+        return action.lower().replace(" ", "_"), "", {}
+    action_type = (action.get("type", "") or "").lower().replace(" ", "_")
+    target = action.get("target", action.get("value", ""))
+    return action_type, target, action
+
+
+def action_tier(action) -> int:
+    """Tier for a raw plan action. Unknown types are conservative (Tier 2),
+    except common informational step prefixes which are Tier 1."""
+    action_type, _, _ = _normalize_action(action)
+    tier = ACTION_TIERS.get(action_type)
+    if tier is not None:
+        return tier
+    if action_type.startswith((
+        "review_", "verify_", "check_", "log_",
+        "investigate_", "alert_", "escalate_", "notify_",
+    )):
+        return 1
+    return DEFAULT_ACTION_TIER
+
+
+def _extract_plan(case: dict) -> list:
+    """Pull the action list out of a case (handles str/list/dict encodings)."""
+    plan = case.get("response_plan", [])
+    if isinstance(plan, str):
+        try:
+            plan = json.loads(plan)
+        except (json.JSONDecodeError, TypeError):
+            plan = []
+    if isinstance(plan, dict):
+        plan = plan.get("actions", plan.get("response_plan", []))
+    return plan if isinstance(plan, list) else []
+
+
+def classify_case(case: dict) -> dict:
+    """Split a case's response plan into tier1 (auto) / tier2 (human-gated)."""
+    tier1, tier2 = [], []
+    for action in _extract_plan(case):
+        (tier1 if action_tier(action) == 1 else tier2).append(action)
+    return {"tier1": tier1, "tier2": tier2}
+
+
+def rollback_notes(action) -> str:
+    """Human-readable rollback guidance for a plan action."""
+    action_type, _, _ = _normalize_action(action)
+    return ROLLBACK_NOTES.get(action_type, GENERIC_ROLLBACK)
+
 
 def _wazuh_login() -> str:
     if _wazuh_token["value"]:
@@ -131,29 +231,34 @@ def add_watchlist(ioc: str, ioc_type: str = "ip") -> dict:
         return {"success": False, "action": "add_watchlist", "error": str(e)}
 
 
-def execute_case(case: dict) -> list[dict]:
-    """Execute the full response plan for a case.
+def execute_case(case: dict, tier: int | None = None, dry_run: bool = False) -> list[dict]:
+    """Execute the response plan for a case.
 
-    Reads the response_plan from the case and runs each actionable step.
+    Args:
+        case:    the case dict (reads `response_plan`, `severity`, `title`, `id`).
+        tier:    None → run the full plan (legacy behavior);
+                 1 → run only reversible Tier-1 actions;
+                 2 → run only human-gated Tier-2 actions.
+        dry_run: if True, returns a plan preview with rollback guidance
+                 instead of executing anything.
+
     Returns a list of result dicts.
     """
     results = []
-    plan = case.get("response_plan", [])
+    plan = _extract_plan(case)
     level = case.get("severity", "low")
     title = case.get("title", "")
     case_id = case.get("id", "?")
 
-    if isinstance(plan, str):
-        try:
-            plan = json.loads(plan)
-        except (json.JSONDecodeError, TypeError):
-            plan = []
-    if isinstance(plan, dict):
-        plan = plan.get("actions", plan.get("response_plan", []))
+    if tier == 1:
+        plan = [a for a in plan if action_tier(a) == 1]
+    elif tier == 2:
+        plan = [a for a in plan if action_tier(a) == 2]
 
     if not plan:
-        # If no plan, notify as default
-        results.append(notify_soc(f"Case {case_id}: {title} — executed (no specific actions)", level))
+        if tier is None:
+            # If no plan, notify as default
+            results.append(notify_soc(f"Case {case_id}: {title} — executed (no specific actions)", level))
         return results
 
     for action in plan:
@@ -163,6 +268,16 @@ def execute_case(case: dict) -> list[dict]:
         else:
             action_type = (action.get("type", "") or "").lower().replace(" ", "_")
             target = action.get("target", action.get("value", ""))
+
+        if dry_run:
+            results.append({
+                "action": action_type,
+                "target": target,
+                "tier": action_tier(action),
+                "dry_run": True,
+                "rollback": rollback_notes(action),
+            })
+            continue
 
         if action_type in ("block_ip", "block") and target:
             results.append(block_ip(target))
@@ -177,14 +292,17 @@ def execute_case(case: dict) -> list[dict]:
         elif action_type in ("notify", "notify_soc", "alert"):
             msg = action.get("rationale", "") if not isinstance(action, str) else f"Case: {title}"
             results.append(notify_soc(f"Case {case_id}: {title} — {msg}", level))
-        elif action_type in ("watchlist", "ioc", "add_to_watchlist") and target:
+        elif action_type in ("watchlist", "ioc", "add_to_watchlist", "add_watchlist") and target:
             results.append(add_watchlist(target))
         elif action_type in ("investigate", "review", "escalate"):
             results.append(notify_soc(
                 f"Case {case_id}: {title} — requires investigation", "high"))
         elif target:
-            # Unknown action type with a target — try ping as generic check
-            results.append(ping_device(target))
+            # Unknown action type with a target — never execute silently.
+            # Surface it for human review instead (was: generic ping).
+            results.append({"success": False, "action": action_type,
+                            "target": target,
+                            "error": "unknown action — skipped, human review required"})
         else:
             results.append(notify_soc(
                 f"Case {case_id}: {title} — action: {action_type}", "info"))
