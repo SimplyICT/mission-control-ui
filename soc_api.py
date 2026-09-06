@@ -26,6 +26,7 @@ Registered from app.py via include_router(). Auth: app.py middleware gates
 
 import concurrent.futures
 import asyncio
+import hmac
 import json
 import logging
 import os
@@ -205,7 +206,18 @@ import threading as _threading
 _threading.Thread(target=_drain_loop, daemon=True, name="cmd-drain").start()
 
 
+_EDR_WS_KEY = os.getenv("EDR_WS_KEY", "").strip()
+
+
 async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
+    # Device-auth gate: when EDR_WS_KEY is configured, the agent's
+    # X-EDR-Key handshake header must match (agents send it via --key).
+    # Reject BEFORE accept so the upgrade fails (403) instead of hanging.
+    supplied = ws.headers.get("x-edr-key", "") or ""
+    if _EDR_WS_KEY and not hmac.compare_digest(supplied, _EDR_WS_KEY):
+        logger.warning("WS handshake rejected: missing/mismatched X-EDR-Key")
+        await ws.close(code=1008)
+        return
     await ws.accept()
     agent_key = None
     try:
