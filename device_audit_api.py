@@ -2545,8 +2545,9 @@ def get_site_detail(site_id: str):
 
 
 @app.post("/sites")
-def create_site(payload: Dict[str, Any]):
-    """Create a new site."""
+async def create_site(request: Request, payload: Dict[str, Any]):
+    """Create a new site in the caller's tenant."""
+    tenant_id = await get_current_tenant(request)
     site_name = payload.get("site_name", "").strip()
     if not site_name:
         raise HTTPException(status_code=400, detail="site_name is required")
@@ -2555,6 +2556,7 @@ def create_site(payload: Dict[str, Any]):
         supabase.table("sites")
         .select("site_id, site_name")
         .eq("site_name", site_name)
+        .eq("tenant_id", tenant_id)
         .limit(1)
         .execute()
     )
@@ -2566,6 +2568,7 @@ def create_site(payload: Dict[str, Any]):
 
     data = clean_site_payload(payload)
     data["site_name"] = site_name
+    data["tenant_id"] = tenant_id
     data.setdefault("active", True)
     data.setdefault("sharepoint_enabled", False)
 
