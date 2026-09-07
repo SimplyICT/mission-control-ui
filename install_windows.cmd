@@ -54,10 +54,9 @@ if errorlevel 1 (
 )
 
 echo Creating startup task...
-del start.cmd 2>nul
-echo @echo off >> start.cmd
+echo @echo off > start.cmd
 echo cd /d "%AGENT_DIR%" >> start.cmd
-echo "%PY_CMD%" agent.py --server %SERVER% --key %KEY% >> start.cmd
+echo %PY_CMD% agent.py --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent.log" 2^>^&1 >> start.cmd
 schtasks /create /tn SOCAgent /tr "cmd.exe /c \"%AGENT_DIR%\start.cmd\"" /sc onstart /ru SYSTEM /f >nul 2>nul
 
 echo Starting agent...
