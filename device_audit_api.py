@@ -1443,9 +1443,9 @@ def _validate_email(email: str) -> Optional[str]:
 
 def _migration_hint(what: str) -> str:
     return (
-        f"{what} require the platform migration — open /home/aiagent/device-audit/"
-        "user_email_smtp_migration.sql and run it in the Supabase SQL Editor "
-        "(https://supabase.com/dashboard/project/zhvxjuhgfudavxrfsasn/sql/new), "
+        f"{what} require the platform migration — apply the SQL from /home/aiagent/"
+        "device-audit/user_email_smtp_migration.sql via psql to the internal "
+        "Postgres (10.121.16.95:5432, see /etc/postgrest.conf), "
         "then restart device-audit-api."
     )
 
