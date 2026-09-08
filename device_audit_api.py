@@ -853,7 +853,7 @@ def add_detailed_room_table(doc, room, rows):
         "Device Type",
         "Brand / Model",
         "Serial",
-        "Windows OS / iOS Update",
+        "OS / iOS Update",
         "OneDrive / Camera / iCloud Sync",
         "Photos",
         "Issues / Notes",
@@ -869,7 +869,7 @@ def add_detailed_room_table(doc, room, rows):
         cells[1].text = format_report_value(row.get("brand_model") or row.get("device_name"))
         cells[2].text = format_report_value(row.get("serial_number"))
         cells[3].text = (
-            f"Windows OS: {format_report_value(row.get('windows_os') or row.get('os_version'))}; "
+            f"OS: {format_report_value(row.get('windows_os') or row.get('os_version'))}; "
             f"Windows updates: {format_report_value(row.get('windows_updates'))}; "
             f"Security check: {format_report_value(row.get('security_check'))}; "
             f"iOS update: {format_report_value(row.get('ios_version') or row.get('update_status'))}"
