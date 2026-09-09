@@ -128,10 +128,12 @@ def _bf_clear(ip: str):
 # app login.
 _CF_TEAM_DOMAIN = "simplyict.cloudflareaccess.com"
 _CF_JWKS_URL = f"https://{_CF_TEAM_DOMAIN}/cdn-cgi/access/certs"
-# Access application AUD tags: audit.simplyict.com.au and mc.simplyict.com.au
+# Access application AUD tags: audit.simplyict.com.au, mc.simplyict.com.au,
+# and securesocentral.com.au
 _CF_AUDS = {
     "6ab8faa11e8a78b8ac3fd4b2312c21205b7d91bb084f450c432361d855019c00",
     "63b7bb613ac463c075bd446b592da05c07af1bd963213c71caca42bd919cacd8",
+    "ba0fd5aa8b2aa17767ae5a8128c128d8f99cd24520805311fda90567e2e832d5",
 }
 _CF_JWT_HEADER = "Cf-Access-Jwt-Assertion"
 _CF_JWKS_TTL = 3600  # cache signing keys for 1h; Cloudflare rotates ~quarterly
@@ -142,6 +144,18 @@ def _cf_get_jwks():
     now = time.time()
     if _cf_jwks_cache["keys"] and now - _cf_jwks_cache["fetched"] < _CF_JWKS_TTL:
         return _cf_jwks_cache["keys"]
+    # Prefer the seeded key set: this host's network cannot reach Cloudflare
+    # IP ranges, so an inline fetch would stall every request that trips the
+    # TTL. The seed is refreshed manually when Cloudflare rotates keys
+    # (~quarterly). Network fetch only as a last resort (no seed file).
+    seed = BASE_DIR / "cf_jwks_seed.json"
+    if seed.exists():
+        try:
+            _cf_jwks_cache["keys"] = json.loads(seed.read_text()).get("keys", [])
+            _cf_jwks_cache["fetched"] = now
+            return _cf_jwks_cache["keys"]
+        except Exception:
+            pass
     try:
         r = requests.get(_CF_JWKS_URL, timeout=10)
         r.raise_for_status()
