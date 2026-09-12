@@ -128,6 +128,14 @@
       <div class="stat-value" style="background:linear-gradient(135deg,#fff 20%,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" id="stat-open">--</div>
       <div class="stat-label">Open Remediations</div>
     </div>
+    <div class="stat-tile" style="cursor:pointer;" onclick="window.location.href='/audit-schedule.html'" title="Open the audit schedule">
+      <div class="stat-value" id="stat-next" style="font-size:1.5rem;">--</div>
+      <div class="stat-label" id="stat-next-label">Next Audit</div>
+    </div>
+    <div class="stat-tile" style="cursor:pointer;" onclick="window.location.href='/audit-schedule.html'" title="Open the audit schedule">
+      <div class="stat-value" id="stat-overdue">--</div>
+      <div class="stat-label">Overdue Audits</div>
+    </div>
   </div>
 
   <!-- Audit Section -->
@@ -360,6 +368,48 @@ async function loadStats() {
     const rem = await fetch('/mission/audit-api/remediation-summary').then(r => r.json());
     const open = rem && (rem.open || rem.open_count || (Array.isArray(rem) ? rem.length : 0));
     document.getElementById('stat-open').textContent = open || '--';
+  } catch(e) {}
+
+  // Audit schedule: next audit due + overdue count
+  try {
+    const sched = await fetch('/mission/audit-api/schedule').then(r => r.json());
+    const list = (sched && sched.sites ? sched.sites : []).filter(s => s.enabled !== false);
+    const next = list.slice().sort((a, b) => (a.next_due || '').localeCompare(b.next_due || ''))[0];
+    const nextEl = document.getElementById('stat-next');
+    const nextLabel = document.getElementById('stat-next-label');
+    if (next) {
+      const days = next.days_until;
+      nextEl.textContent = days === 0 ? 'Today' : (days > 0 ? 'in ' + days + 'd' : Math.abs(days) + 'd overdue');
+      const colour = days < 0 ? '#EF4444' : (days === 0 ? '#FF6B00' : null);
+      nextEl.style.background = colour
+        ? colour
+        : 'linear-gradient(135deg, #fff 20%, #FBBF24)';
+      if (colour) {
+        nextEl.style.webkitBackgroundClip = 'initial';
+        nextEl.style.webkitTextFillColor = '#fff';
+        nextEl.style.backgroundClip = 'initial';
+      }
+      const d = new Date(next.next_due + 'T00:00:00');
+      const when = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+      nextLabel.textContent = 'Next Audit · ' + next.site_name.replace(' ELC', '') + ' — ' + when;
+    } else {
+      nextEl.textContent = '—';
+      nextLabel.textContent = 'Next Audit';
+    }
+    const overdue = list.filter(s => s.status === 'overdue').length;
+    const ovEl = document.getElementById('stat-overdue');
+    ovEl.textContent = overdue;
+    if (overdue > 0) {
+      ovEl.style.background = '#EF4444';
+      ovEl.style.webkitBackgroundClip = 'initial';
+      ovEl.style.webkitTextFillColor = '#fff';
+      ovEl.style.backgroundClip = 'initial';
+    } else {
+      ovEl.style.background = 'linear-gradient(135deg, #fff 20%, #10B981)';
+      ovEl.style.webkitBackgroundClip = 'text';
+      ovEl.style.webkitTextFillColor = 'transparent';
+      ovEl.style.backgroundClip = 'text';
+    }
   } catch(e) {}
 }
 loadStats();
