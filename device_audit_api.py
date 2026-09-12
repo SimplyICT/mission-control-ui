@@ -2603,6 +2603,8 @@ def update_site(site_id: str, payload: Dict[str, Any]):
 
 # ── Audit Schedule ────────────────────────────────────────────────────
 WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+DEFAULT_SITE_COLOUR = "#3B82F6"
+COLOUR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def _add_months(d: date, months: int) -> date:
@@ -2636,16 +2638,41 @@ def _snap_to_weekday(d: date, weekday) -> date:
     return _on_or_after_weekday(d, wd) if 0 <= wd <= 6 else d
 
 
+def _snap_to_weekday_in_month(d: date, weekday) -> date:
+    """Snap to the weekday on/after d, but never spill into the following month.
+
+    Keeps a monthly cadence to one occurrence per month — e.g. a 28th anniversary
+    on a Saturday site lands on the month's last Saturday, not the next month's first.
+    """
+    snapped = _snap_to_weekday(d, weekday)
+    if weekday is None or (snapped.year, snapped.month) == (d.year, d.month):
+        return snapped
+    try:
+        wd = int(weekday)
+    except (TypeError, ValueError):
+        return snapped
+    if not (0 <= wd <= 6):
+        return snapped
+    last_day = date(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
+    return last_day - timedelta(days=(last_day.weekday() - wd) % 7)
+
+
 def _due_sequence(site: dict, last_audit: Optional[date], today: date, count: int = 24) -> list:
     """First `count` due dates for a site (last audit + monthly cadence, snapped to weekday)."""
     freq = max(1, int(site.get("audit_frequency_months") or 1))
     weekday = site.get("audit_weekday")
     override = _parse_date(site.get("next_audit_override"))
 
-    first = override or _snap_to_weekday(_add_months(last_audit, freq) if last_audit else today, weekday)
+    if override:
+        first = override
+    elif last_audit:
+        first = _snap_to_weekday_in_month(_add_months(last_audit, freq), weekday)
+    else:
+        first = _snap_to_weekday(today, weekday)
+
     seq = [first]
     for k in range(1, count):
-        seq.append(_snap_to_weekday(_add_months(first, freq * k), weekday))
+        seq.append(_snap_to_weekday_in_month(_add_months(first, freq * k), weekday))
     return seq
 
 
@@ -2661,6 +2688,7 @@ def _site_schedule(site: dict, last_audit: Optional[date], today: date) -> dict:
         "frequency_months": freq,
         "weekday": weekday,
         "weekday_name": WEEKDAY_NAMES[int(weekday)] if weekday is not None and 0 <= int(weekday) <= 6 else None,
+        "colour": site.get("audit_colour") or DEFAULT_SITE_COLOUR,
         "last_audit": last_audit.isoformat() if last_audit else None,
         "next_due": nxt.isoformat(),
         "days_until": days,
@@ -2674,6 +2702,7 @@ class SiteScheduleUpdate(BaseModel):
     audit_weekday: Optional[int] = None
     audit_frequency_months: Optional[int] = None
     next_audit_override: Optional[str] = None
+    audit_colour: Optional[str] = None
 
 
 @app.get("/schedule")
@@ -2691,7 +2720,7 @@ async def get_schedule(month: str = "", tenant_id: str = Depends(get_current_ten
     sites = (
         supabase.table("sites")
         .select("site_id, site_name, active, audit_frequency_days, audit_frequency_months, "
-                "audit_weekday, audit_schedule_enabled, next_audit_override")
+                "audit_weekday, audit_schedule_enabled, next_audit_override, audit_colour")
         .eq("tenant_id", tenant_id)
         .order("site_name")
         .execute()
@@ -2778,6 +2807,11 @@ async def update_site_schedule(site_id: str, body: SiteScheduleUpdate,
         if body.next_audit_override and not parsed:
             raise HTTPException(status_code=400, detail="next_audit_override must be YYYY-MM-DD")
         payload["next_audit_override"] = parsed.isoformat() if parsed else None
+    if "audit_colour" in body.model_fields_set:
+        colour = (body.audit_colour or "").strip()
+        if colour and not COLOUR_RE.match(colour):
+            raise HTTPException(status_code=400, detail="audit_colour must be a hex value like #3B82F6")
+        payload["audit_colour"] = colour or None
 
     if not payload:
         return {"status": "ok", "updated": {}}

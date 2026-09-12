@@ -47,10 +47,11 @@
   .cal-cell.today { border-color: rgba(255,107,0,0.5); background: rgba(255,107,0,0.05); }
   .cal-date { font-weight: 700; color: #888; margin-bottom: 5px; font-size: 12px; }
   .cal-cell.today .cal-date { color: #FF6B00; }
-  .ev { display: block; font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev { display: block; font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid transparent; }
   .ev.done { background: rgba(16,185,129,0.14); color: #10B981; }
   .ev.due { background: rgba(255,107,0,0.16); color: #FF6B00; }
   .ev.overdue { background: rgba(239,68,68,0.16); color: #EF4444; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
   .banner { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .tile { flex: 1; min-width: 150px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; }
   .tile .v { font-size: 1.5rem; font-weight: 800; }
@@ -101,9 +102,11 @@
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div style="margin-top:12px;font-size:12px;color:#777;">
-      <span class="ev done" style="display:inline-block;width:auto;padding:2px 8px;">&#10003; audit completed</span>
-      <span class="ev due" style="display:inline-block;width:auto;padding:2px 8px;margin-left:8px;">audit due</span>
-      <span class="ev overdue" style="display:inline-block;width:auto;padding:2px 8px;margin-left:8px;">overdue</span>
+      Status:
+      <span class="ev done" style="display:inline-block;width:auto;padding:2px 8px;">&#10003; completed</span>
+      <span class="ev due" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;">due</span>
+      <span class="ev overdue" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;">overdue</span>
+      <span style="margin-left:12px;">&nbsp;|&nbsp; The coloured bar on the left of each entry is the centre's own colour.</span>
     </div>
   </div>
 
@@ -152,6 +155,11 @@
           <option value="true">Included on the calendar</option>
           <option value="false">Excluded</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Centre colour</label>
+        <input type="color" id="fColour" value="#3B82F6" style="height:40px;padding:4px;cursor:pointer;">
+        <div class="hint">Accent on calendar entries and site rows. Status colours are unchanged.</div>
       </div>
     </div>
     <div class="status-msg" id="editStatus"></div>
@@ -202,7 +210,7 @@ function load() {
       if (!res.ok) { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule (' + esc(res.data.detail) + ').</div>'; return; }
       sites = res.data.sites || [];
       renderSummary(sites);
-      renderCalendar(res.data);
+      renderCalendar(res.data, sites);
       renderSites(sites);
     })
     .catch(function () { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule.</div>'; });
@@ -223,8 +231,10 @@ function tile(v, l, color) {
   return '<div class="tile"><div class="v" style="color:' + color + '">' + v + '</div><div class="l">' + l + '</div></div>';
 }
 
-function renderCalendar(data) {
+function renderCalendar(data, siteList) {
   var grid = document.getElementById('calGrid');
+  var colourBySite = {};
+  (siteList || []).forEach(function (s) { if (s.colour) colourBySite[s.site_id] = s.colour; });
   var dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var html = dows.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
   var first = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
@@ -241,8 +251,10 @@ function renderCalendar(data) {
     html += '<div class="' + cls + '"><div class="cal-date">' + day + '</div>';
     evs.forEach(function (e) {
       var kind = e.kind === 'done' ? 'done' : (dIso < todayIso ? 'overdue' : 'due');
+      var colour = colourBySite[e.site_id] || '#888';
       var label = (e.kind === 'done' ? '\u2713 ' : '') + e.site_name.replace(' ELC', '');
-      html += '<span class="ev ' + kind + '" title="' + esc(e.site_name + ' — ' + e.kind) + '">' + esc(label) + '</span>';
+      html += '<span class="ev ' + kind + '" style="border-left-color:' + esc(colour) + '" title="' +
+              esc(e.site_name + ' — ' + e.kind) + '">' + esc(label) + '</span>';
     });
     html += '</div>';
   }
@@ -259,7 +271,7 @@ function renderSites(list) {
     var pill = s.enabled ? '<span class="pill ' + s.status + '">' + s.status + '</span>' : '<span class="pill off">off</span>';
     var days = s.enabled ? (s.days_until === 0 ? 'today' : (s.days_until > 0 ? s.days_until + 'd' : Math.abs(s.days_until) + 'd late')) : '-';
     html += '<tr>';
-    html += '<td><strong>' + esc(s.site_name) + '</strong>' + (s.override ? ' <span class="muted" title="Manual override">\u2691</span>' : '') + '</td>';
+    html += '<td><span class="dot" style="background:' + esc(s.colour || '#888') + '"></span><strong>' + esc(s.site_name) + '</strong>' + (s.override ? ' <span class="muted" title="Manual override">\u2691</span>' : '') + '</td>';
     html += '<td>' + cadence + '</td>';
     html += '<td>' + prettyDate(s.last_audit) + '</td>';
     html += '<td>' + (s.enabled ? prettyDate(s.next_due) : '-') + '</td>';
@@ -281,6 +293,7 @@ function openEdit(siteId) {
   document.getElementById('fWeekday').value = editing.weekday === null || editing.weekday === undefined ? '' : String(editing.weekday);
   document.getElementById('fOverride').value = editing.override || '';
   document.getElementById('fEnabled').value = editing.enabled ? 'true' : 'false';
+  document.getElementById('fColour').value = editing.colour || '#3B82F6';
   showStatus('editStatus', '', '');
   document.getElementById('editModal').classList.add('open');
 }
@@ -293,7 +306,8 @@ function saveSchedule() {
     audit_frequency_months: parseInt(document.getElementById('fFreq').value, 10),
     audit_weekday: wd === '' ? null : parseInt(wd, 10),
     next_audit_override: document.getElementById('fOverride').value || null,
-    audit_schedule_enabled: document.getElementById('fEnabled').value === 'true'
+    audit_schedule_enabled: document.getElementById('fEnabled').value === 'true',
+    audit_colour: document.getElementById('fColour').value || null
   };
   fetch(API + '/sites/' + editing.site_id + '/schedule', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
