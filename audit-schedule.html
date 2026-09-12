@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Centre — Audit Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { background: #060608; font-family: Inter, sans-serif; color: #fff; margin: 0; min-height: 100vh; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #060608; }
+  ::-webkit-scrollbar-thumb { background: #FF6B00; border-radius: 2px; }
+  .topbar { background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); position: sticky; top: 12px; z-index: 50; border-radius: 14px; width: 90%; max-width: 1600px; margin: 12px auto; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; text-decoration: none; color: #fff; }
+  .brand-logo { width: 30px; height: 30px; border-radius: 8px; background: #FF6B00; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 12px; }
+  .btn-home { padding: 6px 14px; font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; text-decoration: none; }
+  .btn-home:hover { opacity: 0.85; }
+  .wrap { width: 90%; max-width: 1300px; margin: 24px auto; }
+  h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; font-weight: 700; margin: 0 0 14px; }
+  .sub { color: #999; font-size: 13px; margin-bottom: 18px; }
+  .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+  button, .btn { font-family: Inter, sans-serif; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); color: #fff; font-weight: 500; font-size: 13px; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; }
+  button:hover { border-color: rgba(255,107,0,0.3); background: rgba(255,255,255,0.07); }
+  .btn-primary { background: #FF6B00; border: none; font-weight: 600; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: #888; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #ccc; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .pill { display: inline-block; font-size: 10px; padding: 2px 9px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pill.overdue { background: rgba(239,68,68,0.15); color: #EF4444; }
+  .pill.due { background: rgba(255,107,0,0.15); color: #FF6B00; }
+  .pill.upcoming { background: rgba(16,185,129,0.12); color: #10B981; }
+  .pill.off { background: rgba(255,255,255,0.06); color: #888; }
+  /* Calendar */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .cal-title { font-size: 1.15rem; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-dow { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #777; font-weight: 700; padding: 4px 0; }
+  .cal-cell { min-height: 92px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 6px 7px; font-size: 12px; }
+  .cal-cell.empty { background: transparent; border-color: transparent; }
+  .cal-cell.today { border-color: rgba(255,107,0,0.5); background: rgba(255,107,0,0.05); }
+  .cal-date { font-weight: 700; color: #888; margin-bottom: 5px; font-size: 12px; }
+  .cal-cell.today .cal-date { color: #FF6B00; }
+  .ev { display: block; font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev.done { background: rgba(16,185,129,0.14); color: #10B981; }
+  .ev.due { background: rgba(255,107,0,0.16); color: #FF6B00; }
+  .ev.overdue { background: rgba(239,68,68,0.16); color: #EF4444; }
+  .banner { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tile { flex: 1; min-width: 150px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; }
+  .tile .v { font-size: 1.5rem; font-weight: 800; }
+  .tile .l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal.open { display: flex; }
+  .modal-box { background: #0c0c0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 24px; width: 100%; max-width: 460px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .form-group label { font-size: 12px; color: #999; font-weight: 500; display: block; margin-bottom: 4px; }
+  input, select { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 9px 14px; font-size: 13px; color: #fff; font-family: Inter, sans-serif; outline: none; width: 100%; }
+  input:focus, select:focus { border-color: #FF6B00; }
+  select option { background: #141414; }
+  .hint { font-size: 11px; color: #666; margin-top: 4px; }
+  .status-msg { font-size: 12px; color: #999; margin-top: 10px; }
+  .status-msg.error { color: #EF4444; }
+  .status-msg.success { color: #10B981; }
+  .muted { color: #777; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="brand">
+    <div class="brand-logo">A</div>
+    <span>Audit<span style="color:#FF6B00;">Centre</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="/" class="btn-home">&#9664; Home</a>
+    <a href="/help.html" class="btn-home">Help</a>
+    <button type="button" onclick="logout()" style="padding:6px 14px;font-size:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.45);border-radius:10px;color:#ff6b6b;cursor:pointer;font-family:inherit;">Logout</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>Audit Schedule</h1>
+  <div class="sub">When each site's next audit is due — cadence, last audit and upcoming dates.</div>
+
+  <div class="banner" id="summary"></div>
+
+  <div class="card">
+    <div class="cal-head">
+      <div class="cal-title" id="calTitle">—</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm" onclick="shiftMonth(-1)">&#8249; Prev</button>
+        <button class="btn-sm" onclick="goToday()">Today</button>
+        <button class="btn-sm" onclick="shiftMonth(1)">Next &#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div style="margin-top:12px;font-size:12px;color:#777;">
+      <span class="ev done" style="display:inline-block;width:auto;padding:2px 8px;">&#10003; audit completed</span>
+      <span class="ev due" style="display:inline-block;width:auto;padding:2px 8px;margin-left:8px;">audit due</span>
+      <span class="ev overdue" style="display:inline-block;width:auto;padding:2px 8px;margin-left:8px;">overdue</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next Audits</h2>
+    <div id="siteWrap"><div class="muted">Loading…</div></div>
+  </div>
+</div>
+
+<!-- Schedule editor -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h2 id="editTitle">Audit Schedule</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Cadence</label>
+        <select id="fFreq">
+          <option value="1">Monthly</option>
+          <option value="2">Every 2 months</option>
+          <option value="3">Quarterly</option>
+          <option value="6">Every 6 months</option>
+          <option value="12">Yearly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Preferred day</label>
+        <select id="fWeekday">
+          <option value="">Any day</option>
+          <option value="0">Monday</option>
+          <option value="1">Tuesday</option>
+          <option value="2">Wednesday</option>
+          <option value="3">Thursday</option>
+          <option value="4">Friday</option>
+          <option value="5">Saturday</option>
+          <option value="6">Sunday</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Next audit override</label>
+        <input type="date" id="fOverride">
+        <div class="hint">Leave blank to calculate from the last audit.</div>
+      </div>
+      <div class="form-group">
+        <label>Scheduled</label>
+        <select id="fEnabled">
+          <option value="true">Included on the calendar</option>
+          <option value="false">Excluded</option>
+        </select>
+      </div>
+    </div>
+    <div class="status-msg" id="editStatus"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn-primary" onclick="saveSchedule()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = "/mission/audit-api";
+var sites = [];
+var refDate = new Date();
+var editing = null;
+
+function logout() {
+  fetch(API + '/auth/logout', { method: 'POST' }).finally(function () { window.location.href = '/login.html'; });
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function monthStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+function prettyDate(s) {
+  if (!s) return '-';
+  var p = s.split('-');
+  var d = new Date(+p[0], +p[1] - 1, +p[2]);
+  return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+function safeJson(r) { return r.text().then(function (t) { try { return JSON.parse(t); } catch (e) { return { detail: t || ('HTTP ' + r.status) }; } }); }
+function showStatus(id, cls, msg) { var el = document.getElementById(id); el.className = 'status-msg' + (cls ? ' ' + cls : ''); el.textContent = msg; }
+
+function authGuard() {
+  fetch('/auth/me').then(function (r) {
+    if (!r.ok) window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+  }).catch(function () { window.location.href = '/login.html'; });
+}
+
+function goToday() { refDate = new Date(); load(); }
+function shiftMonth(n) { refDate = new Date(refDate.getFullYear(), refDate.getMonth() + n, 1); load(); }
+
+function load() {
+  var t = document.getElementById('calTitle');
+  t.textContent = refDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  fetch(API + '/schedule?month=' + monthStr(refDate))
+    .then(function (r) { return safeJson(r).then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (res) {
+      if (!res.ok) { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule (' + esc(res.data.detail) + ').</div>'; return; }
+      sites = res.data.sites || [];
+      renderSummary(sites);
+      renderCalendar(res.data);
+      renderSites(sites);
+    })
+    .catch(function () { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule.</div>'; });
+}
+
+function renderSummary(list) {
+  var overdue = list.filter(function (s) { return s.enabled && s.status === 'overdue'; }).length;
+  var due = list.filter(function (s) { return s.enabled && s.status === 'due'; }).length;
+  var soon = list.filter(function (s) { return s.enabled && s.status === 'upcoming' && s.days_until <= 14; }).length;
+  var off = list.filter(function (s) { return !s.enabled; }).length;
+  document.getElementById('summary').innerHTML =
+    tile(overdue, 'Overdue', overdue ? '#EF4444' : '#fff') +
+    tile(due, 'Due today', due ? '#FF6B00' : '#fff') +
+    tile(soon, 'Due within 14 days', '#fff') +
+    tile(off, 'Not scheduled', '#888');
+}
+function tile(v, l, color) {
+  return '<div class="tile"><div class="v" style="color:' + color + '">' + v + '</div><div class="l">' + l + '</div></div>';
+}
+
+function renderCalendar(data) {
+  var grid = document.getElementById('calGrid');
+  var dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var html = dows.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+  var first = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+  var lead = (first.getDay() + 6) % 7;            // Monday-first offset
+  var days = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0).getDate();
+  var byDate = {};
+  (data.calendar || []).forEach(function (e) { (byDate[e.date] = byDate[e.date] || []).push(e); });
+  var todayIso = data.today;
+  for (var i = 0; i < lead; i++) html += '<div class="cal-cell empty"></div>';
+  for (var day = 1; day <= days; day++) {
+    var dIso = refDate.getFullYear() + '-' + pad(refDate.getMonth() + 1) + '-' + pad(day);
+    var evs = byDate[dIso] || [];
+    var cls = 'cal-cell' + (dIso === todayIso ? ' today' : '');
+    html += '<div class="' + cls + '"><div class="cal-date">' + day + '</div>';
+    evs.forEach(function (e) {
+      var kind = e.kind === 'done' ? 'done' : (dIso < todayIso ? 'overdue' : 'due');
+      var label = (e.kind === 'done' ? '\u2713 ' : '') + e.site_name.replace(' ELC', '');
+      html += '<span class="ev ' + kind + '" title="' + esc(e.site_name + ' — ' + e.kind) + '">' + esc(label) + '</span>';
+    });
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function renderSites(list) {
+  if (!list.length) { document.getElementById('siteWrap').innerHTML = '<div class="muted">No sites yet.</div>'; return; }
+  var html = '<table><thead><tr><th>Site</th><th>Cadence</th><th>Last audit</th><th>Next due</th><th>Days</th><th>Status</th><th></th></tr></thead><tbody>';
+  list.forEach(function (s) {
+    var cadence = s.enabled
+      ? (s.frequency_months === 1 ? 'Monthly' : 'Every ' + s.frequency_months + ' months') + (s.weekday_name ? ' \u00b7 ' + s.weekday_name : '')
+      : '<span class="pill off">Not scheduled</span>';
+    var pill = s.enabled ? '<span class="pill ' + s.status + '">' + s.status + '</span>' : '<span class="pill off">off</span>';
+    var days = s.enabled ? (s.days_until === 0 ? 'today' : (s.days_until > 0 ? s.days_until + 'd' : Math.abs(s.days_until) + 'd late')) : '-';
+    html += '<tr>';
+    html += '<td><strong>' + esc(s.site_name) + '</strong>' + (s.override ? ' <span class="muted" title="Manual override">\u2691</span>' : '') + '</td>';
+    html += '<td>' + cadence + '</td>';
+    html += '<td>' + prettyDate(s.last_audit) + '</td>';
+    html += '<td>' + (s.enabled ? prettyDate(s.next_due) : '-') + '</td>';
+    html += '<td>' + days + '</td>';
+    html += '<td>' + pill + '</td>';
+    html += '<td><button class="btn-sm" onclick="openEdit(\'' + s.site_id + '\')">Edit</button> ' +
+            '<a class="btn-sm btn-home" style="margin-left:6px" href="/mission/device-audit.html?site_id=' + s.site_id + '">Start audit</a></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('siteWrap').innerHTML = html;
+}
+
+function openEdit(siteId) {
+  editing = sites.filter(function (s) { return s.site_id === siteId; })[0];
+  if (!editing) return;
+  document.getElementById('editTitle').textContent = 'Audit Schedule — ' + editing.site_name;
+  document.getElementById('fFreq').value = String(editing.frequency_months || 1);
+  document.getElementById('fWeekday').value = editing.weekday === null || editing.weekday === undefined ? '' : String(editing.weekday);
+  document.getElementById('fOverride').value = editing.override || '';
+  document.getElementById('fEnabled').value = editing.enabled ? 'true' : 'false';
+  showStatus('editStatus', '', '');
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); editing = null; }
+
+function saveSchedule() {
+  if (!editing) return;
+  var wd = document.getElementById('fWeekday').value;
+  var payload = {
+    audit_frequency_months: parseInt(document.getElementById('fFreq').value, 10),
+    audit_weekday: wd === '' ? null : parseInt(wd, 10),
+    next_audit_override: document.getElementById('fOverride').value || null,
+    audit_schedule_enabled: document.getElementById('fEnabled').value === 'true'
+  };
+  fetch(API + '/sites/' + editing.site_id + '/schedule', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  })
+    .then(function (r) { return safeJson(r).then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (res) {
+      if (!res.ok) { showStatus('editStatus', 'error', (res.data && (res.data.detail || res.data.error)) || 'Save failed.'); return; }
+      showStatus('editStatus', 'success', 'Schedule saved.');
+      setTimeout(function () { closeModal(); load(); }, 600);
+    })
+    .catch(function () { showStatus('editStatus', 'error', 'Request failed.'); });
+}
+
+authGuard();
+load();
+</script>
+</body>
+</html>

@@ -1,248 +1,368 @@
-```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Mission Control Audit Center</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>* {
-      box-sizing: border-box;
-    }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Centre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #060608; font-family: 'Inter', sans-serif; color: #fff; margin: 0; }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #060608; }
+    ::-webkit-scrollbar-thumb { background: #FF6B00; border-radius: 2px; }
 
-    .topbar {
-      background: #111827;
-      padding: 18px 28px;
-      border-bottom: 1px solid #1e293b;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .nav-link {
+      color: #999; font-size: 14px; font-weight: 500;
+      padding: 7px 16px; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+      text-decoration: none;
     }
-
-    .title {
-      font-size: 24px;
-      font-weight: bold;
-      color: #f8fafc;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-top: 4px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 30px auto;
-      padding: 0 20px;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #1e293b, #111827);
-      border: 1px solid #334155;
-      border-radius: 18px;
-      padding: 30px;
-      margin-bottom: 28px;
-    }
-
-    .hero h1 {
-      margin: 0 0 10px 0;
-      font-size: 34px;
-      color: #f8fafc;
-    }
-
-    .hero p {
-      margin: 0;
-      color: #cbd5e1;
-      line-height: 1.6;
-      max-width: 800px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
+    .nav-link.active { color: #fff; background: rgba(255,107,0,0.12); border: 1px solid rgba(255,107,0,0.2); }
 
     .card {
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
       padding: 24px;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: #3b82f6;
-    }
-
-    .card h2 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 20px;
-      color: #f8fafc;
-    }
-
-    .card p {
-      color: #94a3b8;
-      min-height: 48px;
-      line-height: 1.5;
-    }
-
-    button {
-      width: 100%;
-      border: none;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: bold;
+      transition: transform 0.2s ease, border-color 0.2s ease;
       cursor: pointer;
-      background: #2563eb;
-      color: white;
-      transition: background 0.15s ease;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,107,0,0.3); }
+    .card h3 { margin: 16px 0 8px; font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .card p { margin: 0; font-size: 13px; color: #999; line-height: 1.5; }
+    .card-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    .stat-tile {
+      padding: 22px 24px; border-radius: 14px;
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+      flex: 1; min-width: 160px;
     }
-
-    .footer {
-      text-align: center;
-      margin-top: 30px;
-      color: #64748b;
-      font-size: 13px;
+    .stat-value {
+      font-size: 2rem; font-weight: 800; line-height: 1;
+      background: linear-gradient(135deg, #fff 20%, #FF6B00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-  
-.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+    .stat-label { font-size: 12px; color: #999; margin-top: 6px; font-weight: 500; }
 
-.topbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
-.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+    .section-title { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    .section-sub { font-size: 13px; color: #999; margin-top: 2px; }
 
-@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-@media(max-width:1100px){.kpi{grid-column:span 4}}@media(max-width:700px){.kpi{grid-column:span 6}.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-
-
-/* Platform universal styles */
-:root{--bg:#07090d;--panel:rgba(18,24,34,.96);--border:rgba(84,214,255,.18);--text:#e7f6ff;--muted:#8fa6b5;--cyan:#00e5ff;--green:#00e676;--amber:#ffca28;--red:#ff1744;--blue:#2196f3}
-*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(0,229,255,.12),transparent 28%),radial-gradient(circle at top right,rgba(255,23,68,.10),transparent 30%),var(--bg);color:var(--text);min-height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,8,13,.9);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
-.brand h1{margin:0;font-size:1.25rem;color:var(--cyan);letter-spacing:1px}.brand span{color:var(--muted);font-size:.78rem}
-.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-input{background:#05070a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 9px;outline:none;font-family:inherit}
-button,a.button{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(33,150,243,.35));color:var(--text);border:1px solid rgba(0,229,255,.35);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block;white-space:nowrap}
-.nav-btn{background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(33,150,243,0.35));color:#e7f6ff;border:1px solid rgba(0,229,255,0.35);border-radius:8px;padding:6px 14px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-.nav-btn-home{background:#334155;color:#e2e8f0;border:1px solid #475569;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-@media(max-width:700px){.topbar{flex-direction:column;align-items:stretch}.controls{justify-content:flex-start}input.api{min-width:100%}}
-
-</style>
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #FF6B00; color: #fff; font-weight: 600; font-size: 13px;
+      padding: 9px 18px; border-radius: 9999px; border: none;
+      cursor: pointer; transition: opacity 0.2s; text-decoration: none;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+  </style>
 </head>
-<body>
-
-
-<div class="topbar">
-    <div class="brand">
-      <h1>📋 
-      <span></span>
-    </div>
-    <div class="controls">
-      <a class="nav-btn-home" href="/index-platform.html">&#9664; Home</a>
-      <a class="nav-btn" href="/help.html">? Help</a>
-      <a class="nav-btn" href="/devdocs.html">DevDocs</a>
-    </div>
-  </div>    <div class="subtitle">Audit Operations & Device Compliance</div>
-  </div>
-</div>
-
-<div class="container">
-
-  <div class="hero">
-    <h1>Audit Management</h1>
-    <p>
-      Manage device records, execute audits, review compliance reports,
-      monitor active devices and maintain operational audit history
-      from a unified Mission Control styled interface.
-    </p>
-  </div>
-
-  <div class="grid">
-
-    <div class="card">
-      <h2>Device Records</h2>
-      <p>View, edit and create managed devices across all audit-enabled sites.</p>
-      <button onclick="goRecords()">Open Device Records</button>
-    </div>
-
-    <div class="card">
-      <h2>Run Audit</h2>
-      <p>Launch and complete operational device audits for individual sites.</p>
-      <button onclick="goAudit()">Run Device Audit</button>
-    </div>
-
-    <div class="card">
-      <h2>Audit Reports</h2>
-      <p>Review generated audit reports, findings and compliance outcomes.</p>
-      <button onclick="goReports()">Open Reports</button>
-    </div>
-
-    <div class="card">
-      <h2>Director View</h2>
-      <p>Executive overview of compliance, risks, audit trends and network status.</p>
-      <button onclick="goDirector()">Open Director Dashboard</button>
-    </div>
-
-    <div class="card">
-      <h2>Audit Cleanup</h2>
-      <p>Manage historic audits, remove test data and maintain clean datasets.</p>
-      <button onclick="goCleanup()">Open Cleanup</button>
-    </div>
-
-    <div class="card">
-      <h2>Mission Control</h2>
-      <p>Return to the primary Mission Control dashboard and monitoring systems.</p>
-      <button onclick="goMain()">Back to Mission Control</button>
-    </div>
-
-  </div>
-
-  <div class="footer">
-    Mission Control Audit Platform
-  </div>
-
-</div>
-
-<script>
-function goRecords() {
-  window.location.href = "/device-records.html";
-}
-
-function goAudit() {
-  window.location.href = "/device-audit.html";
-}
-
-function goReports() {
-  window.location.href = "/audit-reports.html";
-}
-
-function goDirector() {
-  window.location.href = "/director-view.html";
-}
-
-function goCleanup() {
-  window.location.href = "/audit-cleanup.html";
-}
-
-function goMain() {
-  window.location.href = "/";
-}
+<body><script>
+(async function(){try{const r=await fetch("/auth/me");if(!r.ok){window.location.href="/login.html?redirect="+encodeURIComponent(window.location.pathname+window.location.search)}}catch(e){window.location.href="/login.html?redirect="+encodeURIComponent(window.location.pathname+window.location.search)}})();
 </script>
 
+<!-- ═══ HEADER ═══ -->
+<div style="height:12px;"></div>
+<header style="background:rgba(10,10,10,0.95); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.06); position:sticky; top:12px; z-index:50; border-radius:14px; width:80%; max-width:1200px; margin:0 auto;">
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:60px;">
+    <a href="/" style="flex-shrink:0; display:flex; align-items:center; gap:10px; text-decoration:none;">
+      <div style="width:32px; height:32px; border-radius:8px; background:#FF6B00; display:flex; align-items:center; justify-content:center;">
+        <span style="color:#fff; font-weight:800; font-size:12px;">A</span>
+      </div>
+      <span style="color:#fff; font-weight:700; font-size:18px;">Audit<span style="color:#FF6B00;">Centre</span></span>
+    </a>
+    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end;">
+      <a href="/" style="padding:6px 14px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; text-decoration:none;">&#9664; Home</a>
+      <a href="/help.html" style="padding:6px 14px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; text-decoration:none;">Help</a>
+      <a href="/devdocs.html" style="padding:6px 14px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; text-decoration:none;">DevDocs</a>
+      <button type="button" onclick="fetch('/mission/audit-api/auth/logout',{method:'POST'}).finally(function(){window.location.href='/login.html';});" style="padding:6px 14px; font-size:12px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.45); border-radius:10px; color:#ff6b6b; cursor:pointer; font-family:inherit;">Logout</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main style="width:80%; max-width:1200px; margin:0 auto; padding:40px 0 80px;">
+
+  <!-- Hero -->
+  <div style="border-bottom:1px solid rgba(255,255,255,0.04); padding:32px 0 24px; margin-bottom:28px;">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(255,107,0,0.15), rgba(255,107,0,0.05)); border:1px solid rgba(255,107,0,0.15); display:flex; align-items:center; justify-content:center; font-size:20px;">
+        &#128203;
+      </div>
+      <div>
+        <h1 style="font-size:1.8rem; font-weight:800; color:#fff; letter-spacing:-0.02em; margin:0;">Audit Management</h1>
+        <p style="font-size:14px; color:#999; margin:2px 0 0;">Device records, operational audits, compliance reporting</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:32px;">
+    <div class="stat-tile">
+      <div class="stat-value" id="stat-devices">--</div>
+      <div class="stat-label">Registered Devices</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" style="background:linear-gradient(135deg,#fff 20%,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" id="stat-sites">--</div>
+      <div class="stat-label">Active Sites</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" style="background:linear-gradient(135deg,#fff 20%,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" id="stat-audits">--</div>
+      <div class="stat-label">Audit Batches</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" style="background:linear-gradient(135deg,#fff 20%,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" id="stat-open">--</div>
+      <div class="stat-label">Open Remediations</div>
+    </div>
+  </div>
+
+  <!-- Audit Section -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <div>
+      <h2 class="section-title" style="margin:0;">Audit Operations</h2>
+      <p class="section-sub">Core audit tools and device management</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px; margin-bottom:48px;">
+
+    <a href="/mission/device-records.html" class="card">
+      <div class="card-icon" style="background:rgba(255,107,0,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <h3>Device Records</h3>
+      <p>View, edit and create managed devices across all audit-enabled sites.</p>
+    </a>
+
+    <a href="/mission/device-audit.html" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h3>Run Audit</h3>
+      <p>Launch and complete operational device audits for individual sites.</p>
+    </a>
+
+    <a href="/audit-schedule.html" class="card">
+      <div class="card-icon" style="background:rgba(251,191,36,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <h3>Audit Schedule</h3>
+      <p>Calendar of when each site's next audit is due, cadence and overdue items.</p>
+    </a>
+
+    <a href="/mission/audit-reports.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <h3>Audit Reports</h3>
+      <p>Review generated audit reports, findings and compliance outcomes.</p>
+    </a>
+
+    <a href="/mission/audit-cleanup.html" class="card">
+      <div class="card-icon" style="background:rgba(239,68,68,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </div>
+      <h3>Audit Cleanup</h3>
+      <p>Manage historic audits, remove test data and maintain clean datasets.</p>
+    </a>
+
+  </div>
+
+  <!-- Compliance Section -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">
+    <div>
+      <h2 class="section-title" style="margin:0;">Compliance</h2>
+      <p class="section-sub">Regulatory and policy management tools</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px;">
+
+    <a href="/active-device-register.html" class="card">
+      <div class="card-icon" style="background:rgba(124,58,237,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      <h3>Active Device Register</h3>
+      <p>Register of all active devices across sites with compliance status.</p>
+    </a>
+
+    <a href="/mission/director-view.html" class="card">
+      <div class="card-icon" style="background:rgba(255,107,0,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <h3>Director View</h3>
+      <p>Executive overview of compliance, risks, audit trends and network status.</p>
+    </a>
+
+    <a href="/remediation.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Remediation Tracker</h3>
+      <p>Track and manage remediation actions arising from audit findings.</p>
+    </a>
+
+    <a href="/incident-register.html" class="card">
+      <div class="card-icon" style="background:rgba(239,68,68,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      </div>
+      <h3>Incident Register</h3>
+      <p>Log, track and manage security and compliance incidents.</p>
+    </a>
+
+    <a href="/credentials/" class="card">
+      <div class="card-icon" style="background:rgba(255,107,0,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h3>Credential Vault</h3>
+      <p>Securely store and manage passwords, credentials, and device access keys.</p>
+    </a>
+
+  </div>
+
+  </div>
+
+    <a href="/compliance-guide.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <h3>Compliance Guidelines</h3>
+      <p>ACECQA NQF compliance reference — quality areas, child safety, reporting obligations, and record keeping.</p>
+    </a>
+
+  </div>
+
+  <!-- Policies Section -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">
+    <div>
+      <h2 class="section-title" style="margin:0;">Policies</h2>
+      <p class="section-sub">Service policies and procedures reference</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px;">
+
+    <a href="/social-media-policy.html" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+      </div>
+      <h3>Social Media Policy</h3>
+      <p>QA7 — standards for official, professional and personal use of social media.</p>
+    </a>
+
+    <a href="/safe-use-of-digital-technologies.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <h3>Safe Use of Digital Technologies</h3>
+      <p>QA2 + QA7 — safe use of devices, online environments, AI and CCTV.</p>
+    </a>
+
+  </div>
+
+  <!-- Governance & Projects Section -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04);">
+    <div>
+      <h2 class="section-title" style="margin:0;">Governance &amp; Projects</h2>
+      <p class="section-sub">Policy-driven task management and compliance tracking</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px;">
+
+    <a href="/project-management.html" class="card">
+      <div class="card-icon" style="background:rgba(251,191,36,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <h3>Project Management</h3>
+      <p>Policy-driven projects, member assignments, kanban task board.</p>
+    </a>
+
+    <a href="/governance.html" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <h3>Governance</h3>
+      <p>Review schedules, completed items, compliance scorecards per policy.</p>
+    </a>
+
+  </div>
+
+  <div class="section-title" style="display:flex;align-items:center;gap:12px;margin-top:40px;margin-bottom:20px;padding-bottom:8px;border-top:1px solid rgba(255,255,255,0.04);padding-top:24px;">
+    <h2 style="margin:0;font-size:20px;color:#f8fafc;font-weight:700;">Administration</h2>
+    <span style="font-size:12px;color:#94a3b8">Manage users, sites, and tenants</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px;">
+
+    <a href="/admin-users.html" class="card">
+      <div class="card-icon" style="background:rgba(124,58,237,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <h3>User Management</h3>
+      <p>Create, edit, and manage user accounts and permissions.</p>
+    </a>
+
+    <a href="/site-onboarding.html" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <h3>Site Onboarding</h3>
+      <p>Configure new sites with SharePoint integration and audit settings.</p>
+    </a>
+
+    <a href="/tenant-admin.html" class="card">
+      <div class="card-icon" style="background:rgba(255,107,0,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+      <h3>Tenant Admin</h3>
+      <p>Create and manage multi-tenant organisations.</p>
+    </a>
+
+  </div>
+
+  <div style="text-align:center; margin-top:48px; color:#555; font-size:12px;">
+    Audit Centre &middot; Mission Control Platform
+  </div>
+
+</main>
+
+<script>
+// Load stats from API
+async function loadStats() {
+  try {
+    const devices = await fetch('/mission/audit-api/devices').then(r => r.json());
+    document.getElementById('stat-devices').textContent = Array.isArray(devices) ? devices.length : '--';
+  } catch(e) {}
+  try {
+    const sites = await fetch('/mission/audit-api/sites').then(r => r.json());
+    document.getElementById('stat-sites').textContent = Array.isArray(sites) ? sites.length : '--';
+  } catch(e) {}
+  try {
+    const audits = await fetch('/mission/audit-api/audit-batches').then(r => r.json());
+    document.getElementById('stat-audits').textContent = Array.isArray(audits) ? audits.length : '--';
+  } catch(e) {}
+  try {
+    const rem = await fetch('/mission/audit-api/remediation-summary').then(r => r.json());
+    const open = rem && (rem.open || rem.open_count || (Array.isArray(rem) ? rem.length : 0));
+    document.getElementById('stat-open').textContent = open || '--';
+  } catch(e) {}
+}
+loadStats();
+</script>
 </body>
 </html>
-```

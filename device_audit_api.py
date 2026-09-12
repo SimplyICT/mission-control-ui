@@ -13,6 +13,7 @@ from docx.shared import Inches, Pt
 from docx.enum.section import WD_ORIENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import csv
+import calendar
 import io
 import json
 import logging
@@ -2598,6 +2599,190 @@ def update_site(site_id: str, payload: Dict[str, Any]):
         raise HTTPException(status_code=404, detail="Site not found or update failed")
 
     return {"success": True, "site": result.data[0]}
+
+
+# ── Audit Schedule ────────────────────────────────────────────────────
+WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def _add_months(d: date, months: int) -> date:
+    y = d.year + (d.month - 1 + months) // 12
+    m = (d.month - 1 + months) % 12 + 1
+    return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
+
+
+def _on_or_after_weekday(d: date, weekday: int) -> date:
+    return d + timedelta(days=(weekday - d.weekday()) % 7)
+
+
+def _parse_date(value) -> Optional[date]:
+    if not value:
+        return None
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
+
+
+def _snap_to_weekday(d: date, weekday) -> date:
+    if weekday is None:
+        return d
+    try:
+        wd = int(weekday)
+    except (TypeError, ValueError):
+        return d
+    return _on_or_after_weekday(d, wd) if 0 <= wd <= 6 else d
+
+
+def _due_sequence(site: dict, last_audit: Optional[date], today: date, count: int = 24) -> list:
+    """First `count` due dates for a site (last audit + monthly cadence, snapped to weekday)."""
+    freq = max(1, int(site.get("audit_frequency_months") or 1))
+    weekday = site.get("audit_weekday")
+    override = _parse_date(site.get("next_audit_override"))
+
+    first = override or _snap_to_weekday(_add_months(last_audit, freq) if last_audit else today, weekday)
+    seq = [first]
+    for k in range(1, count):
+        seq.append(_snap_to_weekday(_add_months(first, freq * k), weekday))
+    return seq
+
+
+def _site_schedule(site: dict, last_audit: Optional[date], today: date) -> dict:
+    """Next due date for a site: last audit + frequency, snapped to its weekday."""
+    freq = int(site.get("audit_frequency_months") or 1)
+    weekday = site.get("audit_weekday")
+    override = _parse_date(site.get("next_audit_override"))
+    nxt = _due_sequence(site, last_audit, today, count=1)[0]
+    days = (nxt - today).days
+    return {
+        "enabled": site.get("audit_schedule_enabled", True) is not False,
+        "frequency_months": freq,
+        "weekday": weekday,
+        "weekday_name": WEEKDAY_NAMES[int(weekday)] if weekday is not None and 0 <= int(weekday) <= 6 else None,
+        "last_audit": last_audit.isoformat() if last_audit else None,
+        "next_due": nxt.isoformat(),
+        "days_until": days,
+        "status": "overdue" if days < 0 else ("due" if days == 0 else "upcoming"),
+        "override": override.isoformat() if override else None,
+    }
+
+
+class SiteScheduleUpdate(BaseModel):
+    audit_schedule_enabled: Optional[bool] = None
+    audit_weekday: Optional[int] = None
+    audit_frequency_months: Optional[int] = None
+    next_audit_override: Optional[str] = None
+
+
+@app.get("/schedule")
+async def get_schedule(month: str = "", tenant_id: str = Depends(get_current_tenant)):
+    """Per-site next audit due dates plus calendar entries for a month (YYYY-MM)."""
+    today = date.today()
+    ref = today
+    if month:
+        try:
+            y, m = month.split("-")
+            ref = date(int(y), int(m), 1)
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=400, detail="month must be formatted YYYY-MM")
+
+    sites = (
+        supabase.table("sites")
+        .select("site_id, site_name, active, audit_frequency_days, audit_frequency_months, "
+                "audit_weekday, audit_schedule_enabled, next_audit_override")
+        .eq("tenant_id", tenant_id)
+        .order("site_name")
+        .execute()
+        .data or []
+    )
+    site_ids = [s["site_id"] for s in sites]
+    audits = []
+    if site_ids:
+        audits = (
+            supabase.table("device_audits")
+            .select("site_id, site_name, audit_date, status")
+            .in_("site_id", site_ids)
+            .execute()
+            .data or []
+        )
+
+    last_by_site: Dict[str, date] = {}
+    for a in audits:
+        d = _parse_date(a.get("audit_date"))
+        sid = a.get("site_id")
+        if not d or not sid:
+            continue
+        if sid not in last_by_site or d > last_by_site[sid]:
+            last_by_site[sid] = d
+
+    out, entries = [], []
+    for s in sites:
+        last = last_by_site.get(s["site_id"])
+        sch = _site_schedule(s, last, today)
+        out.append({"site_id": s["site_id"], "site_name": s["site_name"],
+                    "active": s.get("active", True), **sch})
+        if sch["enabled"]:
+            for occ in _due_sequence(s, last, today, count=24):
+                if (occ.year, occ.month) > (ref.year, ref.month):
+                    break
+                if (occ.year, occ.month) == (ref.year, ref.month):
+                    entries.append({"date": occ.isoformat(), "site_id": s["site_id"],
+                                    "site_name": s["site_name"], "kind": "due"})
+                    break
+
+    for a in audits:
+        d = _parse_date(a.get("audit_date"))
+        if d and (d.year, d.month) == (ref.year, ref.month):
+            entries.append({"date": d.isoformat(), "site_id": a.get("site_id"),
+                            "site_name": a.get("site_name") or "", "kind": "done"})
+
+    entries.sort(key=lambda e: (e["date"], e["kind"]))
+    return {
+        "month": f"{ref.year:04d}-{ref.month:02d}",
+        "today": today.isoformat(),
+        "sites": out,
+        "calendar": entries,
+    }
+
+
+@app.put("/sites/{site_id}/schedule")
+async def update_site_schedule(site_id: str, body: SiteScheduleUpdate,
+                               tenant_id: str = Depends(get_current_tenant)):
+    """Update a site's audit cadence (weekday, frequency, override, enabled)."""
+    r = (supabase.table("sites").select("site_id")
+         .eq("site_id", site_id).eq("tenant_id", tenant_id).limit(1).execute())
+    if not r.data:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    payload: Dict[str, Any] = {}
+    if body.audit_schedule_enabled is not None:
+        payload["audit_schedule_enabled"] = body.audit_schedule_enabled
+    if "audit_weekday" in body.model_fields_set:
+        if body.audit_weekday is None:
+            payload["audit_weekday"] = None
+        elif 0 <= body.audit_weekday <= 6:
+            payload["audit_weekday"] = body.audit_weekday
+        else:
+            raise HTTPException(status_code=400, detail="audit_weekday must be 0 (Mon) .. 6 (Sun)")
+    if "audit_frequency_months" in body.model_fields_set:
+        if body.audit_frequency_months is None:
+            payload["audit_frequency_months"] = 1
+        elif 1 <= body.audit_frequency_months <= 60:
+            payload["audit_frequency_months"] = body.audit_frequency_months
+        else:
+            raise HTTPException(status_code=400, detail="audit_frequency_months must be 1..60")
+    if "next_audit_override" in body.model_fields_set:
+        parsed = _parse_date(body.next_audit_override)
+        if body.next_audit_override and not parsed:
+            raise HTTPException(status_code=400, detail="next_audit_override must be YYYY-MM-DD")
+        payload["next_audit_override"] = parsed.isoformat() if parsed else None
+
+    if not payload:
+        return {"status": "ok", "updated": {}}
+    u = supabase.table("sites").update(payload).eq("site_id", site_id).execute()
+    return {"status": "ok", "site": u.data[0] if u.data else None}
 
 
 @app.post("/sites/{site_id}/test-sharepoint")

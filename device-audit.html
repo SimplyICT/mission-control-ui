@@ -532,6 +532,13 @@ async function loadSites() {
       select.appendChild(option);
     });
     status.textContent = `Sites loaded: ${sites.length}`;
+
+    // Deep link: /device-audit.html?site_id=... (used by the Audit Schedule page)
+    const presetSite = new URLSearchParams(window.location.search).get("site_id");
+    if (presetSite && sites.some(s => s.site_id === presetSite)) {
+      select.value = presetSite;
+      select.dispatchEvent(new Event("change"));
+    }
   } catch (err) {
     status.textContent = "Failed to load sites. Check console.";
     console.error("loadSites error:", err);
