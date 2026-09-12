@@ -47,11 +47,16 @@
   .cal-cell.today { border-color: rgba(255,107,0,0.5); background: rgba(255,107,0,0.05); }
   .cal-date { font-weight: 700; color: #888; margin-bottom: 5px; font-size: 12px; }
   .cal-cell.today .cal-date { color: #FF6B00; }
-  .ev { display: block; font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid transparent; }
-  .ev.done { background: rgba(16,185,129,0.14); color: #10B981; }
-  .ev.due { background: rgba(255,107,0,0.16); color: #FF6B00; }
-  .ev.overdue { background: rgba(239,68,68,0.16); color: #EF4444; }
+  .ev { display: block; font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid transparent; color: #fff; }
+  .ev .gl { font-weight: 700; margin-right: 4px; }
+  .ev.done { border-left-color: #10B981; }
+  .ev.done .gl { color: #10B981; }
+  .ev.due { border-left-color: #FF6B00; }
+  .ev.due .gl { color: #FF6B00; }
+  .ev.overdue { border-left-color: #EF4444; }
+  .ev.overdue .gl { color: #EF4444; }
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
+  .key { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #ccc; padding: 3px 10px; border-radius: 999px; margin: 0 6px 6px 0; }
   .banner { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .tile { flex: 1; min-width: 150px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; }
   .tile .v { font-size: 1.5rem; font-weight: 800; }
@@ -101,12 +106,13 @@
       </div>
     </div>
     <div class="cal-grid" id="calGrid"></div>
-    <div style="margin-top:12px;font-size:12px;color:#777;">
-      Status:
-      <span class="ev done" style="display:inline-block;width:auto;padding:2px 8px;">&#10003; completed</span>
-      <span class="ev due" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;">due</span>
-      <span class="ev overdue" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;">overdue</span>
-      <span style="margin-left:12px;">&nbsp;|&nbsp; The coloured bar on the left of each entry is the centre's own colour.</span>
+    <div id="centreKey" style="margin-top:16px;"></div>
+    <div style="margin-top:10px;font-size:12px;color:#777;">
+      Key:
+      <span class="ev done" style="display:inline-block;width:auto;padding:2px 8px;background:rgba(255,255,255,0.06);"><span class="gl">&#10003;</span>completed</span>
+      <span class="ev due" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;background:rgba(255,255,255,0.06);"><span class="gl">&#9679;</span>due</span>
+      <span class="ev overdue" style="display:inline-block;width:auto;padding:2px 8px;margin-left:6px;background:rgba(255,255,255,0.06);"><span class="gl">&#9888;</span>overdue</span>
+      <span style="margin-left:12px;">&nbsp;|&nbsp; Fill colour = centre &nbsp;&middot;&nbsp; left bar + icon = status</span>
     </div>
   </div>
 
@@ -210,10 +216,21 @@ function load() {
       if (!res.ok) { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule (' + esc(res.data.detail) + ').</div>'; return; }
       sites = res.data.sites || [];
       renderSummary(sites);
+      renderKey(sites);
       renderCalendar(res.data, sites);
       renderSites(sites);
     })
     .catch(function () { document.getElementById('siteWrap').innerHTML = '<div class="muted">Failed to load schedule.</div>'; });
+}
+
+function renderKey(list) {
+  var el = document.getElementById('centreKey');
+  if (!list.length) { el.innerHTML = ''; return; }
+  el.innerHTML = list.map(function (s) {
+    var c = s.colour || '#888';
+    return '<span class="key" style="background:' + esc(c) + '38;border-left:3px solid ' + esc(c) + '">' +
+           esc(s.site_name.replace(' ELC', '')) + '</span>';
+  }).join('');
 }
 
 function renderSummary(list) {
@@ -252,9 +269,11 @@ function renderCalendar(data, siteList) {
     evs.forEach(function (e) {
       var kind = e.kind === 'done' ? 'done' : (dIso < todayIso ? 'overdue' : 'due');
       var colour = colourBySite[e.site_id] || '#888';
-      var label = (e.kind === 'done' ? '\u2713 ' : '') + e.site_name.replace(' ELC', '');
-      html += '<span class="ev ' + kind + '" style="border-left-color:' + esc(colour) + '" title="' +
-              esc(e.site_name + ' — ' + e.kind) + '">' + esc(label) + '</span>';
+      var glyph = kind === 'done' ? '\u2713' : (kind === 'overdue' ? '\u26A0' : '\u25CF');
+      var label = e.site_name.replace(' ELC', '');
+      html += '<span class="ev ' + kind + '" style="background:' + esc(colour) + '38" title="' +
+              esc(e.site_name + ' — ' + kind) + '">' +
+              '<span class="gl">' + glyph + '</span>' + esc(label) + '</span>';
     });
     html += '</div>';
   }
