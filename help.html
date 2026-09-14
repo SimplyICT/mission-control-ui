@@ -52,6 +52,8 @@ h2{scroll-margin-top:90px}
     <a href="#new-client">New Client Setup</a>
     <a href="#microsoft-sharepoint">SharePoint / Microsoft Setup</a>
     <a href="#audit-operations">Audit Operations</a>
+    <a href="#audit-schedule">Audit Schedule</a>
+    <a href="#credential-vault">Credential Vault</a>
     <a href="#compliance">Compliance</a>
     <a href="#multi-tenant">Multi-Tenant</a>
     <a href="#support">Support</a>
@@ -176,6 +178,53 @@ h2{scroll-margin-top:90px}
   <div class="section">
     <h3>Audit Reports</h3>
     <p>Review generated audit reports with compliance scores and findings. Download as DOCX or PDF.</p>
+  </div>
+
+  <h2 id="audit-schedule">Audit Schedule</h2>
+  <div class="section">
+    <h3>Where it is</h3>
+    <p>Home &rarr; <strong>Audit Operations</strong> &rarr; <strong>Audit Schedule</strong>. The dashboard tiles <strong>Next Audit</strong> and <strong>Overdue Audits</strong> both link straight to it.</p>
+  </div>
+  <div class="section">
+    <h3>Reading the calendar</h3>
+    <ul>
+      <li><strong>Fill colour</strong> = the centre (each centre has its own colour, set per site)</li>
+      <li><strong>Left bar + icon</strong> = status: &#10003; completed, &#9679; due, &#9888; overdue</li>
+      <li>Use <strong>&#8249; Prev</strong> / <strong>Today</strong> / <strong>Next &#8250;</strong> to move between months</li>
+      <li>Completed entries come from real audits; due entries are projected from each site's cadence</li>
+    </ul>
+  </div>
+  <div class="section">
+    <h3>Next Audits table</h3>
+    <p>Shows cadence, last audit, next due date, days remaining and status for every site. <strong>Edit</strong> sets the cadence (monthly/quarterly/etc.), the preferred day (e.g. Saturday), a manual next-audit override, whether it appears on the calendar, and the centre's colour. <strong>Start audit</strong> opens the audit page with that site already selected.</p>
+  </div>
+  <div class="section">
+    <h3>How the next date is worked out</h3>
+    <p>Next due = <em>last completed audit + frequency</em>, moved to the site's preferred weekday and kept inside that month, so each centre appears once per month. A site is <strong>overdue</strong> once that date passes without a completed audit.</p>
+  </div>
+
+  <h2 id="credential-vault">Credential Vault</h2>
+  <div class="section">
+    <h3>What it is</h3>
+    <p>A separate, encrypted store for device and site credentials (usernames, passwords, PINs, URLs). Open it from Home &rarr; <strong>Credentials</strong> — it runs as its own service, so it has its own session.</p>
+  </div>
+  <div class="section">
+    <h3>Adding a credential to a device</h3>
+    <ol>
+      <li>Go to <strong>Devices</strong> and open the device</li>
+      <li>Click <strong>+ Add Credential</strong> — the device comes preselected; leave the <strong>Device</strong> field set to that device so the credential is linked to it</li>
+      <li>Enter Username, Password, URL / IP and any notes</li>
+      <li>Enter the <strong>Master Password</strong> (see below) and click <strong>Save</strong> — you are returned to the device and the credential is listed</li>
+    </ol>
+    <p>If the master password is wrong the form comes back with an error and keeps what you typed — nothing is saved until it is correct.</p>
+  </div>
+  <div class="section">
+    <h3>Revealing a saved password</h3>
+    <p>Open a credential and click <strong>Show</strong> — you are prompted for the Master Password, then the value is revealed; <strong>Copy</strong> puts it on the clipboard. Every reveal is written to the vault's <strong>Audit Log</strong>.</p>
+  </div>
+  <div class="section">
+    <h3>Master password</h3>
+    <p>Required to encrypt when saving and to decrypt when viewing. It is held in the server configuration (not in the app or the database) — ask your SimplyICT administrator if you don't have it. Keep it safe: it is the only key to the stored credentials.</p>
   </div>
 
   <h2 id="compliance">Compliance</h2>
