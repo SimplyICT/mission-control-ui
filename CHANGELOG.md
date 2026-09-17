@@ -6,6 +6,14 @@ All notable changes to this project are documented here.
 
 ## [v1.4] — 2026-09-17
 
+Released agent version: **1.1.2** (`AGENT_VERSION` in `agent_unified.py`).
+
+**Verified in production** on a real client machine (DESKTOP-37759RK): installer
+push took it 1.1.0 → 1.1.1, then a pushed `self_update` took it 1.1.1 → 1.1.2
+(telemetry `update {from: 1.1.1, to: 1.1.2, success: true}`, agent back online on
+1.1.2 within seconds). The re-delivered command then self-limited with
+"payload version 1.1.2 is not newer than 1.1.2".
+
 ### Added — SOC agent auto-update (roadmap P1.1)
 - **One published artifact.** `GET /api/agent/download/agent?platform=<os>` serves
   `agent_unified.py` with `X-Agent-Version` + `X-Agent-Sha256` and `no-store`;

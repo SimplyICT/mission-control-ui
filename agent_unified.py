@@ -35,7 +35,7 @@ import uuid
 logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.1"
+AGENT_VERSION = "1.1.2"
 RECONNECT_BASE = 5
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
