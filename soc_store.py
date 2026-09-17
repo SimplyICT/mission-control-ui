@@ -900,6 +900,16 @@ def pending_commands(agent_id: str, include_sent: bool = False) -> list[dict]:
     )
 
 
+def clear_commands(agent_id: str, command: str) -> int:
+    """Drop queued/delivered-but-unanswered commands (history rows are kept)."""
+    with _lock:
+        cur = _connect().execute(
+            "DELETE FROM agent_commands WHERE agent_id=? AND command=? AND status IN ('pending','sent')",
+            (agent_id, command))
+        _connect().commit()
+        return cur.rowcount
+
+
 def mark_command_sent(cmd_id: str) -> None:
     """Record delivery so the drain loop stops re-sending the same command."""
     _exec("UPDATE agent_commands SET status='sent', updated=? WHERE id=? AND status='pending'",

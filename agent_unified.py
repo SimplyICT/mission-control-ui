@@ -35,7 +35,7 @@ import uuid
 logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.7"
+AGENT_VERSION = "1.1.8"
 RECONNECT_BASE = 5
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
@@ -581,6 +581,12 @@ async def perform_self_update(download_url: str = "", expected_sha: str = "",
     min_bytes = 1000 if not frozen else 100_000      # a real onefile exe is megabytes
     if not new_code or len(new_code) < min_bytes:
         return done(f"suspicious payload ({len(new_code)} bytes)")
+    # Shape check before anything is written: a captive portal / SSO login page
+    # answers 200 with HTML, and installing that would brick the agent.
+    if frozen and not new_code.startswith(b"MZ"):
+        return done("payload is not a Windows executable (login page?)")
+    if not frozen and b"AGENT_VERSION" not in new_code[:8192]:
+        return done("payload does not look like the agent script")
     if expected_sha and hashlib.sha256(new_code).hexdigest() != expected_sha:
         return done("sha256 mismatch")
 

@@ -2577,7 +2577,7 @@ def _agents_snapshot():
     """
     from datetime import datetime, timezone, timedelta
     from soc_api import (connected_agents, agent_meta, needs_update,
-                         agent_build_kind, published_meta)
+                         agent_build_kind, published_meta, update_state_for as _update_state_for)
     telemetry = _load_agents()
     live = connected_agents()
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
@@ -2601,6 +2601,7 @@ def _agents_snapshot():
             "needs_update": needs_update(system.get("agent_version"), kind),
             "latest_version": published_meta(kind)["version"],
             "update": info.get("update") or {},
+            "update_state": _update_state_for(info),
             "update_requested_at": info.get("update_requested_at", ""),
             "ip": data.get("ip", info.get("ip", "")),
             "last_seen": seen,

@@ -153,6 +153,43 @@ def needs_update(agent_version, kind: str = "script") -> bool:
     return _version_tuple(agent_version) < _version_tuple(published_meta(kind)["version"])
 
 
+def update_state_for(info: dict) -> str:
+    """UI state for an agent's update: '' | 'updating' | 'updated' | 'failed'.
+
+    A current agent is never 'updating' — a request goes stale the moment the
+    agent reports the published version — and an old request is not shown at all,
+    so a no-op push cannot leave the row spinning forever.
+    """
+    system = (info.get("data") or {}).get("system") or {}
+    kind = agent_build_kind(system)
+    ver = system.get("agent_version")
+    last = info.get("update") or {}
+    req = str(info.get("update_requested_at") or "")
+    reported = str(last.get("at") or "")
+    if req and req > reported:
+        if not needs_update(ver, kind):
+            return ""
+        try:
+            age = (datetime.now(timezone.utc)
+                   - datetime.fromisoformat(req.replace("Z", "+00:00"))).total_seconds()
+        except Exception:
+            age = 0
+        return "updating" if age < 1800 else ""
+    age_of_report = 1e9
+    if reported:
+        try:
+            age_of_report = (datetime.now(timezone.utc)
+                             - datetime.fromisoformat(reported.replace("Z", "+00:00"))).total_seconds()
+        except Exception:
+            pass
+    if last.get("success") is True:
+        # "updated" is a confirmation, not a permanent label.
+        return "updated" if (not needs_update(ver, kind) and age_of_report < 7200) else ""
+    if last.get("success") is False and age_of_report < 86400:
+        return "failed"
+    return ""
+
+
 def _ws_base_url(ws) -> str:
     """http(s)://host the agent actually reached us on (mesh, LAN or public)."""
     host = ws.headers.get("host") or ws.headers.get("x-forwarded-host") or ""
@@ -227,6 +264,7 @@ def _agent_list() -> list[dict]:
             "needs_update": needs_update(system.get("agent_version"), kind),
             "latest_version": latest,
             "update": info.get("update") or {},
+            "update_state": update_state_for(info),
             "update_requested_at": info.get("update_requested_at", ""),
             "ip": data.get("ip", info.get("ip", "")),
             "last_seen": info.get("last_seen", ""),
@@ -347,6 +385,15 @@ async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
                 outdated = needs_update(sysinfo.get("agent_version"), kind)
                 entry["latest_version"] = meta["version"]
                 entry["update_needed"] = outdated
+                if not outdated:
+                    # Current: drop the pending-request marker and any queued update
+                    # so nothing keeps spinning in the UI or in the outbox.
+                    entry.pop("update_requested_at", None)
+                    try:
+                        from soc_store import clear_commands
+                        clear_commands(agent_key, "self_update")
+                    except Exception:
+                        pass
                 _save_telemetry(telemetry)
                 # Registration ack FIRST (client's auto-update window). The download
                 # URL is built from the address the agent reached us on, so mesh, LAN
@@ -714,6 +761,22 @@ def api_agent_download_agent(platform: str = "windows"):
     )
 
 
+def agent_update_base() -> str:
+    """Base URL *agents* can reach for downloads.
+
+    Never derived from the operator's request Host: the dashboard is browsed
+    through the Cloudflare-fronted domain, and agents pointed at that domain get
+    the Access login page instead of the artifact (an update then fails on the
+    checksum, or worse, would install an HTML file). Agents reach the collector
+    at this address, so publishes use it unconditionally.
+    """
+    base = os.getenv("SOC_AGENT_BASE", "").strip()
+    if base:
+        return base.rstrip("/")
+    host = os.getenv("SOC_SERVER", "173.208.232.91:8095").strip()
+    return f"http://{host}"
+
+
 @router.post("/api/agents/update")
 async def api_agents_update(request: Request):
     """Ask agents to self-update. Targets: explicit ids, all, or only outdated."""
@@ -729,22 +792,28 @@ async def api_agents_update(request: Request):
             agent_ids.append(key)
     agent_ids = sorted(set(agent_ids))
 
-    host = request.headers.get("host", "") or os.getenv("SOC_SERVER", "173.208.232.91:8095")
-    scheme = "https" if (request.headers.get("x-forwarded-proto") or "").lower() == "https" else "http"
-    base = f"{scheme}://{host}"
+    base = agent_update_base()
 
-    updated, failed, errors = 0, 0, []
+    updated, failed, skipped, errors = 0, 0, [], []
     for aid in agent_ids:
         try:
             from soc_store import get_command
             system = (telemetry.get(aid, {}).get("data") or {}).get("system") or {}
             platform = system.get("platform", "windows")
             kind = agent_build_kind(system)
+            meta = published_meta(kind)
+            if not needs_update(system.get("agent_version"), kind):
+                # Already on the published build: queueing an update would just
+                # make the agent refuse and leave a stuck "updating" state.
+                skipped.append(aid)
+                entry = telemetry.setdefault(aid, {"data": {}})
+                entry.pop("update_requested_at", None)
+                continue
             cmd_id = enqueue_command(aid, "self_update", {
-                "server": host,
+                "server": base.split("//", 1)[-1],
                 "url": f"{base}{download_path(kind, platform)}",
-                "sha256": published_meta(kind)["sha256"],
-                "version": published_meta(kind)["version"],
+                "sha256": meta["sha256"],
+                "version": meta["version"],
             })
             cmd = get_command(cmd_id)
             _deliver_sync(aid, cmd)
@@ -757,7 +826,8 @@ async def api_agents_update(request: Request):
             errors.append(f"{aid}: {e}")
     if agent_ids:
         _save_telemetry(telemetry)
-    return {"updated": updated, "failed": failed, "errors": errors[:5],
+    return {"updated": updated, "failed": failed, "skipped": len(skipped),
+            "skipped_ids": skipped[:10], "errors": errors[:5],
             "targets": len(agent_ids), "latest_version": agent_meta()["version"],
             "latest_exe_version": exe_meta()["version"]}
 
@@ -779,6 +849,26 @@ def api_agent_install_batch():
     if f.exists():
         return HTMLResponse(f.read_text(errors="replace"), status_code=200)
     return JSONResponse({"error": "installer not found"}, status_code=404)
+
+
+@router.get("/api/agent/tools/wazuh-remove.ps1")
+def api_tool_wazuh_remove_ps1():
+    """Wazuh/OSSEC remover for Windows endpoints (fetched by TRMM as SYSTEM)."""
+    f = BASE_DIR / "wazuh-remove.ps1"
+    if f.exists():
+        return Response(f.read_bytes(), media_type="text/plain",
+                        headers={"Cache-Control": "no-store"})
+    return JSONResponse({"error": "tool not found"}, status_code=404)
+
+
+@router.get("/api/agent/tools/wazuh-remove.sh")
+def api_tool_wazuh_remove_sh():
+    """Wazuh/OSSEC remover for Linux endpoints."""
+    f = BASE_DIR / "wazuh-remove.sh"
+    if f.exists():
+        return Response(f.read_bytes(), media_type="text/x-shellscript",
+                        headers={"Cache-Control": "no-store"})
+    return JSONResponse({"error": "tool not found"}, status_code=404)
 
 
 @router.get("/api/agent/install/windows-exe")
