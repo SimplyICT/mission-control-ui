@@ -2568,55 +2568,54 @@ def _load_agents():
     except: pass
     return {}
 
+def _agents_snapshot():
+    """Every known agent with authoritative status and update state.
+
+    Online = live WS connection in this worker, or a check-in inside the
+    10-minute window (the service runs 2 workers, so a connection may live in
+    the other one). The SPA's online/offline filters depend on this.
+    """
+    from datetime import datetime, timezone, timedelta
+    from soc_api import connected_agents, agent_meta, needs_update
+    telemetry = _load_agents()
+    live = connected_agents()
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
+    latest = agent_meta()["version"]
+    out = []
+    for key, info in telemetry.items():
+        data = info.get("data") if isinstance(info.get("data"), dict) else {}
+        system = data.get("system") if isinstance(data.get("system"), dict) else {}
+        seen = str(info.get("last_seen", ""))
+        try:
+            recent = datetime.fromisoformat(seen.replace("Z", "+00:00")) >= cutoff
+        except Exception:
+            recent = False
+        online = key in live or (data.get("status") == "online" and recent)
+        out.append({
+            "id": key,
+            "hostname": system.get("hostname", key.split("-", 1)[-1] if "-" in key else key),
+            "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
+            "version": system.get("agent_version", "?"),
+            "needs_update": needs_update(system.get("agent_version")),
+            "latest_version": latest,
+            "update": info.get("update") or {},
+            "update_requested_at": info.get("update_requested_at", ""),
+            "ip": data.get("ip", info.get("ip", "")),
+            "last_seen": seen,
+            "status": "online" if online else "offline",
+        })
+    return out
+
 @app.get("/api/agents/online")
 def api_agents_online():
-    """List agents that have checked in recently."""
-    telemetry = _load_agents()
-    agents = []
-    from datetime import datetime, timezone, timedelta
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
-    from soc_api import connected_agents
-    live = connected_agents()
-    for key, info in telemetry.items():
-        try:
-            connected = key in live
-            if connected or (info.get("data", {}).get("status") == "online"
-                             and datetime.fromisoformat(info.get("last_seen", "").replace("Z", "+00:00")) >= cutoff):
-                system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
-                agents.append({
-                    "id": key,
-                    "hostname": system.get("hostname", key.split("-", 1)[-1] if "-" in key else key),
-                    "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
-                    "version": system.get("agent_version", "?"),
-                    "last_seen": info.get("last_seen", ""),
-                    "status": "online" if connected else "online",
-                })
-        except:
-            if key in live:
-                system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
-                agents.append({"id": key,
-                               "hostname": system.get("hostname", key),
-                               "platform": system.get("platform", "unknown"),
-                               "version": system.get("agent_version", "?"),
-                               "last_seen": info.get("last_seen", ""),
-                               "status": "online"})
+    """List agents that are connected / have checked in recently."""
+    agents = [a for a in _agents_snapshot() if a["status"] == "online"]
     return {"count": len(agents), "agents": agents}
 
 @app.get("/api/agents/all")
 def api_agents_all():
-    """List all known agents."""
-    telemetry = _load_agents()
-    agents = []
-    for key, info in telemetry.items():
-        system = info.get("data", {}).get("system", {}) if isinstance(info.get("data"), dict) else {}
-        agents.append({
-            "id": key,
-            "hostname": system.get("hostname", key),
-            "platform": system.get("platform", "unknown"),
-            "version": system.get("agent_version", "?"),
-            "last_seen": info.get("last_seen", ""),
-            "status": "offline",
-        })
+    """List all known agents (online + offline) with version + update state."""
+    agents = _agents_snapshot()
     return {"count": len(agents), "agents": agents}
 
 
@@ -2658,6 +2657,19 @@ async def agent_poll(agent_id: str, request: Request):
                     "command": cmd["command"],
                     "args": _json.loads(cmd.get("args") or "{}"),
                 }))
+            # Nothing queued: the poll doubles as the version/update check for
+            # agents that cannot hold a WebSocket open.
+            from soc_api import agent_meta, needs_update as _needs_update
+            _meta = agent_meta()
+            _host = request.headers.get("host", "")
+            return {
+                "type": "noop",
+                "latest_version": _meta["version"],
+                "agent_sha256": _meta["sha256"],
+                "needs_update": _needs_update(info.get("agent_version")),
+                "download_url": (f"http://{_host}/api/agent/download/agent"
+                                 f"?platform={info.get('platform', 'windows')}") if _host else "",
+            }
     except Exception as e:
         logger.warning("agent_poll error: %s", e)
     return {}
@@ -2718,13 +2730,24 @@ def agent_build_script():
 
 @app.get("/api/agent/download/windows")
 def agent_download_win():
-    """Download the Windows agent script (for .exe build or direct use)."""
+    """Download the Windows agent script (for .exe build or direct use).
+
+    Kept for installer/back-compat — the canonical publish endpoint is
+    /api/agent/download/agent, which also serves Linux and macOS.
+    """
     script = Path(__file__).parent / "agent_unified.py"
     if script.exists():
         from fastapi.responses import Response
+        from soc_api import agent_meta
+        meta = agent_meta()
         return Response(
             content=script.read_bytes(),
             media_type="text/x-python",
-            headers={"Content-Disposition": "attachment; filename=agent_unified.py"},
+            headers={
+                "X-Agent-Version": meta["version"],
+                "X-Agent-Sha256": meta["sha256"],
+                "Cache-Control": "no-store",
+                "Content-Disposition": "attachment; filename=agent_unified.py",
+            },
         )
     return {"error": "script not found"}, 404

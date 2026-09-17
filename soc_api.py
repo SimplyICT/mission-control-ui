@@ -26,10 +26,12 @@ Registered from app.py via include_router(). Auth: app.py middleware gates
 
 import concurrent.futures
 import asyncio
+import hashlib
 import hmac
 import json
 import logging
 import os
+import re
 import socket
 import time
 import uuid
@@ -64,8 +66,48 @@ logger = logging.getLogger("soc_api")
 
 router = APIRouter(tags=["soc-api"])
 
-LATEST_AGENT_VERSION = "1.1.0"
 AGENT_TELEMETRY_FILE = BASE_DIR / "agent_telemetry.json"
+AGENT_SOURCE_FILE = BASE_DIR / "agent_unified.py"
+
+# The published agent version is whatever agent_unified.py declares — bump the
+# agent file and the server follows. No second constant to keep in sync.
+_agent_meta_cache: dict = {}
+
+
+def agent_meta() -> dict:
+    """Version + sha256 of the agent script we publish (cached by file mtime)."""
+    try:
+        st = AGENT_SOURCE_FILE.stat()
+    except OSError:
+        return {"version": "0.0.0", "sha256": "", "bytes": 0}
+    if _agent_meta_cache.get("mtime") != st.st_mtime:
+        raw = AGENT_SOURCE_FILE.read_bytes()
+        m = re.search(rb'^AGENT_VERSION\s*=\s*"([^"]+)"', raw, re.M)
+        _agent_meta_cache.update({
+            "mtime": st.st_mtime,
+            "version": m.group(1).decode() if m else "0.0.0",
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "bytes": len(raw),
+        })
+    return dict(_agent_meta_cache)
+
+
+def _version_tuple(v) -> tuple:
+    return tuple(int(n) for n in re.findall(r"\d+", str(v or ""))[:3]) or (0,)
+
+
+def needs_update(agent_version) -> bool:
+    """True when the agent reports an older version than the one we publish."""
+    return _version_tuple(agent_version) < _version_tuple(agent_meta()["version"])
+
+
+def _ws_base_url(ws) -> str:
+    """http(s)://host the agent actually reached us on (mesh, LAN or public)."""
+    host = ws.headers.get("host") or ws.headers.get("x-forwarded-host") or ""
+    if not host:
+        return ""
+    scheme = "https" if (ws.headers.get("x-forwarded-proto") or "").lower() == "https" else "http"
+    return f"{scheme}://{host}"
 
 # Dedicated pool for slow agent-result persistence (OSV lookups etc.) so it
 # can never starve the event loop or the sync-endpoint threadpool.
@@ -116,6 +158,7 @@ def _client_ip(request: Request) -> str:
 def _agent_list() -> list[dict]:
     """Flat agent list from telemetry (shape used by /api/agents/all)."""
     telemetry = _load_telemetry()
+    latest = agent_meta()["version"]
     agents = []
     for key, info in telemetry.items():
         data = info.get("data", {}) if isinstance(info.get("data"), dict) else {}
@@ -127,6 +170,10 @@ def _agent_list() -> list[dict]:
             "hostname": system.get("hostname", default_host),
             "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
             "version": system.get("agent_version", "?"),
+            "needs_update": needs_update(system.get("agent_version")),
+            "latest_version": latest,
+            "update": info.get("update") or {},
+            "update_requested_at": info.get("update_requested_at", ""),
             "ip": data.get("ip", info.get("ip", "")),
             "last_seen": info.get("last_seen", ""),
             "status": "online" if info.get("data", {}).get("status") == "online" else "offline",
@@ -174,10 +221,16 @@ def _deliver_sync(agent_key: str, cmd: dict) -> bool:
             "command": cmd["command"],
             "args": json.loads(cmd.get("args") or "{}"),
         }), loop)
-        # Fire-and-forget: command stays pending if the send ever fails;
-        # the register drain retries it on the next reconnect.
+        # Fire-and-forget: the command is marked sent so the drain loop stops
+        # re-sending it; it is re-delivered on the next reconnect if no result
+        # ever arrives (see pending_commands(include_sent=True)).
         fut.add_done_callback(lambda f: None if not f.exception()
                               else logger.warning("WS send error: %s", f.exception()))
+        try:
+            from soc_store import mark_command_sent
+            mark_command_sent(cmd["id"])
+        except Exception:
+            pass
         return True
     except Exception as e:
         logger.warning("WS deliver failed: %s", e)
@@ -234,16 +287,28 @@ async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
                 entry = telemetry.setdefault(agent_key, {"data": {}})
                 entry["data"] = {"system": sysinfo, "status": "online"}
                 entry["last_seen"] = _now()
+                meta = agent_meta()
+                platform = sysinfo.get("platform", "unknown")
+                outdated = needs_update(sysinfo.get("agent_version"))
+                entry["latest_version"] = meta["version"]
+                entry["update_needed"] = outdated
                 _save_telemetry(telemetry)
-                # Registration ack FIRST (client's auto-update window).
+                # Registration ack FIRST (client's auto-update window). The download
+                # URL is built from the address the agent reached us on, so mesh, LAN
+                # and public agents all get a URL they can actually fetch.
+                base = _ws_base_url(ws)
                 await ws.send_json({
                     "type": "registered",
                     "agent_id": sysinfo.get("agent_id", agent_key),
-                    "latest_version": LATEST_AGENT_VERSION,
-                    "needs_update": str(sysinfo.get("agent_version", "")) != LATEST_AGENT_VERSION,
+                    "latest_version": meta["version"],
+                    "agent_sha256": meta["sha256"],
+                    "download_url": (f"{base}/api/agent/download/agent?platform={platform}"
+                                     if base else ""),
+                    "needs_update": outdated,
                 })
-                # Drain pending command outbox.
-                for cmd in pending_commands(agent_key):
+                # Drain the outbox — re-deliver anything still unanswered, so a
+                # command queued while the agent was away lands on reconnect.
+                for cmd in pending_commands(agent_key, include_sent=True):
                     await ws.send_json({
                         "type": "command",
                         "id": cmd["id"],
@@ -255,6 +320,19 @@ async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
                 loop_local = asyncio.get_running_loop()
                 loop_local.run_in_executor(_scan_executor, _persist_agent_result,
                                            agent_key, msg.get("command", ""), msg.get("result", {}))
+            elif kind == "update" and agent_key:
+                info = msg.get("data", {}) or {}
+                telemetry = _load_telemetry()
+                entry = telemetry.setdefault(agent_key, {"data": {}})
+                entry["update"] = {
+                    "at": _now(),
+                    "from": str(info.get("from", ""))[:20],
+                    "to": str(info.get("to", ""))[:20],
+                    "success": bool(info.get("success")),
+                    "error": str(info.get("error", ""))[:200],
+                }
+                entry["update_needed"] = not info.get("success")
+                _save_telemetry(telemetry)
             elif kind == "telemetry" and agent_key:
                 telemetry = _load_telemetry()
                 entry = telemetry.setdefault(agent_key, {"data": {}})
@@ -559,23 +637,71 @@ def api_agent_telemetry(agent_id: str):
     return {"data": {"data": info.get("data", {})}}
 
 
+@router.get("/api/agent/download/agent")
+def api_agent_download_agent(platform: str = "windows"):
+    """Publish the unified agent script.
+
+    Every platform runs the same file, so one artifact serves Windows, Linux and
+    macOS. Version/sha256 travel as headers for the agent's integrity check.
+    """
+    if not AGENT_SOURCE_FILE.exists():
+        return JSONResponse({"error": "agent source not found"}, status_code=404)
+    meta = agent_meta()
+    return Response(
+        content=AGENT_SOURCE_FILE.read_bytes(),
+        media_type="text/x-python",
+        headers={
+            "X-Agent-Version": meta["version"],
+            "X-Agent-Sha256": meta["sha256"],
+            "Cache-Control": "no-store",
+            "Content-Disposition": 'attachment; filename="agent.py"',
+        },
+    )
+
+
 @router.post("/api/agents/update")
 async def api_agents_update(request: Request):
+    """Ask agents to self-update. Targets: explicit ids, all, or only outdated."""
     body = await request.json()
-    agent_ids = body.get("agent_ids") or []
-    updated = 0
-    failed = 0
-    server = os.getenv("SOC_SERVER", "173.208.232.91:8095")
+    agent_ids = list(body.get("agent_ids") or [])
+    if body.get("all") or body.get("outdated"):
+        telemetry = _load_telemetry()
+        for key, info in telemetry.items():
+            system = (info.get("data") or {}).get("system") or {}
+            if body.get("outdated") and not needs_update(system.get("agent_version")):
+                continue
+            agent_ids.append(key)
+    agent_ids = sorted(set(agent_ids))
+
+    host = request.headers.get("host", "") or os.getenv("SOC_SERVER", "173.208.232.91:8095")
+    scheme = "https" if (request.headers.get("x-forwarded-proto") or "").lower() == "https" else "http"
+    base = f"{scheme}://{host}"
+
+    telemetry = _load_telemetry()
+    updated, failed, errors = 0, 0, []
     for aid in agent_ids:
         try:
             from soc_store import get_command
-            cmd_id = enqueue_command(aid, "self_update", {"server": server})
+            system = (telemetry.get(aid, {}).get("data") or {}).get("system") or {}
+            platform = system.get("platform", "windows")
+            cmd_id = enqueue_command(aid, "self_update", {
+                "server": host,
+                "url": f"{base}/api/agent/download/agent?platform={platform}",
+                "sha256": agent_meta()["sha256"],
+            })
             cmd = get_command(cmd_id)
             _deliver_sync(aid, cmd)
+            entry = telemetry.setdefault(aid, {"data": {}})
+            entry["update_requested_at"] = _now()
+            entry["update_needed"] = True
             updated += 1
-        except Exception:
+        except Exception as e:
             failed += 1
-    return {"updated": updated, "failed": failed}
+            errors.append(f"{aid}: {e}")
+    if agent_ids:
+        _save_telemetry(telemetry)
+    return {"updated": updated, "failed": failed, "errors": errors[:5],
+            "targets": len(agent_ids), "latest_version": agent_meta()["version"]}
 
 
 @router.post("/api/agent/{agent_id}/result")

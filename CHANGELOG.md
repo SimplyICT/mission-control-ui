@@ -4,6 +4,52 @@ All notable changes to this project are documented here.
 
 ---
 
+## [v1.4] — 2026-09-17
+
+### Added — SOC agent auto-update (roadmap P1.1)
+- **One published artifact.** `GET /api/agent/download/agent?platform=<os>` serves
+  `agent_unified.py` with `X-Agent-Version` + `X-Agent-Sha256` and `no-store`;
+  `/api/agent/download/windows` stays as the installer/back-compat path with the
+  same headers.
+- **Version derived from the agent file.** `soc_api.agent_meta()` reads
+  `AGENT_VERSION` and the sha256 straight out of `agent_unified.py` (mtime-cached),
+  so a release is a one-line version bump — no second constant to keep in sync.
+- **Registration ack carries everything needed to update**: `latest_version`,
+  `agent_sha256`, `download_url` built from the address the agent actually reached
+  us on (mesh / LAN / public all work), and a semver `needs_update`.
+- **Agent-side update is verify-before-replace**: download → sha256 check → parse the
+  payload's `AGENT_VERSION` and refuse equal/older → syntax-compile the payload →
+  keep a `.bak` → `os.replace` (atomic) → report the outcome over the WS
+  (`{"type":"update"}`) → re-exec. One attempt per process; failures leave the
+  running agent untouched. The same path serves the pushed `self_update` command
+  and polling-mode agents (`POST /api/agent/{id}/poll` now answers with the update
+  hint when it has no queued command).
+- **Outbox delivery tracking**: delivered commands are marked `sent`, so the drain
+  loop no longer re-sends the same command every 5s; unanswered commands are
+  re-delivered on reconnect (`pending_commands(include_sent=True)`).
+- New bulk/partial update endpoint shape: `POST /api/agents/update` accepts
+  `agent_ids`, `all`, or `outdated` and reports `{updated, failed, targets,
+  latest_version}`.
+- `/api/agents/all` and `/api/agents/online` now report `needs_update`,
+  `latest_version`, `update` (last report) and `update_requested_at`, with status
+  resolved from the live WS set plus a 10-minute check-in window (the SPA's
+  offline filter was counting every agent as offline before this).
+
+### Fixed
+- **Handlers defined after the `__main__` guard never registered.** `main()` sat
+  mid-file, so `eventlog`, `forward_logs`, `self_update`, `fim_scan`, `packages`
+  and `vuln_packages` were missing from `HANDLERS` whenever the agent ran as a
+  script (always). Server-pushed commands for those handlers — including the
+  update command and every queued FIM/vulnerability scan — were silently ignored.
+  The guard now lives at the end of the file; all 14 handlers register.
+- **On-connect update was dead.** The ack handler referenced `_aiohttp`/`_json`,
+  which are only bound when aiohttp is *missing*, so every agent raised
+  `NameError: name '_aiohttp' is not defined` and skipped the update. Replaced with
+  `_await_registered()` (waits for the ack, queues any earlier command frames for
+  the main loop) plus the shared verified update path.
+
+---
+
 ## [v1.3] — 2026-09-04
 
 ### Added — Action Tier Engine (AI-Everywhere Phase 2)
