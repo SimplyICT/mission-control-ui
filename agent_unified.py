@@ -35,7 +35,7 @@ import uuid
 logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.6"
+AGENT_VERSION = "1.1.7"
 RECONNECT_BASE = 5
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
@@ -452,6 +452,45 @@ async def _notify_update(result: dict) -> None:
             pass
 
 
+def _windows_update_shim(exe: str, new_path: str, old_path: str, log_path: str, args: str) -> str:
+    """Batch shim that swaps the running exe for the staged one.
+
+    Retries the rename (the onefile bootloader holds the image briefly), keeps
+    the old build until the swap succeeds, relaunches with the original args and
+    falls back to restarting the old build. Logs every step.
+    """
+    exe_dir = os.path.dirname(exe)
+    return (
+        "@echo off\r\n"
+        "setlocal enabledelayedexpansion\r\n"
+        f'set "EXE={exe}"\r\n'
+        f'set "NEW={new_path}"\r\n'
+        f'set "OLD={old_path}"\r\n'
+        f'set "LOG={log_path}"\r\n'
+        'echo [%DATE% %TIME%] updater start > "%LOG%"\r\n'
+        "set /a tries=0\r\n"
+        ":wait\r\n"
+        "ping -n 3 127.0.0.1 >nul\r\n"
+        f'move /y "%EXE%" "%OLD%" >> "%LOG%" 2>&1\r\n'
+        f'if exist "%EXE%" (\r\n'
+        "  set /a tries+=1\r\n"
+        "  if !tries! lss 30 goto wait\r\n"
+        ")\r\n"
+        f'if exist "%EXE%" (\r\n'
+        '  echo swap failed after !tries! tries - restarting old build >> "%LOG%"\r\n'
+        + (f'  start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'  start "" /d "{exe_dir}" "%EXE%"\r\n')
+        + '  del "%~f0" >nul 2>nul\r\n'
+        "  exit /b 0\r\n"
+        ")\r\n"
+        f'move /y "%NEW%" "%EXE%" >> "%LOG%" 2>&1\r\n'
+        f'del "%OLD%" >nul 2>nul\r\n'
+        'taskkill /f /im SOCAgent.exe >nul 2>nul\r\n'
+        + (f'start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'start "" /d "{exe_dir}" "%EXE%"\r\n')
+        + 'echo [%DATE% %TIME%] swapped + relaunched >> "%LOG%"\r\n'
+        'del "%~f0" >nul 2>nul\r\n'
+    )
+
+
 def _stage_frozen_update(new_exe: bytes) -> str:
     """Swap a running PyInstaller exe for the downloaded one. Returns '' on success.
 
@@ -484,34 +523,8 @@ def _stage_frozen_update(new_exe: bytes) -> str:
 
     args = " ".join(f'"{a}"' if " " in a else a for a in sys.argv[1:])
     # NOTE: 'ping -n' is the sleep that works without a console; taskkill/timeout do not.
-    script = (
-        "@echo off\r\n"
-        "setlocal enabledelayedexpansion\r\n"
-        f'set "EXE={exe}"\r\n'
-        f'set "NEW={new_path}"\r\n'
-        f'set "OLD={old_path}"\r\n'
-        f'set "LOG={log_path}"\r\n'
-        'echo [%DATE% %TIME%] updater start > "%LOG%"\r\n'
-        "set /a tries=0\r\n"
-        ":wait\r\n"
-        "ping -n 3 127.0.0.1 >nul\r\n"
-        f'move /y "%EXE%" "%OLD%" >> "%LOG%" 2>&1\r\n'
-        f'if exist "%EXE%" (\r\n'
-        "  set /a tries+=1\r\n"
-        "  if !tries! lss 30 goto wait\r\n"
-        ")\r\n"
-        f'if exist "%EXE%" (\r\n'
-        '  echo swap failed after !tries! tries - restarting old build >> "%LOG%"\r\n'
-        + (f'  start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'  start "" /d "{exe_dir}" "%EXE%"\r\n')
-        + '  del "%~f0" >nul 2>nul\r\n'
-        "  exit /b 0\r\n"
-        ")\r\n"
-        f'move /y "%NEW%" "%EXE%" >> "%LOG%" 2>&1\r\n'
-        f'del "%OLD%" >nul 2>nul\r\n'
-        + (f'start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'start "" /d "{exe_dir}" "%EXE%"\r\n')
-        + 'echo [%DATE% %TIME%] swapped + relaunched >> "%LOG%"\r\n'
-        'del "%~f0" >nul 2>nul\r\n'
-    )
+    script = _windows_update_shim(exe, new_path, old_path, log_path, args)
+
     try:
         with open(cmd_path, "w", newline="") as f:
             f.write(script)
