@@ -35,7 +35,7 @@ import uuid
 logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.2"
+AGENT_VERSION = "1.1.6"
 RECONNECT_BASE = 5
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
@@ -80,6 +80,7 @@ def collect_system_info() -> dict:
         "os_name": f"{platform.system()} {platform.release()}",
         "arch": platform.machine(),
         "agent_version": AGENT_VERSION,
+        "build": "exe" if getattr(sys, "frozen", False) else "script",
         "boot_time": _get_boot_time(),
         "cpu_count": os.cpu_count() or 0,
     }
@@ -371,6 +372,7 @@ async def _polling_mode(server: str):
                             download_url=cmd_data.get("download_url", ""),
                             expected_sha=cmd_data.get("agent_sha256", ""),
                             server=server,
+                            to_version=cmd_data.get("latest_version", ""),
                         )
                 except: pass
             
@@ -383,8 +385,12 @@ async def _polling_mode(server: str):
 #  Self-update
 # ═══════════════════════════════════════════════════════
 
-MAX_UPDATE_ATTEMPTS = 1          # per process — never loop an update
+MAX_UPDATE_ATTEMPTS = 5          # total attempts per process
+MAX_ATTEMPTS_PER_VERSION = 2     # one retry per release, then leave it to the next reconnect
+MIN_UPDATE_INTERVAL = 30         # seconds between attempts (no tight retry loops)
 _update_attempts = 0
+_update_last_at = 0.0
+_update_versions: dict = {}      # target version -> attempts
 _current_ws = None               # set while the WS connection is live
 _deferred_frames: list = []      # frames read during the registration handshake
 
@@ -446,31 +452,111 @@ async def _notify_update(result: dict) -> None:
             pass
 
 
-async def perform_self_update(download_url: str = "", expected_sha: str = "",
-                              server: str = "", notify=None) -> dict:
-    """Download the published agent, verify it, replace this script atomically.
+def _stage_frozen_update(new_exe: bytes) -> str:
+    """Swap a running PyInstaller exe for the downloaded one. Returns '' on success.
 
-    Only restarts when a verified, newer file is already in place: a failed
+    Windows keeps the running image locked (the onefile bootloader holds it even
+    after the python child exits), so a detached cmd shim retries the rename, then
+    relaunches with the original arguments. If the swap cannot be completed the
+    shim relaunches the *old* build, so an agent is never left dead.
+    """
+    exe = os.path.abspath(sys.executable)
+    exe_dir = os.path.dirname(exe)
+    new_path = os.path.join(exe_dir, "SOCAgent.new.exe")
+    old_path = exe + ".old"
+    cmd_path = os.path.join(exe_dir, "soc-agent-update.cmd")
+    log_path = os.path.join(exe_dir, "soc-agent-update.log")
+    try:
+        with open(new_path, "wb") as f:
+            f.write(new_exe)
+    except Exception as e:
+        return f"cannot stage update: {str(e)[:120]}"
+
+    if os.name != "nt":
+        # POSIX lets a running image be replaced in place; no shim needed.
+        try:
+            os.chmod(new_path, 0o755)
+            shutil.copy2(exe, old_path)
+            os.replace(new_path, exe)
+        except Exception as e:
+            return f"replace failed: {str(e)[:120]}"
+        return ""
+
+    args = " ".join(f'"{a}"' if " " in a else a for a in sys.argv[1:])
+    # NOTE: 'ping -n' is the sleep that works without a console; taskkill/timeout do not.
+    script = (
+        "@echo off\r\n"
+        "setlocal enabledelayedexpansion\r\n"
+        f'set "EXE={exe}"\r\n'
+        f'set "NEW={new_path}"\r\n'
+        f'set "OLD={old_path}"\r\n'
+        f'set "LOG={log_path}"\r\n'
+        'echo [%DATE% %TIME%] updater start > "%LOG%"\r\n'
+        "set /a tries=0\r\n"
+        ":wait\r\n"
+        "ping -n 3 127.0.0.1 >nul\r\n"
+        f'move /y "%EXE%" "%OLD%" >> "%LOG%" 2>&1\r\n'
+        f'if exist "%EXE%" (\r\n'
+        "  set /a tries+=1\r\n"
+        "  if !tries! lss 30 goto wait\r\n"
+        ")\r\n"
+        f'if exist "%EXE%" (\r\n'
+        '  echo swap failed after !tries! tries - restarting old build >> "%LOG%"\r\n'
+        + (f'  start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'  start "" /d "{exe_dir}" "%EXE%"\r\n')
+        + '  del "%~f0" >nul 2>nul\r\n'
+        "  exit /b 0\r\n"
+        ")\r\n"
+        f'move /y "%NEW%" "%EXE%" >> "%LOG%" 2>&1\r\n'
+        f'del "%OLD%" >nul 2>nul\r\n'
+        + (f'start "" /d "{exe_dir}" "%EXE%" {args}\r\n' if args else f'start "" /d "{exe_dir}" "%EXE%"\r\n')
+        + 'echo [%DATE% %TIME%] swapped + relaunched >> "%LOG%"\r\n'
+        'del "%~f0" >nul 2>nul\r\n'
+    )
+    try:
+        with open(cmd_path, "w", newline="") as f:
+            f.write(script)
+        flags = 0x00000008 | 0x00000200   # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        subprocess.Popen(["cmd", "/c", cmd_path], creationflags=flags, close_fds=True)
+    except Exception as e:
+        return f"cannot start updater: {str(e)[:120]}"
+    return ""
+
+
+async def perform_self_update(download_url: str = "", expected_sha: str = "",
+                              server: str = "", notify=None,
+                              to_version: str = "") -> dict:
+    """Download the published agent, verify it, replace this build.
+
+    Script builds are replaced atomically in place; packaged (.exe) builds are
+    staged and swapped by a detached updater after this process exits. Either
+    way the update only happens for a verified, newer payload — a failed
     download, checksum mismatch or syntax error leaves the running agent alone,
     and each process attempts at most MAX_UPDATE_ATTEMPTS updates.
     """
     global _update_attempts
     me = AGENT_VERSION
-    result = {"success": False, "from": me, "to": me, "error": ""}
+    frozen = bool(getattr(sys, "frozen", False))
+    result = {"success": False, "from": me, "to": to_version or me, "error": ""}
 
     def done(err: str = "") -> dict:
         result["error"] = err
         _save_update_state(last_result=result, at=time.time())
         return result
 
-    if getattr(sys, "frozen", False):
-        return done("frozen build — update through the installer")
+    global _update_last_at
     if _update_attempts >= MAX_UPDATE_ATTEMPTS:
-        return done("update already attempted in this process")
+        return done("update attempts exhausted in this process")
+    if to_version and _update_versions.get(to_version, 0) >= MAX_ATTEMPTS_PER_VERSION:
+        return done(f"already attempted {to_version} twice in this process")
+    if time.time() - _update_last_at < MIN_UPDATE_INTERVAL:
+        return done("update attempted too recently")
     _update_attempts += 1
+    _update_last_at = time.time()
+    if to_version:
+        _update_versions[to_version] = _update_versions.get(to_version, 0) + 1
 
-    url = download_url or (f"http://{server}/api/agent/download/agent?platform={get_platform()}"
-                           if server else "")
+    default_path = "/api/agent/download/exe" if frozen else f"/api/agent/download/agent?platform={get_platform()}"
+    url = download_url or (f"http://{server}{default_path}" if server else "")
     if not url:
         return done("no download url")
 
@@ -479,10 +565,33 @@ async def perform_self_update(download_url: str = "", expected_sha: str = "",
     except Exception as e:
         return done(f"download failed: {str(e)[:120]}")
 
-    if not new_code or len(new_code) < 1000:
+    min_bytes = 1000 if not frozen else 100_000      # a real onefile exe is megabytes
+    if not new_code or len(new_code) < min_bytes:
         return done(f"suspicious payload ({len(new_code)} bytes)")
     if expected_sha and hashlib.sha256(new_code).hexdigest() != expected_sha:
         return done("sha256 mismatch")
+
+    if frozen:
+        # The payload is a binary: the target version comes from the server.
+        result["to"] = to_version or me
+        if not to_version or _ver_tuple(to_version) <= _ver_tuple(me):
+            return done(f"payload version {to_version or '?'} is not newer than {me}")
+        if not expected_sha:
+            return done("packaged build requires a sha256 from the server")
+        err = _stage_frozen_update(new_code)
+        if err:
+            return done(err)
+        result["success"] = True
+        result["staged"] = True      # swap happens after this process exits
+        _save_update_state(last_result=result, at=time.time(), installed=os.path.abspath(sys.executable))
+        logger.info("Self-update staged %s -> %s (%d bytes); swapping after exit",
+                    me, result["to"], len(new_code))
+        notify = notify or _notify_update
+        try:
+            await notify(result)
+        except Exception:
+            pass
+        raise SystemExit(0)          # the updater shim waits for this exit
 
     m = re.search(rb'^AGENT_VERSION\s*=\s*"([^"]+)"', new_code, re.M)
     new_ver = m.group(1).decode() if m else ""
@@ -626,6 +735,7 @@ async def run(server: str, api_key: str = ""):
                         download_url=ack.get("download_url", ""),
                         expected_sha=ack.get("agent_sha256", ""),
                         server=server,
+                        to_version=ack.get("latest_version", ""),
                     )
                     # Still running => the update did not restart us (it logged why).
 
@@ -811,6 +921,7 @@ async def cmd_self_update(args: dict) -> dict:
         download_url=args.get("url", ""),
         expected_sha=args.get("sha256", ""),
         server=args.get("server", ""),
+        to_version=args.get("version", ""),
     )
     return {"success": result["success"], "from": result["from"], "to": result["to"],
             "error": result["error"]}

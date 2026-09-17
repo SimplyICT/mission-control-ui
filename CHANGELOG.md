@@ -6,13 +6,43 @@ All notable changes to this project are documented here.
 
 ## [v1.4] — 2026-09-17
 
-Released agent version: **1.1.2** (`AGENT_VERSION` in `agent_unified.py`).
+Released agent version: **1.1.6** (`AGENT_VERSION` in `agent_unified.py`).
 
 **Verified in production** on a real client machine (DESKTOP-37759RK): installer
 push took it 1.1.0 → 1.1.1, then a pushed `self_update` took it 1.1.1 → 1.1.2
 (telemetry `update {from: 1.1.1, to: 1.1.2, success: true}`, agent back online on
 1.1.2 within seconds). The re-delivered command then self-limited with
 "payload version 1.1.2 is not newer than 1.1.2".
+
+### Added — packaged (.exe) agent (roadmap P1.2)
+- `build_windows_exe.ps1` builds a standalone `SOCAgent.exe` with PyInstaller and
+  uploads it with its version (`POST /api/agent/upload-exe` now stores a
+  `SOCAgent.exe.meta.json` sidecar: version, sha256, size, built_at — a binary
+  cannot be parsed for its version). Build script fixed: correct server, ASCII
+  only (PowerShell 5.1 chokes on UTF-8 punctuation), builds in a plain workspace
+  (PyInstaller refuses `*-build` paths), uploads with curl first and keeps the
+  build when the upload fails.
+- `install_windows_exe.cmd` (+ `GET /api/agent/install/windows-exe`) installs the
+  packaged agent with no Python on the target: stops any existing agent (task,
+  `SOCAgent.exe`, legacy `python.exe … SOCAgent …`), downloads the exe, writes
+  `start.cmd`, recreates the scheduled task and starts it.
+- Frozen builds report `"build": "exe"`, so the ack hands them
+  `/api/agent/download/exe` plus the exe's version/sha; `needs_update` is compared
+  per kind, so script and packaged agents can release independently.
+- Packaged self-update: the agent verifies sha256, requires a strictly newer
+  version from the server, stages `SOCAgent.new.exe` and spawns a detached
+  `soc-agent-update.cmd` that retries the rename (the onefile bootloader keeps the
+  image locked briefly), keeps the old build until the swap succeeds, relaunches
+  with the original arguments, and falls back to restarting the old build if the
+  swap cannot complete. POSIX frozen builds replace in place instead.
+  The update report carries `staged: true` for the shim path.
+
+### Fixed — update loop guards
+- An agent refused every later release once any update attempt had been made in
+  the process (`"update already attempted in this process"`), so a single failed
+  download stranded a machine until the process restarted. Now: up to 5 attempts
+  per process, one retry per release, 30s minimum spacing — later releases are
+  still accepted.
 
 ### Added — SOC agent auto-update (roadmap P1.1)
 - **One published artifact.** `GET /api/agent/download/agent?platform=<os>` serves

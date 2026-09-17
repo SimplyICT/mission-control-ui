@@ -2576,11 +2576,11 @@ def _agents_snapshot():
     the other one). The SPA's online/offline filters depend on this.
     """
     from datetime import datetime, timezone, timedelta
-    from soc_api import connected_agents, agent_meta, needs_update
+    from soc_api import (connected_agents, agent_meta, needs_update,
+                         agent_build_kind, published_meta)
     telemetry = _load_agents()
     live = connected_agents()
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
-    latest = agent_meta()["version"]
     out = []
     for key, info in telemetry.items():
         data = info.get("data") if isinstance(info.get("data"), dict) else {}
@@ -2591,13 +2591,15 @@ def _agents_snapshot():
         except Exception:
             recent = False
         online = key in live or (data.get("status") == "online" and recent)
+        kind = agent_build_kind(system)
         out.append({
             "id": key,
             "hostname": system.get("hostname", key.split("-", 1)[-1] if "-" in key else key),
             "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
             "version": system.get("agent_version", "?"),
-            "needs_update": needs_update(system.get("agent_version")),
-            "latest_version": latest,
+            "build": kind,
+            "needs_update": needs_update(system.get("agent_version"), kind),
+            "latest_version": published_meta(kind)["version"],
             "update": info.get("update") or {},
             "update_requested_at": info.get("update_requested_at", ""),
             "ip": data.get("ip", info.get("ip", "")),
@@ -2659,16 +2661,18 @@ async def agent_poll(agent_id: str, request: Request):
                 }))
             # Nothing queued: the poll doubles as the version/update check for
             # agents that cannot hold a WebSocket open.
-            from soc_api import agent_meta, needs_update as _needs_update
-            _meta = agent_meta()
+            from soc_api import agent_build_kind, needs_update as _needs_update, published_meta
+            _kind = agent_build_kind(info)
+            _meta = published_meta(_kind)
             _host = request.headers.get("host", "")
+            _dir = "/api/agent/download/exe" if _kind == "exe" else \
+                f"/api/agent/download/agent?platform={info.get('platform', 'windows')}"
             return {
                 "type": "noop",
                 "latest_version": _meta["version"],
                 "agent_sha256": _meta["sha256"],
-                "needs_update": _needs_update(info.get("agent_version")),
-                "download_url": (f"http://{_host}/api/agent/download/agent"
-                                 f"?platform={info.get('platform', 'windows')}") if _host else "",
+                "needs_update": _needs_update(info.get("agent_version"), _kind),
+                "download_url": f"http://{_host}{_dir}" if _host else "",
             }
     except Exception as e:
         logger.warning("agent_poll error: %s", e)
@@ -2677,16 +2681,31 @@ async def agent_poll(agent_id: str, request: Request):
 
 @app.post("/api/agent/upload-exe")
 async def agent_upload_exe(request: Request):
-    """Upload compiled SOCAgent.exe from the build script."""
+    """Upload a compiled SOCAgent.exe from build_windows_exe.ps1.
+
+    An optional `version` form field records what was built, so the server can
+    tell packaged agents whether they are current (the version cannot be read
+    back out of the binary).
+    """
     try:
+        import hashlib as _hashlib
         form = await request.form()
         file = form.get("file")
         if file and hasattr(file, "read"):
             content = await file.read()
             exe_path = Path(__file__).parent / "SOCAgent.exe"
             exe_path.write_bytes(content)
-            logger.info("Uploaded SOCAgent.exe (%d bytes)", len(content))
-            return {"status": "ok", "size": len(content)}
+            from soc_api import agent_meta
+            version = str(form.get("version") or "").strip() or agent_meta()["version"]
+            meta_path = Path(__file__).parent / "SOCAgent.exe.meta.json"
+            meta_path.write_text(json.dumps({
+                "version": version,
+                "sha256": _hashlib.sha256(content).hexdigest(),
+                "bytes": len(content),
+                "built_at": datetime.now(timezone.utc).isoformat(),
+            }, indent=2))
+            logger.info("Uploaded SOCAgent.exe (%d bytes, v%s)", len(content), version)
+            return {"status": "ok", "size": len(content), "version": version}
     except Exception as e:
         return {"status": "error", "message": str(e)}
     return {"status": "error", "message": "no file"}
@@ -2695,21 +2714,34 @@ async def agent_upload_exe(request: Request):
 def agent_download_exe():
     """Download standalone SOCAgent.exe (no Python needed)."""
     exe_path = Path(__file__).parent / "SOCAgent.exe"
+    from fastapi.responses import Response
     if exe_path.exists():
-        from fastapi.responses import Response
+        from soc_api import exe_meta
+        meta = exe_meta()
         return Response(
             content=exe_path.read_bytes(),
             media_type="application/octet-stream",
-            headers={"Content-Disposition": "attachment; filename=SOCAgent.exe"},
+            headers={
+                "X-Agent-Version": meta["version"],
+                "X-Agent-Sha256": meta["sha256"],
+                "Cache-Control": "no-store",
+                "Content-Disposition": "attachment; filename=SOCAgent.exe",
+            },
         )
     # Fallback: serve the Python script with .py extension
     script = Path(__file__).parent / "agent_unified.py"
     if script.exists():
-        from fastapi.responses import Response
+        from soc_api import agent_meta
+        meta = agent_meta()
         return Response(
             content=script.read_bytes(),
             media_type="text/x-python",
-            headers={"Content-Disposition": "attachment; filename=SOCAgent.py"},
+            headers={
+                "X-Agent-Version": meta["version"],
+                "X-Agent-Sha256": meta["sha256"],
+                "Cache-Control": "no-store",
+                "Content-Disposition": "attachment; filename=SOCAgent.py",
+            },
         )
     return {"error": "Agent script not found"}, 404
 

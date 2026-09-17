@@ -68,6 +68,8 @@ router = APIRouter(tags=["soc-api"])
 
 AGENT_TELEMETRY_FILE = BASE_DIR / "agent_telemetry.json"
 AGENT_SOURCE_FILE = BASE_DIR / "agent_unified.py"
+AGENT_EXE_FILE = BASE_DIR / "SOCAgent.exe"
+AGENT_EXE_META = BASE_DIR / "SOCAgent.exe.meta.json"
 
 # The published agent version is whatever agent_unified.py declares — bump the
 # agent file and the server follows. No second constant to keep in sync.
@@ -89,16 +91,66 @@ def agent_meta() -> dict:
             "sha256": hashlib.sha256(raw).hexdigest(),
             "bytes": len(raw),
         })
-    return dict(_agent_meta_cache)
+    return {"version": _agent_meta_cache["version"],
+            "sha256": _agent_meta_cache["sha256"],
+            "bytes": _agent_meta_cache["bytes"]}
+
+
+def exe_meta() -> dict:
+    """Version + sha256 of the packaged Windows agent (PyInstaller build).
+
+    Falls back to the script's version when no sidecar exists, so an exe uploaded
+    by an older build script still compares sensibly.
+    """
+    if not AGENT_EXE_FILE.exists():
+        return {"version": "", "sha256": "", "bytes": 0}
+    try:
+        st = AGENT_EXE_FILE.stat()
+    except OSError:
+        return {"version": "", "sha256": "", "bytes": 0}
+    if _agent_meta_cache.get("exe_mtime") != st.st_mtime:
+        side: dict = {}
+        try:
+            side = json.loads(AGENT_EXE_META.read_text())
+        except Exception:
+            side = {}
+        _agent_meta_cache.update({
+            "exe_mtime": st.st_mtime,
+            "exe_version": side.get("version") or agent_meta()["version"],
+            "exe_sha256": side.get("sha256") or hashlib.sha256(AGENT_EXE_FILE.read_bytes()).hexdigest(),
+            "exe_bytes": st.st_size,
+        })
+    return {"version": _agent_meta_cache["exe_version"],
+            "sha256": _agent_meta_cache["exe_sha256"],
+            "bytes": _agent_meta_cache["exe_bytes"]}
+
+
+def agent_build_kind(sysinfo: dict) -> str:
+    """'exe' for a frozen (PyInstaller) agent, else 'script'."""
+    build = str((sysinfo or {}).get("build", "")).lower()
+    return "exe" if build in ("exe", "frozen") else "script"
+
+
+def published_meta(kind: str = "script") -> dict:
+    """What we publish for that agent kind (exe falls back to the script)."""
+    if kind == "exe":
+        meta = exe_meta()
+        if meta["version"] and meta["sha256"]:
+            return meta
+    return agent_meta()
+
+
+def download_path(kind: str, platform_name: str = "windows") -> str:
+    return "/api/agent/download/exe" if kind == "exe" else f"/api/agent/download/agent?platform={platform_name}"
 
 
 def _version_tuple(v) -> tuple:
     return tuple(int(n) for n in re.findall(r"\d+", str(v or ""))[:3]) or (0,)
 
 
-def needs_update(agent_version) -> bool:
+def needs_update(agent_version, kind: str = "script") -> bool:
     """True when the agent reports an older version than the one we publish."""
-    return _version_tuple(agent_version) < _version_tuple(agent_meta()["version"])
+    return _version_tuple(agent_version) < _version_tuple(published_meta(kind)["version"])
 
 
 def _ws_base_url(ws) -> str:
@@ -158,19 +210,21 @@ def _client_ip(request: Request) -> str:
 def _agent_list() -> list[dict]:
     """Flat agent list from telemetry (shape used by /api/agents/all)."""
     telemetry = _load_telemetry()
-    latest = agent_meta()["version"]
     agents = []
     for key, info in telemetry.items():
         data = info.get("data", {}) if isinstance(info.get("data"), dict) else {}
         system = data.get("system", {}) if isinstance(data, dict) else {}
         default_host = key.split("-", 1)[-1] if "-" in key else key
+        kind = agent_build_kind(system)
+        latest = published_meta(kind)["version"]
         agents.append({
             "id": key,
             "name": system.get("hostname", system.get("host_name", default_host)),
             "hostname": system.get("hostname", default_host),
             "platform": system.get("platform", key.split("-")[0] if "-" in key else "unknown"),
             "version": system.get("agent_version", "?"),
-            "needs_update": needs_update(system.get("agent_version")),
+            "build": kind,
+            "needs_update": needs_update(system.get("agent_version"), kind),
             "latest_version": latest,
             "update": info.get("update") or {},
             "update_requested_at": info.get("update_requested_at", ""),
@@ -287,23 +341,24 @@ async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
                 entry = telemetry.setdefault(agent_key, {"data": {}})
                 entry["data"] = {"system": sysinfo, "status": "online"}
                 entry["last_seen"] = _now()
-                meta = agent_meta()
                 platform = sysinfo.get("platform", "unknown")
-                outdated = needs_update(sysinfo.get("agent_version"))
+                kind = agent_build_kind(sysinfo)
+                meta = published_meta(kind)
+                outdated = needs_update(sysinfo.get("agent_version"), kind)
                 entry["latest_version"] = meta["version"]
                 entry["update_needed"] = outdated
                 _save_telemetry(telemetry)
                 # Registration ack FIRST (client's auto-update window). The download
                 # URL is built from the address the agent reached us on, so mesh, LAN
-                # and public agents all get a URL they can actually fetch.
+                # and public agents all get a URL they can actually fetch, and a
+                # packaged (exe) agent is handed the exe rather than the script.
                 base = _ws_base_url(ws)
                 await ws.send_json({
                     "type": "registered",
                     "agent_id": sysinfo.get("agent_id", agent_key),
                     "latest_version": meta["version"],
                     "agent_sha256": meta["sha256"],
-                    "download_url": (f"{base}/api/agent/download/agent?platform={platform}"
-                                     if base else ""),
+                    "download_url": f"{base}{download_path(kind, platform)}" if base else "",
                     "needs_update": outdated,
                 })
                 # Drain the outbox — re-deliver anything still unanswered, so a
@@ -664,11 +719,12 @@ async def api_agents_update(request: Request):
     """Ask agents to self-update. Targets: explicit ids, all, or only outdated."""
     body = await request.json()
     agent_ids = list(body.get("agent_ids") or [])
+    telemetry = _load_telemetry()
     if body.get("all") or body.get("outdated"):
-        telemetry = _load_telemetry()
         for key, info in telemetry.items():
             system = (info.get("data") or {}).get("system") or {}
-            if body.get("outdated") and not needs_update(system.get("agent_version")):
+            if body.get("outdated") and not needs_update(system.get("agent_version"),
+                                                          agent_build_kind(system)):
                 continue
             agent_ids.append(key)
     agent_ids = sorted(set(agent_ids))
@@ -677,17 +733,18 @@ async def api_agents_update(request: Request):
     scheme = "https" if (request.headers.get("x-forwarded-proto") or "").lower() == "https" else "http"
     base = f"{scheme}://{host}"
 
-    telemetry = _load_telemetry()
     updated, failed, errors = 0, 0, []
     for aid in agent_ids:
         try:
             from soc_store import get_command
             system = (telemetry.get(aid, {}).get("data") or {}).get("system") or {}
             platform = system.get("platform", "windows")
+            kind = agent_build_kind(system)
             cmd_id = enqueue_command(aid, "self_update", {
                 "server": host,
-                "url": f"{base}/api/agent/download/agent?platform={platform}",
-                "sha256": agent_meta()["sha256"],
+                "url": f"{base}{download_path(kind, platform)}",
+                "sha256": published_meta(kind)["sha256"],
+                "version": published_meta(kind)["version"],
             })
             cmd = get_command(cmd_id)
             _deliver_sync(aid, cmd)
@@ -701,7 +758,8 @@ async def api_agents_update(request: Request):
     if agent_ids:
         _save_telemetry(telemetry)
     return {"updated": updated, "failed": failed, "errors": errors[:5],
-            "targets": len(agent_ids), "latest_version": agent_meta()["version"]}
+            "targets": len(agent_ids), "latest_version": agent_meta()["version"],
+            "latest_exe_version": exe_meta()["version"]}
 
 
 @router.post("/api/agent/{agent_id}/result")
@@ -718,6 +776,15 @@ async def api_agent_result(agent_id: str, request: Request):
 @router.get("/api/agent/install/windows-batch")
 def api_agent_install_batch():
     f = BASE_DIR / "install_windows.cmd"
+    if f.exists():
+        return HTMLResponse(f.read_text(errors="replace"), status_code=200)
+    return JSONResponse({"error": "installer not found"}, status_code=404)
+
+
+@router.get("/api/agent/install/windows-exe")
+def api_agent_install_exe():
+    """Installer for the packaged agent (no Python needed on the target)."""
+    f = BASE_DIR / "install_windows_exe.cmd"
     if f.exists():
         return HTMLResponse(f.read_text(errors="replace"), status_code=200)
     return JSONResponse({"error": "installer not found"}, status_code=404)
