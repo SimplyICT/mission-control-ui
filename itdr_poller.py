@@ -49,6 +49,8 @@ GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 ITDR_STORE = Path(__file__).parent / "itdr_events.json"
 ITDR_CASES = Path(__file__).parent / "itdr_cases.json"
 TENANTS_FILE = Path(__file__).parent / "itdr_tenants.json"
+STATUS_FILE = Path(__file__).parent / "itdr_poll_status.json"
+CREDS_FILE = Path(__file__).parent / "itdr_tenant_creds.json"  # mode 600; written by onboarding
 POLL_INTERVAL_MIN = float(os.getenv("ITDR_POLL_INTERVAL_MIN", "5"))
 MAX_EVENTS = 5000
 MAX_CASES = 500
@@ -111,13 +113,38 @@ def _legacy_default_tenant() -> dict | None:
     }
 
 
+def _load_status() -> dict:
+    try:
+        return json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_status(status: dict) -> None:
+    try:
+        STATUS_FILE.write_text(json.dumps(status, indent=2, default=str), encoding="utf-8")
+    except Exception as e:
+        logger.warning("could not persist poll status: %s", e)
+
+
 def get_tenants() -> list[dict]:
-    """All registered tenants plus the legacy synth tenant if nothing is configured."""
+    """Every tenant with its last poll status merged in.
+
+    Poll results live in itdr_poll_status.json (runtime state) while the registry
+    holds configuration — and the legacy env tenant has no registry row at all,
+    so its status would otherwise be invisible.
+    """
     tenants = _load_tenants()
     if not tenants:
         legacy = _legacy_default_tenant()
         if legacy:
             tenants = [legacy]
+    status = _load_status()
+    for t in tenants:
+        st = status.get(t.get("id", "")) or {}
+        for k in ("last_poll", "last_status", "last_error", "last_counts", "defender"):
+            if k in st:
+                t[k] = st[k]
     return tenants
 
 
@@ -180,18 +207,55 @@ def delete_tenant(tenant_id: str) -> bool:
     return True
 
 
+def load_credentials() -> dict:
+    """Per-tenant secrets captured through onboarding (file mode 600)."""
+    try:
+        return json.loads(CREDS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_credentials(tenant_id: str, creds: dict) -> None:
+    all_creds = load_credentials()
+    entry = all_creds.get(tenant_id) or {}
+    for k in ("tenant_id", "client_id", "client_secret"):
+        if creds.get(k):
+            entry[k] = str(creds[k]).strip()
+    all_creds[tenant_id] = entry
+    CREDS_FILE.write_text(json.dumps(all_creds, indent=2), encoding="utf-8")
+    try:
+        os.chmod(CREDS_FILE, 0o600)
+    except OSError:
+        pass
+    _token_cache.pop(tenant_id, None)
+    _DEFENDER_PROBE.pop(tenant_id, None)
+
+
+def has_credentials(tenant_id: str) -> bool:
+    c = load_credentials().get(tenant_id) or {}
+    return bool(c.get("client_id") and c.get("client_secret"))
+
+
 def _tenant_credentials(tenant: dict) -> dict:
-    """Resolve client id/secret/tenant id for a tenant from env vars."""
+    """Resolve client id/secret/tenant id for a tenant.
+
+    Order: onboarding file (UI) → env vars for the tenant's prefix → legacy env.
+    """
     if not tenant:
         return {}
     tid = tenant.get("id", "")
     if tid == "default":
-        return dict(LEGACY_CREDS)
+        stored = load_credentials().get("default") or {}
+        return {k: stored.get(k) or LEGACY_CREDS.get(k, "") for k in
+                ("tenant_id", "client_id", "client_secret")}
     prefix = (tenant.get("env_prefix") or tid).upper()
+    stored = load_credentials().get(tid) or {}
     creds = {
-        "tenant_id": os.getenv(f"ITDR_{prefix}_TENANT_ID", "").strip() or (tenant.get("tenant_id") or "").strip(),
-        "client_id": os.getenv(f"ITDR_{prefix}_CLIENT_ID", "").strip(),
-        "client_secret": os.getenv(f"ITDR_{prefix}_CLIENT_SECRET", "").strip(),
+        "tenant_id": (os.getenv(f"ITDR_{prefix}_TENANT_ID", "").strip()
+                      or stored.get("tenant_id") or (tenant.get("tenant_id") or "").strip()),
+        "client_id": os.getenv(f"ITDR_{prefix}_CLIENT_ID", "").strip() or stored.get("client_id", ""),
+        "client_secret": (os.getenv(f"ITDR_{prefix}_CLIENT_SECRET", "").strip()
+                          or stored.get("client_secret", "")),
     }
     return creds
 
@@ -402,11 +466,20 @@ def get_summary() -> dict:
         ready = is_configured(t)
         if ready and t.get("enabled", True):
             configured += 1
+        perms = {}
+        try:
+            perms = graph_permissions(t)          # cached probe (1 h TTL)
+        except Exception:
+            perms = {}
         tenants_out.append({
             "id": tid,
             "name": t.get("name", tid),
             "tenant_id": t.get("tenant_id", ""),
             "org_id": t.get("org_id", "default"),
+            "identity": perms.get("identity", ""),
+            "defender": perms.get("defender", ""),
+            "defender_missing_roles": perms.get("defender_missing_roles", []),
+            "last_counts": t.get("last_counts") or {},
             "enabled": t.get("enabled", True),
             "configured": ready,
             "last_poll": t.get("last_poll"),
@@ -434,6 +507,20 @@ def get_summary() -> dict:
 #  Poll Cycle
 # ═══════════════════════════════════════════════════════
 
+def _graph_ts(value) -> str:
+    """ISO-8601 the Graph API accepts: second precision, Z suffix, no offset."""
+    if not value:
+        return ""
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return value
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _last_event_ts(tenant_id: str) -> str | None:
     """Newest stored event timestamp for a tenant (Graph filter window base)."""
     for e in _load_events():
@@ -444,7 +531,18 @@ def _last_event_ts(tenant_id: str) -> str | None:
     return None
 
 
-def _mark_poll(tenant_id: str, status: str, error: str | None = None):
+def _mark_poll(tenant_id: str, status: str, error: str | None = None,
+               counts: dict | None = None, defender: str | None = None):
+    """Record a poll result (runtime state; survives the legacy env tenant too)."""
+    all_status = _load_status()
+    entry = all_status.get(tenant_id) or {}
+    entry.update({"last_poll": _now_iso(), "last_status": status, "last_error": error})
+    if counts is not None:
+        entry["last_counts"] = counts
+    if defender is not None:
+        entry["defender"] = defender
+    all_status[tenant_id] = entry
+    _save_status(all_status)
     """Persist poll status onto the tenant registry row."""
     tenants = _load_tenants()
     changed = False
@@ -457,6 +555,131 @@ def _mark_poll(tenant_id: str, status: str, error: str | None = None):
             break
     if changed:
         _save_tenants(tenants)
+
+
+# ── Microsoft Defender (M365 security) ────────────────────────────────────
+# The same app registration must be granted the Defender XDR application roles;
+# without them Graph answers 403 "Missing application roles", which we surface as
+# a per-tenant status instead of failing the poll.
+
+DEFENDER_ROLES = ("SecurityAlert.Read.All", "SecurityIncident.Read.All")
+
+# tenant id -> (checked_at, status dict)
+_DEFENDER_PROBE: dict[str, tuple[float, dict]] = {}
+_PROBE_TTL = 3600
+
+
+def graph_permissions(tenant: dict, force: bool = False) -> dict:
+    """Which Graph capabilities this tenant's app can actually use.
+
+    Probes one cheap request per area and reports the outcome, so onboarding can
+    tell the admin exactly what to grant/consent.
+    """
+    tid = tenant.get("id", "default")
+    cached = _DEFENDER_PROBE.get(tid)
+    if cached and not force and time.time() - cached[0] < _PROBE_TTL:
+        return cached[1]
+    out = {"identity": "", "defender": "", "defender_missing_roles": [], "checked_at": _now_iso()}
+    headers = _headers(tenant)
+    if not headers.get("Authorization"):
+        out.update({"identity": "no_credentials", "defender": "no_credentials"})
+        _DEFENDER_PROBE[tid] = (time.time(), out)
+        return out
+    probes = (
+        ("identity", f"{GRAPH_BASE}/auditLogs/signIns?$top=1"),
+        ("defender", f"{GRAPH_BASE}/security/alerts_v2?$top=1"),
+    )
+    for area, url in probes:
+        try:
+            r = requests.get(url, headers=headers, timeout=30)
+            if r.status_code == 200:
+                out[area] = "ok"
+            elif r.status_code == 403:
+                body = r.text[:600]
+                roles = [x for x in DEFENDER_ROLES if x in body]
+                if not roles:
+                    roles = [x.strip() for x in body.split("API required roles:")[-1].split(",")][:4]
+                out[area] = "missing_roles"
+                if area == "defender":
+                    out["defender_missing_roles"] = [x for x in roles if x]
+            else:
+                out[area] = f"http_{r.status_code}"
+        except Exception as e:
+            out[area] = f"error: {str(e)[:60]}"
+    _DEFENDER_PROBE[tid] = (time.time(), out)
+    return out
+
+
+def fetch_defender_alerts(tenant: dict, since: str | None = None, limit: int = 200) -> list[dict]:
+    """Defender XDR alerts (security/alerts_v2) — the threat feed for M365."""
+    url = f"{GRAPH_BASE}/security/alerts_v2?$top={limit}&$expand=evidence"
+    if since:
+        url += f"&$filter=createdDateTime ge {_graph_ts(since)}"
+    r = requests.get(url, headers=_headers(tenant), timeout=45)
+    r.raise_for_status()
+    return r.json().get("value", [])
+
+
+def fetch_defender_incidents(tenant: dict, since: str | None = None, limit: int = 100) -> list[dict]:
+    """Defender XDR incidents (correlated alert groups)."""
+    url = f"{GRAPH_BASE}/security/incidents?$top={limit}"
+    if since:
+        url += f"&$filter=createdDateTime ge {_graph_ts(since)}"
+    r = requests.get(url, headers=_headers(tenant), timeout=45)
+    r.raise_for_status()
+    return r.json().get("value", [])
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _defender_event(alert: dict, tenant: dict) -> dict:
+    evidence = alert.get("evidence") or []
+    user = ""
+    device = ""
+    for ev in evidence:
+        if not user:
+            user = (ev.get("userAccount", {}) or {}).get("accountName", "") or ev.get("userPrincipalName", "")
+        if not device:
+            device = ev.get("deviceName", "") or ev.get("hostName", "")
+    return {
+        "id": alert.get("id", ""),
+        "source": "defenderAlert",
+        "created_at": alert.get("createdDateTime", ""),
+        "user": user,
+        "device": device,
+        "title": alert.get("title", ""),
+        "severity": (alert.get("severity") or "unknown").lower(),
+        "status": (alert.get("status") or "new").lower(),
+        "category": alert.get("category", ""),
+        "service_source": alert.get("serviceSource", ""),
+        "detection_source": alert.get("detectionSource", ""),
+        "mitre": alert.get("mitreTechniques") or [],
+        "description": alert.get("description", ""),
+        "incident_id": alert.get("incidentId", ""),
+        "tenant_id": tenant.get("id", "default"),
+        "tenant_name": tenant.get("name", ""),
+    }
+
+
+def _defender_incident_event(inc: dict, tenant: dict) -> dict:
+    return {
+        "id": inc.get("id", ""),
+        "source": "defenderIncident",
+        "created_at": inc.get("createdDateTime", ""),
+        "user": "",
+        "device": "",
+        "title": inc.get("displayName", "") or "Defender incident",
+        "severity": (inc.get("severity") or "unknown").lower(),
+        "status": (inc.get("status") or "active").lower(),
+        "category": inc.get("classification", "") or "",
+        "service_source": "defender_xdr",
+        "alert_count": len(inc.get("alerts") or []),
+        "description": ", ".join(sorted({(a.get("title") or "") for a in (inc.get("alerts") or [])}))[:400],
+        "tenant_id": tenant.get("id", "default"),
+        "tenant_name": tenant.get("name", ""),
+    }
 
 
 def poll_tenant(tenant_id: str) -> dict:
@@ -474,13 +697,15 @@ def poll_tenant(tenant_id: str) -> dict:
         _mark_poll(tenant_id, "auth_error", "token acquisition failed")
         return {"status": "error", "tenant_id": tenant_id, "message": "token acquisition failed"}
 
-    # Polling window: last stored event for this tenant, else 24h ago.
-    since = _last_event_ts(tenant_id)
-    if not since:
-        since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat() + "Z"
+    # Polling window: last stored event for this tenant, else 24h ago. Graph wants
+    # second precision with a Z suffix — datetime.isoformat() (+00:00, microseconds)
+    # is rejected with HTTP 400, which used to break every poll of a fresh tenant.
+    since = _graph_ts(_last_event_ts(tenant_id)) or _graph_ts(
+        datetime.now(timezone.utc) - timedelta(hours=24))
 
     results = {"tenant_id": tenant_id, "sign_ins": 0, "audit_logs": 0,
-               "risk_detections": 0, "events_stored": 0, "detections": 0}
+               "risk_detections": 0, "defender_alerts": 0, "defender_incidents": 0,
+               "events_stored": 0, "detections": 0, "defender": None}
     new_events: list[dict] = []
 
     try:
@@ -544,6 +769,28 @@ def poll_tenant(tenant_id: str) -> dict:
         new_events.extend(risks)
         results["risk_detections"] = len(risks)
 
+        # Microsoft Defender XDR (M365 threats) — only when the tenant's app has
+        # the roles; otherwise record what to grant and keep polling identity.
+        perms = graph_permissions(tenant)
+        results["defender"] = perms.get("defender", "")
+        if perms.get("defender") == "ok":
+            try:
+                alerts = fetch_defender_alerts(tenant, since)
+                new_events.extend(_defender_event(a, tenant) for a in alerts)
+                results["defender_alerts"] = len(alerts)
+            except Exception as e:
+                logger.warning("Defender alerts fetch failed (tenant %s): %s", tenant_id, str(e)[:120])
+                results["defender"] = f"error: {str(e)[:80]}"
+            try:
+                incidents = fetch_defender_incidents(tenant, since)
+                new_events.extend(_defender_incident_event(i, tenant) for i in incidents)
+                results["defender_incidents"] = len(incidents)
+            except Exception as e:
+                logger.warning("Defender incidents fetch failed (tenant %s): %s", tenant_id, str(e)[:120])
+        elif perms.get("defender") == "missing_roles":
+            logger.warning("Defender roles not granted for tenant %s: %s",
+                           tenant_id, perms.get("defender_missing_roles"))
+
         # Store tagged events
         store_events(new_events, tenant)
         results["events_stored"] = len(_load_events())
@@ -563,7 +810,11 @@ def poll_tenant(tenant_id: str) -> dict:
         results["message"] = str(e)
         return results
 
-    _mark_poll(tenant_id, "ok")
+    _mark_poll(tenant_id, "ok", None, counts={
+        k: results.get(k, 0) for k in ("sign_ins", "audit_logs", "risk_detections",
+                                       "defender_alerts", "defender_incidents",
+                                       "events_stored", "detections")},
+        defender=results.get("defender") or "")
     results["status"] = "ok"
     return results
 
@@ -576,11 +827,15 @@ def _create_cases_for_detections(detections: list[dict], tenant: dict) -> int:
     for det in detections:
         user = det.get("user", "")
         dtype = det.get("detection_type", "")
-        key = (tenant.get("id", ""), dtype, user)
+        # Defender alerts/incidents dedupe on their own id (a device alert has no
+        # user, so the identity key would collapse unrelated alerts together).
+        by_event = det.get("dedup_field") == "event_id" and det.get("event_id")
+        key = (tenant.get("id", ""), dtype, det.get("event_id", "") if by_event else user)
         dup = False
         for c in existing:
-            if (c.get("tenant_id"), c.get("detection_type"), c.get("user")) == key \
-                    and c.get("status") in ("open", "investigating"):
+            cur = (c.get("tenant_id"), c.get("detection_type"),
+                   c.get("event_id", "") if by_event else c.get("user"))
+            if cur == key and c.get("status") in ("open", "investigating"):
                 try:
                     ts = datetime.fromisoformat(str(c.get("created_at", "")).replace("Z", "+00:00"))
                     if now - ts <= timedelta(hours=24):

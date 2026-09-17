@@ -1060,8 +1060,74 @@ def api_itdr_cases(tenant: str = ""):
 # ── ITDR tenants (M365 multi-tenant registry) ─────────────────────────────
 
 @router.get("/api/itdr/tenants")
-def api_itdr_tenants():
-    return {"tenants": itdr_poller.get_tenants()}
+def api_itdr_tenants(health: bool = False):
+    """Tenants with configuration + connection health.
+
+    health=true forces a fresh Graph permission probe per tenant (the "Test
+    connection" button); otherwise the cached probe (1 h TTL) is used so the page
+    stays fast.
+    """
+    tenants = itdr_poller.get_tenants()
+    for t in tenants:
+        try:
+            perms = itdr_poller.graph_permissions(t, force=health)
+        except Exception as e:
+            perms = {"identity": f"error: {str(e)[:60]}", "defender": "unknown"}
+        t["configured"] = itdr_poller.is_configured(t)
+        t["identity"] = perms.get("identity", "")
+        t["defender"] = perms.get("defender", "")
+        t["defender_missing_roles"] = perms.get("defender_missing_roles", [])
+        # never ship secrets to the browser
+        t.pop("client_secret", None)
+    return {"tenants": tenants,
+            "defender_roles_required": list(itdr_poller.DEFENDER_ROLES)}
+
+
+@router.post("/api/itdr/tenants/{tenant_id}/credentials")
+async def api_itdr_tenant_credentials(tenant_id: str, request: Request):
+    """Store a tenant's app-registration credentials (onboarding).
+
+    Written to itdr_tenant_creds.json (mode 600) so onboarding does not need a
+    .env edit + restart. The app registration itself must exist in the customer
+    tenant with the Graph roles below and admin consent granted.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    tenant = itdr_poller.get_tenant(tenant_id)
+    if tenant is None:
+        return {"success": False, "error": f"tenant '{tenant_id}' not found"}
+    if not (body.get("client_id") and body.get("client_secret")):
+        return {"success": False, "error": "client_id and client_secret are required"}
+    itdr_poller.save_credentials(tenant_id, {
+        "tenant_id": body.get("tenant_id") or tenant.get("tenant_id") or "",
+        "client_id": body.get("client_id"),
+        "client_secret": body.get("client_secret"),
+    })
+    if body.get("tenant_id") and body["tenant_id"] != tenant.get("tenant_id"):
+        itdr_poller.update_tenant(tenant_id, {"tenant_id": body["tenant_id"]})
+    perms = itdr_poller.graph_permissions(itdr_poller.get_tenant(tenant_id), force=True)
+    ok = bool(itdr_poller.get_token(itdr_poller.get_tenant(tenant_id)))
+    return {"success": True, "authenticated": ok, "permissions": perms}
+
+
+@router.get("/api/itdr/tenants/{tenant_id}/health")
+def api_itdr_tenant_health(tenant_id: str):
+    """Fresh connection/permission check for one tenant."""
+    tenant = itdr_poller.get_tenant(tenant_id)
+    if tenant is None:
+        return {"success": False, "error": f"tenant '{tenant_id}' not found"}
+    perms = itdr_poller.graph_permissions(tenant, force=True)
+    token = itdr_poller.get_token(tenant)
+    return {"success": True, "tenant_id": tenant_id,
+            "configured": itdr_poller.is_configured(tenant),
+            "authenticated": bool(token),
+            "permissions": perms,
+            "defender_roles_required": list(itdr_poller.DEFENDER_ROLES),
+            "last_status": tenant.get("last_status"),
+            "last_poll": tenant.get("last_poll"),
+            "last_counts": tenant.get("last_counts") or {}}
 
 
 @router.post("/api/itdr/tenants")
@@ -1082,6 +1148,16 @@ async def api_itdr_tenants_create(request: Request):
         )
     except ValueError as e:
         return {"success": False, "error": str(e)}
+
+    # Onboarding can carry the app-registration credentials in the same call.
+    if body.get("client_id") and body.get("client_secret"):
+        itdr_poller.save_credentials(tenant["id"], {
+            "tenant_id": tenant.get("tenant_id") or "",
+            "client_id": body["client_id"],
+            "client_secret": body["client_secret"],
+        })
+        tenant["configured"] = True
+        tenant["permissions"] = itdr_poller.graph_permissions(tenant, force=True)
     return {"success": True, "tenant": tenant}
 
 
