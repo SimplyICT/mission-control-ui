@@ -606,7 +606,10 @@ def graph_permissions(tenant: dict, force: bool = False) -> dict:
                 out[area] = f"http_{r.status_code}"
         except Exception as e:
             out[area] = f"error: {str(e)[:60]}"
-    _DEFENDER_PROBE[tid] = (time.time(), out)
+    # Re-check soon while something is missing (an admin usually grants within
+    # minutes); cache longer once everything is granted.
+    ttl = _PROBE_TTL if out.get("identity") == "ok" and out.get("defender") == "ok" else 300
+    _DEFENDER_PROBE[tid] = (time.time() - _PROBE_TTL + ttl, out)
     return out
 
 
