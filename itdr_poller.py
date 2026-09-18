@@ -479,6 +479,8 @@ def get_summary() -> dict:
             "identity": perms.get("identity", ""),
             "defender": perms.get("defender", ""),
             "defender_missing_roles": perms.get("defender_missing_roles", []),
+            "mde": t.get("mde") or "",
+            "mde_missing_roles": (mde_permissions(t).get("missing_roles") or []),
             "last_counts": t.get("last_counts") or {},
             "enabled": t.get("enabled", True),
             "configured": ready,
@@ -613,6 +615,115 @@ def graph_permissions(tenant: dict, force: bool = False) -> dict:
     return out
 
 
+# ── Microsoft Defender for Endpoint (device alerts) ───────────────────────
+# A separate API (api.security.microsoft.com) and its own app roles
+# (Alert.Read.All for alerts, Machine.Read.All for device inventory) — granted on
+# the same app registration, but under the "Microsoft Defender for Endpoint"
+# resource, not Microsoft Graph.
+
+MDE_BASE = "https://api.security.microsoft.com"
+MDE_SCOPE = "https://api.security.microsoft.com/.default"
+MDE_ROLES = ("Alert.Read.All", "Machine.Read.All")
+
+_mde_token_cache: dict[str, dict] = {}
+_MDE_PROBE: dict[str, tuple[float, dict]] = {}
+
+
+def mde_token(tenant: dict) -> str:
+    creds = _tenant_credentials(tenant)
+    if not all([creds.get("tenant_id"), creds.get("client_id"), creds.get("client_secret")]):
+        return ""
+    tid = tenant.get("id", "")
+    cached = _mde_token_cache.get(tid)
+    if cached and cached.get("value") and time.time() < cached.get("expires_at", 0) - 60:
+        return cached["value"]
+    try:
+        r = requests.post(f"https://login.microsoftonline.com/{creds['tenant_id']}/oauth2/v2.0/token",
+                          data={"grant_type": "client_credentials", "client_id": creds["client_id"],
+                                "client_secret": creds["client_secret"], "scope": MDE_SCOPE}, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        _mde_token_cache[tid] = {"value": body.get("access_token", ""),
+                                 "expires_at": time.time() + int(body.get("expires_in", 3600))}
+        return _mde_token_cache[tid]["value"]
+    except Exception as e:
+        logger.warning("MDE token failed (tenant %s): %s", tid, str(e)[:100])
+        return ""
+
+
+def mde_headers(tenant: dict) -> dict:
+    tok = mde_token(tenant)
+    return {"Authorization": f"Bearer {tok}"} if tok else {}
+
+
+def mde_permissions(tenant: dict, force: bool = False) -> dict:
+    """Whether the app can read Defender for Endpoint alerts for this tenant."""
+    tid = tenant.get("id", "default")
+    cached = _MDE_PROBE.get(tid)
+    if cached and not force and time.time() - cached[0] < 300:
+        return cached[1]
+    out = {"status": "", "missing_roles": [], "checked_at": _now_iso()}
+    headers = mde_headers(tenant)
+    if not headers:
+        out["status"] = "no_credentials"
+    else:
+        try:
+            r = requests.get(f"{MDE_BASE}/api/alerts?$top=1", headers=headers, timeout=30)
+            if r.status_code == 200:
+                out["status"] = "ok"
+            elif r.status_code == 403:
+                body = r.text[:600]
+                out["status"] = "missing_roles"
+                roles = [x for x in MDE_ROLES if x in body]
+                out["missing_roles"] = roles or [x.strip() for x in
+                                                 body.split("API required roles:")[-1].split(",")][:3]
+            elif r.status_code == 401:
+                out["status"] = "unauthorized"
+            else:
+                out["status"] = f"http_{r.status_code}"
+        except Exception as e:
+            out["status"] = f"error: {str(e)[:60]}"
+    _MDE_PROBE[tid] = (time.time(), out)
+    return out
+
+
+def fetch_mde_alerts(tenant: dict, since: str | None = None, limit: int = 100) -> list[dict]:
+    """Defender for Endpoint device alerts (api.security.microsoft.com/api/alerts)."""
+    url = f"{MDE_BASE}/api/alerts?$top={limit}"
+    if since:
+        url += f"&$filter=alertCreationTime ge {_graph_ts(since)}"
+    r = requests.get(url, headers=mde_headers(tenant), timeout=45)
+    r.raise_for_status()
+    return r.json().get("value", [])
+
+
+_MDE_SEVERITY = {"high": "high", "medium": "medium", "low": "low", "informational": "low"}
+_MDE_STATUS = {"new": "new", "inprogress": "in_progress", "resolved": "resolved"}
+
+
+def _mde_event(alert: dict, tenant: dict) -> dict:
+    return {
+        "id": alert.get("id", ""),
+        "source": "mdeAlert",
+        "created_at": alert.get("alertCreationTime") or alert.get("firstEventTime", ""),
+        "user": alert.get("loggedOnUsers", [{}])[0].get("userName", "") if alert.get("loggedOnUsers") else "",
+        "device": alert.get("computerDnsName") or alert.get("deviceName", ""),
+        "device_id": alert.get("machineId", ""),
+        "title": alert.get("title", ""),
+        "severity": _MDE_SEVERITY.get(str(alert.get("severity", "")).lower(), "medium"),
+        "status": _MDE_STATUS.get(str(alert.get("status", "")).lower().replace(" ", ""), "new"),
+        "category": alert.get("category", ""),
+        "service_source": "microsoftDefenderForEndpoint",
+        "detection_source": alert.get("detectionSource", ""),
+        "mitre": alert.get("mitreTechniques") or [],
+        "description": alert.get("description", "") or alert.get("recommendedAction", ""),
+        "incident_id": alert.get("incidentId", ""),
+        "alert_web_url": alert.get("alertWebUrl", ""),
+        "tenant_id": tenant.get("id", "default"),
+        "tenant_name": tenant.get("name", ""),
+    }
+
+
 def fetch_defender_alerts(tenant: dict, since: str | None = None, limit: int = 200) -> list[dict]:
     """Defender XDR alerts (security/alerts_v2) — the threat feed for M365.
 
@@ -715,7 +826,8 @@ def poll_tenant(tenant_id: str) -> dict:
 
     results = {"tenant_id": tenant_id, "sign_ins": 0, "audit_logs": 0,
                "risk_detections": 0, "defender_alerts": 0, "defender_incidents": 0,
-               "events_stored": 0, "detections": 0, "defender": None}
+               "mde_alerts": 0, "events_stored": 0, "detections": 0,
+               "defender": None, "mde": None}
     new_events: list[dict] = []
 
     try:
@@ -801,6 +913,20 @@ def poll_tenant(tenant_id: str) -> dict:
             logger.warning("Defender roles not granted for tenant %s: %s",
                            tenant_id, perms.get("defender_missing_roles"))
 
+        # Defender for Endpoint (device alerts) — separate API + roles.
+        mde = mde_permissions(tenant)
+        results["mde"] = mde.get("status", "")
+        if mde.get("status") == "ok":
+            try:
+                mde_alerts = fetch_mde_alerts(tenant, since)
+                new_events.extend(_mde_event(a, tenant) for a in mde_alerts)
+                results["mde_alerts"] = len(mde_alerts)
+            except Exception as e:
+                logger.warning("MDE alerts fetch failed (tenant %s): %s", tenant_id, str(e)[:120])
+                results["mde"] = f"error: {str(e)[:80]}"
+        elif mde.get("status") == "missing_roles":
+            logger.warning("MDE roles not granted for tenant %s: %s", tenant_id, mde.get("missing_roles"))
+
         # Store tagged events
         store_events(new_events, tenant)
         results["events_stored"] = len(_load_events())
@@ -822,7 +948,7 @@ def poll_tenant(tenant_id: str) -> dict:
 
     _mark_poll(tenant_id, "ok", None, counts={
         k: results.get(k, 0) for k in ("sign_ins", "audit_logs", "risk_detections",
-                                       "defender_alerts", "defender_incidents",
+                                       "defender_alerts", "defender_incidents", "mde_alerts",
                                        "events_stored", "detections")},
         defender=results.get("defender") or "")
     results["status"] = "ok"
@@ -854,8 +980,31 @@ def _create_cases_for_detections(detections: list[dict], tenant: dict) -> int:
                 except Exception:
                     dup = True  # unparseable ts → treat as recent to avoid spam
                     break
+        # High-impact Defender findings go to the human review queue as well, so
+        # they show up on the dashboard/SLA board next to every other alert.
+        if det.get("severity") in ("high", "critical") and dtype.startswith(("defender_", "mde_")):
+            try:
+                import soc_queue
+                alert_id = det.get("event_id", "")
+                already = any((q.get("details") or {}).get("alert_id") == alert_id
+                              and q.get("source") == "m365-defender"
+                              for q in soc_queue.get_queue())
+                if not already:
+                    soc_queue.create_item(
+                        title=det.get("title", "Defender detection"),
+                        severity=det.get("severity", "high"),
+                        source="m365-defender",
+                        details={"alert_id": alert_id, "tenant": tenant.get("id", ""),
+                                 "tenant_name": tenant.get("name", ""), "user": user,
+                                 "detection_type": dtype,
+                                 "description": (det.get("description") or "")[:1000]})
+            except Exception as e:
+                logger.warning("queue hand-off failed: %s", str(e)[:120])
+
+
         if dup:
             continue
+
         case = {
             "id": "itdr-" + uuid.uuid4().hex[:12],
             "tenant_id": tenant.get("id", ""),

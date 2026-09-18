@@ -1026,6 +1026,94 @@ def _itdr_event_out(ev: dict) -> dict:
     }
 
 
+@router.get("/api/defender/summary")
+def api_defender_summary(hours: int = 720):
+    """M365 Defender rollup: XDR alerts, incidents, endpoint alerts, cases, queue."""
+    # Counts are over everything stored (alerts keep arriving for old activity),
+    # with a 24 h overlay for "what happened today".
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    events = [e for e in itdr_poller.get_events(limit=5000)
+              if str(e.get("source", "")).startswith(("defender", "mde"))]
+    by_source = {}
+    sev = {}
+    recent = {"alerts": 0, "incidents": 0, "endpoint_alerts": 0}
+    recent_key = {"defenderAlert": "alerts", "defenderIncident": "incidents", "mdeAlert": "endpoint_alerts"}
+    for e in events:
+        src = e.get("source", "unknown")
+        by_source[src] = by_source.get(src, 0) + 1
+        sev[e.get("severity", "unknown")] = sev.get(e.get("severity", "unknown"), 0) + 1
+        ts = e.get("created_at") or e.get("timestamp") or ""
+        if ts >= cutoff and src in recent_key:
+            recent[recent_key[src]] += 1
+    cases = [c for c in itdr_poller.get_cases()
+             if str(c.get("detection_type", "")).startswith(("defender_", "mde_"))]
+    open_cases = [c for c in cases if c.get("status") in ("open", "investigating")]
+    try:
+        import soc_queue
+        queue_items = [q for q in soc_queue.get_queue() if q.get("source") == "m365-defender"]
+    except Exception:
+        queue_items = []
+    tenants = []
+    for t in itdr_poller.get_tenants():
+        perms = itdr_poller.graph_permissions(t)
+        mde = itdr_poller.mde_permissions(t)
+        tenants.append({
+            "id": t.get("id"), "name": t.get("name"),
+            "configured": itdr_poller.is_configured(t),
+            "identity": perms.get("identity", ""), "xdr": perms.get("defender", ""),
+            "endpoint": mde.get("status", ""),
+            "xdr_missing_roles": perms.get("defender_missing_roles", []),
+            "endpoint_missing_roles": mde.get("missing_roles", []),
+            "last_poll": t.get("last_poll"), "last_counts": t.get("last_counts") or {},
+        })
+    return {"window_hours": hours,
+            "alerts": by_source.get("defenderAlert", 0),
+            "incidents": by_source.get("defenderIncident", 0),
+            "endpoint_alerts": by_source.get("mdeAlert", 0),
+            "last_24h": recent,
+            "by_source": by_source, "by_severity": sev,
+            "cases": len(cases), "open_cases": len(open_cases),
+            "queue_items": len(queue_items),
+            "queue_open": sum(1 for q in queue_items if q.get("status") in ("new", "investigating", "escalated")),
+            "tenants": tenants,
+            "roles_required": {"xdr": list(itdr_poller.DEFENDER_ROLES),
+                               "endpoint": list(itdr_poller.MDE_ROLES)}}
+
+
+def _defender_event_out(e: dict) -> dict:
+    return {
+        "id": e.get("id", ""),
+        "source": e.get("source", ""),
+        "timestamp": e.get("created_at") or e.get("timestamp") or "",
+        "title": e.get("title", ""),
+        "severity": e.get("severity", ""),
+        "status": e.get("status", ""),
+        "user": e.get("user", ""),
+        "device": e.get("device", ""),
+        "category": e.get("category", ""),
+        "service_source": e.get("service_source", ""),
+        "mitre": e.get("mitre") or [],
+        "description": e.get("description", ""),
+        "incident_id": e.get("incident_id", ""),
+        "alert_web_url": e.get("alert_web_url", ""),
+        "tenant_id": e.get("tenant_id", ""),
+        "tenant_name": e.get("tenant_name", ""),
+    }
+
+
+@router.get("/api/defender/alerts")
+def api_defender_alerts(source: str = "", limit: int = 200):
+    """Stored Defender events; source filters xdr alerts / incidents / endpoint alerts."""
+    wanted = {"alerts": "defenderAlert", "incidents": "defenderIncident", "endpoint": "mdeAlert"}
+    src = wanted.get(source.strip().lower(), source.strip())
+    events = [e for e in itdr_poller.get_events(limit=5000)
+              if str(e.get("source", "")).startswith(("defender", "mde"))]
+    if src:
+        events = [e for e in events if e.get("source") == src]
+    events.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+    return {"count": len(events), "alerts": [_defender_event_out(e) for e in events[:limit]]}
+
+
 @router.get("/api/itdr/summary")
 def api_itdr_summary():
     return itdr_poller.get_summary()

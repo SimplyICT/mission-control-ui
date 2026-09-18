@@ -295,7 +295,7 @@ DEFENDER_SEVERITY = {"high": "high", "critical": "high", "medium": "medium",
 def detect_defender_event(event: dict, all_events: list[dict]) -> dict | None:
     """Turn a Defender alert/incident into a case-worthy detection."""
     source = event.get("source", "")
-    if source not in ("defenderAlert", "defenderIncident"):
+    if source not in ("defenderAlert", "defenderIncident", "mdeAlert"):
         return None
     severity = DEFENDER_SEVERITY.get((event.get("severity") or "unknown").lower(), "medium")
     if severity == "low":
@@ -303,14 +303,16 @@ def detect_defender_event(event: dict, all_events: list[dict]) -> dict | None:
     status = (event.get("status") or "").lower()
     if status in ("resolved", "dismissed", "redirected", "falsepositive"):
         return None
-    label = "Defender alert" if source == "defenderAlert" else "Defender incident"
+    label = {"defenderAlert": "Defender alert", "defenderIncident": "Defender incident",
+             "mdeAlert": "Defender for Endpoint alert"}[source]
     detail = []
     for key in ("service_source", "category", "device", "mitre", "alert_count"):
         val = event.get(key)
         if val:
             detail.append(f"{key.replace('_', ' ')}: {', '.join(val) if isinstance(val, list) else val}")
     return {
-        "detection_type": "defender_alert" if source == "defenderAlert" else "defender_incident",
+        "detection_type": {"defenderAlert": "defender_alert", "defenderIncident": "defender_incident",
+                           "mdeAlert": "mde_alert"}[source],
         "dedup_field": "event_id",
         "severity": severity,
         "title": f"{label}: {event.get('title', '').strip()[:120]}" or label,
