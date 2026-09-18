@@ -416,6 +416,25 @@ def get_events(filters: dict | None = None, limit: int = 200) -> list[dict]:
 #  Cases
 # ═══════════════════════════════════════════════════════
 
+def update_case(case_id: str, updates: dict) -> dict | None:
+    """Patch a case in place (status, notes, assignee, ...). Returns the case."""
+    if not ITDR_CASES.exists():
+        return None
+    try:
+        cases = json.loads(ITDR_CASES.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    updated = None
+    for c in cases:
+        if c.get("id") == case_id:
+            c.update(updates)
+            updated = c
+            break
+    if updated is not None:
+        ITDR_CASES.write_text(json.dumps(cases, indent=2, default=str), encoding="utf-8")
+    return updated
+
+
 def get_cases(tenant_id: str | None = None) -> list[dict]:
     try:
         if ITDR_CASES.exists():
@@ -685,6 +704,86 @@ def mde_permissions(tenant: dict, force: bool = False) -> dict:
             out["status"] = f"error: {str(e)[:60]}"
     _MDE_PROBE[tid] = (time.time(), out)
     return out
+
+
+def _jwt_roles(token: str) -> set:
+    """Roles granted to the app, read straight from its token (no guessing)."""
+    try:
+        import base64
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        return set(json.loads(base64.urlsafe_b64decode(payload)).get("roles") or [])
+    except Exception:
+        return set()
+
+
+def write_capabilities(tenant: dict) -> dict:
+    """Which Defender write-back paths this tenant's app can use."""
+    graph_roles = _jwt_roles(get_token(tenant))
+    mde_roles = _jwt_roles(mde_token(tenant))
+    return {
+        "xdr_alerts": "SecurityAlert.ReadWrite.All" in graph_roles,
+        "xdr_incidents": "SecurityIncident.ReadWrite.All" in graph_roles,
+        "endpoint_alerts": "Alert.ReadWrite.All" in mde_roles,
+        "missing": [r for r, ok in (("SecurityAlert.ReadWrite.All", "SecurityAlert.ReadWrite.All" in graph_roles),
+                                    ("SecurityIncident.ReadWrite.All", "SecurityIncident.ReadWrite.All" in graph_roles),
+                                    ("Alert.ReadWrite.All (WindowsDefenderATP)", "Alert.ReadWrite.All" in mde_roles))
+                    if not ok],
+    }
+
+
+# Defender status/classification vocabulary, per API.
+_XDR_STATUS = {"resolve": "resolved", "dismiss": "resolved", "reopen": "inProgress"}
+_XDR_CLASSIFICATION = {"resolve": "truePositive", "dismiss": "falsePositive"}
+_MDE_STATUS = {"resolve": "Resolved", "dismiss": "Resolved", "reopen": "InProgress"}
+_MDE_CLASSIFICATION = {"resolve": "TruePositive", "dismiss": "FalsePositive",
+                       "reopen": "Unknown"}
+
+
+def push_defender_update(tenant: dict, source: str, item_id: str, action: str,
+                         comment: str = "") -> dict:
+    """Push a SOC decision back to Microsoft Defender (no-op without write roles).
+
+    Returns {"pushed": bool, "detail": str} — never raises.
+    """
+    caps = write_capabilities(tenant)
+    if action not in _XDR_STATUS:
+        return {"pushed": False, "detail": f"no Defender mapping for action '{action}'"}
+    try:
+        if source == "defenderAlert":
+            if not caps["xdr_alerts"]:
+                return {"pushed": False, "detail": "needs SecurityAlert.ReadWrite.All"}
+            r = requests.patch(f"{GRAPH_BASE}/security/alerts_v2/{item_id}",
+                               headers=_headers(tenant),
+                               json={"status": _XDR_STATUS[action],
+                                     "classification": _XDR_CLASSIFICATION.get(action, "unknown"),
+                                     "determination": "other" if action == "resolve" else "notAvailable",
+                                     "comment": (comment or "")[:1000]}, timeout=30)
+        elif source == "defenderIncident":
+            if not caps["xdr_incidents"]:
+                return {"pushed": False, "detail": "needs SecurityIncident.ReadWrite.All"}
+            r = requests.patch(f"{GRAPH_BASE}/security/incidents/{item_id}",
+                               headers=_headers(tenant),
+                               json={"status": _XDR_STATUS[action],
+                                     "classification": _XDR_CLASSIFICATION.get(action, "unknown"),
+                                     "determination": "other" if action == "resolve" else "notAvailable",
+                                     "customTags": [f"soc:{comment[:80]}"] if comment else []}, timeout=30)
+        elif source == "mdeAlert":
+            if not caps["endpoint_alerts"]:
+                return {"pushed": False, "detail": "needs Alert.ReadWrite.All (WindowsDefenderATP)"}
+            r = requests.patch(f"{MDE_BASE}/api/alerts/{item_id}",
+                               headers={**mde_headers(tenant), "Content-Type": "application/json"},
+                               json={"status": _MDE_STATUS[action],
+                                     "classification": _MDE_CLASSIFICATION.get(action, "Unknown"),
+                                     "determination": "Other",
+                                     "comment": (comment or "")[:1000]}, timeout=30)
+        else:
+            return {"pushed": False, "detail": f"unknown source '{source}'"}
+        if r.status_code in (200, 204):
+            return {"pushed": True, "detail": f"{source} {action}: HTTP {r.status_code}"}
+        return {"pushed": False, "detail": f"HTTP {r.status_code}: {r.text[:120]}"}
+    except Exception as e:
+        return {"pushed": False, "detail": f"error: {str(e)[:120]}"}
 
 
 def fetch_mde_alerts(tenant: dict, since: str | None = None, limit: int = 100) -> list[dict]:

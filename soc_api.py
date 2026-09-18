@@ -1066,7 +1066,10 @@ def api_defender_summary(hours: int = 720):
             "endpoint_missing_roles": mde.get("missing_roles", []),
             "last_poll": t.get("last_poll"), "last_counts": t.get("last_counts") or {},
         })
+    tenant0 = (itdr_poller.get_tenants() or [None])[0]
+    write_caps = itdr_poller.write_capabilities(tenant0) if tenant0 else {}
     return {"window_hours": hours,
+            "write_capabilities": write_caps,
             "alerts": by_source.get("defenderAlert", 0),
             "incidents": by_source.get("defenderIncident", 0),
             "endpoint_alerts": by_source.get("mdeAlert", 0),
@@ -1099,6 +1102,117 @@ def _defender_event_out(e: dict) -> dict:
         "tenant_id": e.get("tenant_id", ""),
         "tenant_name": e.get("tenant_name", ""),
     }
+
+
+@router.patch("/api/itdr/cases/{case_id}")
+async def api_itdr_case_update(case_id: str, request: Request):
+    """Resolve / reopen / annotate an ITDR (identity or Defender) case."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    case = None
+    for c in itdr_poller.get_cases():
+        if c.get("id") == case_id:
+            case = c
+            break
+    if case is None:
+        return JSONResponse({"error": "case not found"}, status_code=404)
+    updates = {}
+    if body.get("status"):
+        if body["status"] not in ("open", "investigating", "resolved", "closed", "false_positive"):
+            return JSONResponse({"error": "invalid status"}, status_code=400)
+        updates["status"] = body["status"]
+    if body.get("notes"):
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        updates["notes"] = (case.get("notes") or "") + f"\n[{stamp} soc] {str(body['notes'])[:1000]}"
+    if body.get("assignee"):
+        updates["assignee"] = str(body["assignee"])[:80]
+    if not updates:
+        return JSONResponse({"error": "nothing to update (status/notes/assignee)"}, status_code=400)
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    itdr_poller.update_case(case_id, updates)
+    return {"success": True, "case": {**case, **updates}}
+
+
+@router.post("/api/defender/action")
+async def api_defender_action(request: Request):
+    """Work a Defender item: resolve / dismiss / reopen / assign / note.
+
+    Updates the SOC side (stored event, linked case, review-queue item) and pushes
+    the decision to Microsoft Defender when the app has the write roles; the
+    response says exactly what was applied where.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    source = (body.get("source") or "").strip()
+    item_id = (body.get("id") or "").strip()
+    action = (body.get("action") or "").strip().lower()
+    comment = str(body.get("comment") or "").strip()
+    assignee = str(body.get("assignee") or "").strip()
+    if source not in ("defenderAlert", "defenderIncident", "mdeAlert"):
+        return JSONResponse({"error": "source must be defenderAlert|defenderIncident|mdeAlert"}, status_code=400)
+    if action not in ("resolve", "dismiss", "reopen", "assign", "note"):
+        return JSONResponse({"error": "action must be resolve|dismiss|reopen|assign|note"}, status_code=400)
+    if not item_id:
+        return JSONResponse({"error": "id is required"}, status_code=400)
+
+    applied = {"event": False, "case": None, "queue": None, "defender": None}
+    status_map = {"resolve": "resolved", "dismiss": "false_positive",
+                  "reopen": "open", "assign": "investigating"}
+
+    # 1. stored event
+    try:
+        events = itdr_poller._load_events()
+        for e in events:
+            if e.get("id") == item_id and e.get("source") == source:
+                e["status"] = status_map.get(action, e.get("status"))
+                e["soc_status"] = status_map.get(action, e.get("soc_status"))
+                if comment:
+                    e["notes"] = (e.get("notes") or "") + f"\n[{datetime.now(timezone.utc):%Y-%m-%d %H:%M} soc] {comment[:500]}"
+                e["updated_at"] = datetime.now(timezone.utc).isoformat()
+                applied["event"] = True
+                break
+        if applied["event"]:
+            itdr_poller._save_events(events)
+    except Exception as e:
+        logger.warning("defender action: event update failed: %s", e)
+
+    # 2. linked ITDR case
+    for c in itdr_poller.get_cases():
+        if c.get("event_id") == item_id and c.get("status") in ("open", "investigating"):
+            itdr_poller.update_case(c["id"], {"status": status_map.get(action, c.get("status")),
+                                              "notes": (c.get("notes") or "") + (f"\n[soc] {comment[:500]}" if comment else ""),
+                                              "updated_at": datetime.now(timezone.utc).isoformat()})
+            applied["case"] = c["id"]
+            break
+
+    # 3. review-queue item (source m365-defender)
+    try:
+        import soc_queue
+        for q in soc_queue.get_queue():
+            if q.get("source") == "m365-defender" and (q.get("details") or {}).get("alert_id") == item_id:
+                if action in ("resolve", "dismiss"):
+                    soc_queue.resolve_item(q["id"], comment or status_map[action])
+                elif action == "assign":
+                    soc_queue.claim_item(q["id"], assignee or "analyst1")
+                if comment:
+                    soc_queue.add_note(q["id"], "soc", comment[:500])
+                applied["queue"] = q["id"]
+                break
+    except Exception as e:
+        logger.warning("defender action: queue update failed: %s", e)
+
+    # 4. Microsoft Defender (only when the write roles exist)
+    if action in ("resolve", "dismiss", "reopen"):
+        tenant = itdr_poller.get_tenant("default") or (itdr_poller.get_tenants() or [None])[0]
+        if tenant:
+            applied["defender"] = itdr_poller.push_defender_update(tenant, source, item_id, action, comment)
+        applied["write_capabilities"] = itdr_poller.write_capabilities(tenant) if tenant else {}
+
+    return {"success": True, "action": action, "source": source, "id": item_id, "applied": applied}
 
 
 @router.get("/api/defender/alerts")
