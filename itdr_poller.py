@@ -614,8 +614,12 @@ def graph_permissions(tenant: dict, force: bool = False) -> dict:
 
 
 def fetch_defender_alerts(tenant: dict, since: str | None = None, limit: int = 200) -> list[dict]:
-    """Defender XDR alerts (security/alerts_v2) — the threat feed for M365."""
-    url = f"{GRAPH_BASE}/security/alerts_v2?$top={limit}&$expand=evidence"
+    """Defender XDR alerts (security/alerts_v2) — the threat feed for M365.
+
+    No $expand/$select: alerts_v2 returns `evidence` by default, and asking for it
+    explicitly fails ("Parsing OData Select and Expand failed" / 500).
+    """
+    url = f"{GRAPH_BASE}/security/alerts_v2?$top={limit}"
     if since:
         url += f"&$filter=createdDateTime ge {_graph_ts(since)}"
     r = requests.get(url, headers=_headers(tenant), timeout=45)
@@ -623,11 +627,14 @@ def fetch_defender_alerts(tenant: dict, since: str | None = None, limit: int = 2
     return r.json().get("value", [])
 
 
-def fetch_defender_incidents(tenant: dict, since: str | None = None, limit: int = 100) -> list[dict]:
-    """Defender XDR incidents (correlated alert groups)."""
-    url = f"{GRAPH_BASE}/security/incidents?$top={limit}"
+def fetch_defender_incidents(tenant: dict, since: str | None = None, limit: int = 50) -> list[dict]:
+    """Defender XDR incidents (correlated alert groups).
+
+    Incidents reject `ge` on createdDateTime and cap $top at 50 (both 400).
+    """
+    url = f"{GRAPH_BASE}/security/incidents?$top={min(limit, 50)}"
     if since:
-        url += f"&$filter=createdDateTime ge {_graph_ts(since)}"
+        url += f"&$filter=createdDateTime gt {_graph_ts(since)}"
     r = requests.get(url, headers=_headers(tenant), timeout=45)
     r.raise_for_status()
     return r.json().get("value", [])
