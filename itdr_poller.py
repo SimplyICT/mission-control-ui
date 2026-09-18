@@ -269,7 +269,7 @@ def is_configured(tenant: dict) -> bool:
 #  Auth (per-tenant token cache)
 # ═══════════════════════════════════════════════════════
 
-def get_token(tenant: dict | None = None) -> str:
+def get_token(tenant: dict | None = None, force: bool = False) -> str:
     """Get Microsoft Graph access token via client credentials flow (per tenant)."""
     if tenant is None:
         tenant = _legacy_default_tenant()
@@ -277,7 +277,7 @@ def get_token(tenant: dict | None = None) -> str:
         return ""
     tid = tenant.get("id", "")
     cached = _token_cache.get(tid)
-    if cached and cached.get("value") and time.time() < cached.get("expires_at", 0) - 60:
+    if not force and cached and cached.get("value") and time.time() < cached.get("expires_at", 0) - 60:
         return cached["value"]
 
     creds = _tenant_credentials(tenant)
@@ -648,13 +648,13 @@ _mde_token_cache: dict[str, dict] = {}
 _MDE_PROBE: dict[str, tuple[float, dict]] = {}
 
 
-def mde_token(tenant: dict) -> str:
+def mde_token(tenant: dict, force: bool = False) -> str:
     creds = _tenant_credentials(tenant)
     if not all([creds.get("tenant_id"), creds.get("client_id"), creds.get("client_secret")]):
         return ""
     tid = tenant.get("id", "")
     cached = _mde_token_cache.get(tid)
-    if cached and cached.get("value") and time.time() < cached.get("expires_at", 0) - 60:
+    if not force and cached and cached.get("value") and time.time() < cached.get("expires_at", 0) - 60:
         return cached["value"]
     try:
         r = requests.post(f"https://login.microsoftonline.com/{creds['tenant_id']}/oauth2/v2.0/token",
@@ -676,12 +676,26 @@ def mde_headers(tenant: dict) -> dict:
 
 
 def mde_permissions(tenant: dict, force: bool = False) -> dict:
-    """Whether the app can read Defender for Endpoint alerts for this tenant."""
+    """Whether Defender for Endpoint alerts reach us — via Graph (preferred) or the legacy MDE API.
+
+    Graph's security/alerts_v2 already returns Defender-for-Endpoint alerts
+    (serviceSource microsoftDefenderForEndpoint) under SecurityAlert.Read.All, so
+    the WindowsDefenderATP roles are only needed for the legacy api.security.microsoft.com
+    feed; missing them is not a defect.
+    """
     tid = tenant.get("id", "default")
     cached = _MDE_PROBE.get(tid)
     if cached and not force and time.time() - cached[0] < 300:
         return cached[1]
     out = {"status": "", "missing_roles": [], "checked_at": _now_iso()}
+    graph_read = "SecurityAlert.Read.All" in _jwt_roles(get_token(tenant))
+    legacy_roles = _jwt_roles(mde_token(tenant))
+    if graph_read and "Alert.Read.All" not in legacy_roles:
+        out["status"] = "ok"
+        out["via"] = "graph"
+        out["note"] = "endpoint alerts arrive via Graph alerts_v2"
+        _MDE_PROBE[tid] = (time.time(), out)
+        return out
     headers = mde_headers(tenant)
     if not headers:
         out["status"] = "no_credentials"
@@ -690,6 +704,7 @@ def mde_permissions(tenant: dict, force: bool = False) -> dict:
             r = requests.get(f"{MDE_BASE}/api/alerts?$top=1", headers=headers, timeout=30)
             if r.status_code == 200:
                 out["status"] = "ok"
+                out["via"] = "legacy-mde"
             elif r.status_code == 403:
                 body = r.text[:600]
                 out["status"] = "missing_roles"
@@ -717,18 +732,37 @@ def _jwt_roles(token: str) -> set:
         return set()
 
 
+_WRITE_ROLES = ("SecurityAlert.ReadWrite.All", "SecurityIncident.ReadWrite.All",
+                "Alert.ReadWrite.All")
+
+
 def write_capabilities(tenant: dict) -> dict:
-    """Which Defender write-back paths this tenant's app can use."""
+    """Which Defender write-back paths this tenant's app can use.
+
+    A token minted before an admin consented to a new role keeps its old claims
+    for up to an hour, so re-mint once when the cached token lacks write roles —
+    otherwise a fresh grant looks un-applied until the cache expires.
+    """
     graph_roles = _jwt_roles(get_token(tenant))
+    if not graph_roles.intersection(_WRITE_ROLES):
+        graph_roles = _jwt_roles(get_token(tenant, force=True))
     mde_roles = _jwt_roles(mde_token(tenant))
+    if "Alert.ReadWrite.All" not in mde_roles:
+        mde_roles = _jwt_roles(mde_token(tenant, force=True))
+    graph_alert_write = "SecurityAlert.ReadWrite.All" in graph_roles
+    legacy_mde_write = "Alert.ReadWrite.All" in mde_roles
     return {
-        "xdr_alerts": "SecurityAlert.ReadWrite.All" in graph_roles,
+        "xdr_alerts": graph_alert_write,
         "xdr_incidents": "SecurityIncident.ReadWrite.All" in graph_roles,
-        "endpoint_alerts": "Alert.ReadWrite.All" in mde_roles,
-        "missing": [r for r, ok in (("SecurityAlert.ReadWrite.All", "SecurityAlert.ReadWrite.All" in graph_roles),
-                                    ("SecurityIncident.ReadWrite.All", "SecurityIncident.ReadWrite.All" in graph_roles),
-                                    ("Alert.ReadWrite.All (WindowsDefenderATP)", "Alert.ReadWrite.All" in mde_roles))
+        # Graph alerts_v2 covers Defender-for-Endpoint alerts, so the Graph role alone
+        # is enough — the legacy WindowsDefenderATP role is only an alternative.
+        "endpoint_alerts": graph_alert_write or legacy_mde_write,
+        "endpoint_via": "graph" if graph_alert_write else ("legacy-mde" if legacy_mde_write else ""),
+        "missing": [r for r, ok in (("SecurityAlert.ReadWrite.All", graph_alert_write),
+                                    ("SecurityIncident.ReadWrite.All", "SecurityIncident.ReadWrite.All" in graph_roles))
                     if not ok],
+        "missing_optional": [] if (graph_alert_write or legacy_mde_write) else [
+            "Alert.ReadWrite.All (WindowsDefenderATP, only for the legacy MDE API)"],
     }
 
 
@@ -769,14 +803,23 @@ def push_defender_update(tenant: dict, source: str, item_id: str, action: str,
                                      "determination": "other" if action == "resolve" else "notAvailable",
                                      "customTags": [f"soc:{comment[:80]}"] if comment else []}, timeout=30)
         elif source == "mdeAlert":
-            if not caps["endpoint_alerts"]:
-                return {"pushed": False, "detail": "needs Alert.ReadWrite.All (WindowsDefenderATP)"}
-            r = requests.patch(f"{MDE_BASE}/api/alerts/{item_id}",
-                               headers={**mde_headers(tenant), "Content-Type": "application/json"},
-                               json={"status": _MDE_STATUS[action],
-                                     "classification": _MDE_CLASSIFICATION.get(action, "Unknown"),
-                                     "determination": "Other",
-                                     "comment": (comment or "")[:1000]}, timeout=30)
+            if caps["xdr_alerts"]:
+                # Same Graph surface as XDR alerts (serviceSource microsoftDefenderForEndpoint)
+                r = requests.patch(f"{GRAPH_BASE}/security/alerts_v2/{item_id}",
+                                   headers=_headers(tenant),
+                                   json={"status": _XDR_STATUS[action],
+                                         "classification": _XDR_CLASSIFICATION.get(action, "unknown"),
+                                         "determination": "other" if action == "resolve" else "notAvailable",
+                                         "comment": (comment or "")[:1000]}, timeout=30)
+            elif caps["endpoint_alerts"]:
+                r = requests.patch(f"{MDE_BASE}/api/alerts/{item_id}",
+                                   headers={**mde_headers(tenant), "Content-Type": "application/json"},
+                                   json={"status": _MDE_STATUS[action],
+                                         "classification": _MDE_CLASSIFICATION.get(action, "Unknown"),
+                                         "determination": "Other",
+                                         "comment": (comment or "")[:1000]}, timeout=30)
+            else:
+                return {"pushed": False, "detail": "needs SecurityAlert.ReadWrite.All"}
         else:
             return {"pushed": False, "detail": f"unknown source '{source}'"}
         if r.status_code in (200, 204):
@@ -874,6 +917,9 @@ def _defender_event(alert: dict, tenant: dict) -> dict:
         "status": (alert.get("status") or "new").lower(),
         "category": alert.get("category", ""),
         "service_source": alert.get("serviceSource", ""),
+        # Graph alerts_v2 already carries Defender-for-Endpoint alerts; tagging them
+        # here means the Endpoint view needs no WindowsDefenderATP permission.
+        "endpoint": alert.get("serviceSource", "") == "microsoftDefenderForEndpoint",
         "detection_source": alert.get("detectionSource", ""),
         "mitre": alert.get("mitreTechniques") or [],
         "description": alert.get("description", ""),
@@ -1012,10 +1058,13 @@ def poll_tenant(tenant_id: str) -> dict:
             logger.warning("Defender roles not granted for tenant %s: %s",
                            tenant_id, perms.get("defender_missing_roles"))
 
-        # Defender for Endpoint (device alerts) — separate API + roles.
+        # Defender for Endpoint (device alerts). When Graph already delivers them
+        # (serviceSource microsoftDefenderForEndpoint) the legacy MDE feed is skipped —
+        # calling it without its roles only produces 403 noise.
         mde = mde_permissions(tenant)
         results["mde"] = mde.get("status", "")
-        if mde.get("status") == "ok":
+        results["mde_via"] = mde.get("via", "")
+        if mde.get("status") == "ok" and mde.get("via") == "legacy-mde":
             try:
                 mde_alerts = fetch_mde_alerts(tenant, since)
                 new_events.extend(_mde_event(a, tenant) for a in mde_alerts)

@@ -40,6 +40,7 @@ from pathlib import Path
 
 import requests
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
 import soc_queue
@@ -1026,6 +1027,16 @@ def _itdr_event_out(ev: dict) -> dict:
     }
 
 
+def _is_endpoint_event(e: dict) -> bool:
+    """Defender-for-Endpoint alert: tagged at ingest, or inferred from stored events.
+
+    Events ingested before the flag existed only carry `service_source`, so infer
+    from that too — otherwise historical MDE alerts never show on the Endpoint tab.
+    """
+    return (e.get("source") == "mdeAlert" or bool(e.get("endpoint"))
+            or e.get("service_source") == "microsoftDefenderForEndpoint")
+
+
 @router.get("/api/defender/summary")
 def api_defender_summary(hours: int = 720):
     """M365 Defender rollup: XDR alerts, incidents, endpoint alerts, cases, queue."""
@@ -1038,13 +1049,21 @@ def api_defender_summary(hours: int = 720):
     sev = {}
     recent = {"alerts": 0, "incidents": 0, "endpoint_alerts": 0}
     recent_key = {"defenderAlert": "alerts", "defenderIncident": "incidents", "mdeAlert": "endpoint_alerts"}
+    endpoint_count = 0
     for e in events:
         src = e.get("source", "unknown")
-        by_source[src] = by_source.get(src, 0) + 1
+        is_endpoint = _is_endpoint_event(e)
+        if is_endpoint:
+            endpoint_count += 1
+        else:
+            by_source[src] = by_source.get(src, 0) + 1
         sev[e.get("severity", "unknown")] = sev.get(e.get("severity", "unknown"), 0) + 1
         ts = e.get("created_at") or e.get("timestamp") or ""
-        if ts >= cutoff and src in recent_key:
-            recent[recent_key[src]] += 1
+        if ts >= cutoff:
+            if is_endpoint:
+                recent["endpoint_alerts"] += 1
+            elif src in recent_key:
+                recent[recent_key[src]] += 1
     cases = [c for c in itdr_poller.get_cases()
              if str(c.get("detection_type", "")).startswith(("defender_", "mde_"))]
     open_cases = [c for c in cases if c.get("status") in ("open", "investigating")]
@@ -1062,6 +1081,7 @@ def api_defender_summary(hours: int = 720):
             "configured": itdr_poller.is_configured(t),
             "identity": perms.get("identity", ""), "xdr": perms.get("defender", ""),
             "endpoint": mde.get("status", ""),
+            "endpoint_via": mde.get("via", ""), "endpoint_note": mde.get("note", ""),
             "xdr_missing_roles": perms.get("defender_missing_roles", []),
             "endpoint_missing_roles": mde.get("missing_roles", []),
             "last_poll": t.get("last_poll"), "last_counts": t.get("last_counts") or {},
@@ -1072,7 +1092,8 @@ def api_defender_summary(hours: int = 720):
             "write_capabilities": write_caps,
             "alerts": by_source.get("defenderAlert", 0),
             "incidents": by_source.get("defenderIncident", 0),
-            "endpoint_alerts": by_source.get("mdeAlert", 0),
+            "endpoint_alerts": endpoint_count,
+            "endpoint_via": itdr_poller.write_capabilities(tenant0).get("endpoint_via") if tenant0 else "",
             "last_24h": recent,
             "by_source": by_source, "by_severity": sev,
             "cases": len(cases), "open_cases": len(open_cases),
@@ -1095,6 +1116,7 @@ def _defender_event_out(e: dict) -> dict:
         "device": e.get("device", ""),
         "category": e.get("category", ""),
         "service_source": e.get("service_source", ""),
+        "endpoint": _is_endpoint_event(e),
         "mitre": e.get("mitre") or [],
         "description": e.get("description", ""),
         "incident_id": e.get("incident_id", ""),
@@ -1135,33 +1157,21 @@ async def api_itdr_case_update(case_id: str, request: Request):
     return {"success": True, "case": {**case, **updates}}
 
 
-@router.post("/api/defender/action")
-async def api_defender_action(request: Request):
-    """Work a Defender item: resolve / dismiss / reopen / assign / note.
+class DefenderAction(BaseModel):
+    source: str
+    id: str
+    action: str
+    comment: str = ""
+    assignee: str = ""
 
-    Updates the SOC side (stored event, linked case, review-queue item) and pushes
-    the decision to Microsoft Defender when the app has the write roles; the
-    response says exactly what was applied where.
-    """
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
-    source = (body.get("source") or "").strip()
-    item_id = (body.get("id") or "").strip()
-    action = (body.get("action") or "").strip().lower()
-    comment = str(body.get("comment") or "").strip()
-    assignee = str(body.get("assignee") or "").strip()
-    if source not in ("defenderAlert", "defenderIncident", "mdeAlert"):
-        return JSONResponse({"error": "source must be defenderAlert|defenderIncident|mdeAlert"}, status_code=400)
-    if action not in ("resolve", "dismiss", "reopen", "assign", "note"):
-        return JSONResponse({"error": "action must be resolve|dismiss|reopen|assign|note"}, status_code=400)
-    if not item_id:
-        return JSONResponse({"error": "id is required"}, status_code=400)
 
+def _apply_defender_action(source: str, item_id: str, action: str,
+                           comment: str = "", assignee: str = "") -> dict:
+    """Record a decision on one Defender item across the SOC, then push it if we can."""
     applied = {"event": False, "case": None, "queue": None, "defender": None}
     status_map = {"resolve": "resolved", "dismiss": "false_positive",
                   "reopen": "open", "assign": "investigating"}
+    now = datetime.now(timezone.utc)
 
     # 1. stored event
     try:
@@ -1171,8 +1181,8 @@ async def api_defender_action(request: Request):
                 e["status"] = status_map.get(action, e.get("status"))
                 e["soc_status"] = status_map.get(action, e.get("soc_status"))
                 if comment:
-                    e["notes"] = (e.get("notes") or "") + f"\n[{datetime.now(timezone.utc):%Y-%m-%d %H:%M} soc] {comment[:500]}"
-                e["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    e["notes"] = (e.get("notes") or "") + f"\n[{now:%Y-%m-%d %H:%M} soc] {comment[:500]}"
+                e["updated_at"] = now.isoformat()
                 applied["event"] = True
                 break
         if applied["event"]:
@@ -1183,9 +1193,10 @@ async def api_defender_action(request: Request):
     # 2. linked ITDR case
     for c in itdr_poller.get_cases():
         if c.get("event_id") == item_id and c.get("status") in ("open", "investigating"):
-            itdr_poller.update_case(c["id"], {"status": status_map.get(action, c.get("status")),
-                                              "notes": (c.get("notes") or "") + (f"\n[soc] {comment[:500]}" if comment else ""),
-                                              "updated_at": datetime.now(timezone.utc).isoformat()})
+            itdr_poller.update_case(c["id"], {
+                "status": status_map.get(action, c.get("status")),
+                "notes": (c.get("notes") or "") + (f"\n[{now:%Y-%m-%d %H:%M} soc] {comment[:500]}" if comment else ""),
+                "updated_at": now.isoformat()})
             applied["case"] = c["id"]
             break
 
@@ -1205,24 +1216,109 @@ async def api_defender_action(request: Request):
     except Exception as e:
         logger.warning("defender action: queue update failed: %s", e)
 
-    # 4. Microsoft Defender (only when the write roles exist)
-    if action in ("resolve", "dismiss", "reopen"):
-        tenant = itdr_poller.get_tenant("default") or (itdr_poller.get_tenants() or [None])[0]
-        if tenant:
-            applied["defender"] = itdr_poller.push_defender_update(tenant, source, item_id, action, comment)
-        applied["write_capabilities"] = itdr_poller.write_capabilities(tenant) if tenant else {}
+    # 4. Microsoft Defender — only when the app holds the write role for that surface
+    tenant = itdr_poller.get_tenant("default") or (itdr_poller.get_tenants() or [None])[0]
+    if tenant and action in ("resolve", "dismiss", "reopen"):
+        applied["defender"] = itdr_poller.push_defender_update(tenant, source, item_id, action, comment)
+    applied["write_capabilities"] = itdr_poller.write_capabilities(tenant) if tenant else {}
+    return applied
 
+
+@router.post("/api/defender/action")
+async def api_defender_action(a: DefenderAction):
+    """Work a Defender item: resolve / dismiss / reopen / assign / note.
+
+    Updates the SOC side (stored event, linked case, review-queue item) and pushes
+    the decision to Microsoft Defender when the app has the write roles; the
+    response says exactly what was applied where.
+    """
+    source, item_id, action = a.source.strip(), a.id.strip(), a.action.strip().lower()
+    comment, assignee = a.comment.strip(), a.assignee.strip()
+    if source not in ("defenderAlert", "defenderIncident", "mdeAlert"):
+        return JSONResponse({"error": "source must be defenderAlert|defenderIncident|mdeAlert"}, status_code=400)
+    if action not in ("resolve", "dismiss", "reopen", "assign", "note"):
+        return JSONResponse({"error": "action must be resolve|dismiss|reopen|assign|note"}, status_code=400)
+    if not item_id:
+        return JSONResponse({"error": "id is required"}, status_code=400)
+    applied = _apply_defender_action(source, item_id, action, comment, assignee)
     return {"success": True, "action": action, "source": source, "id": item_id, "applied": applied}
+
+
+class BulkResolve(BaseModel):
+    severities: list[str] = ["informational", "low"]
+    sources: list[str] = ["defenderAlert", "defenderIncident", "mdeAlert"]
+    max_age_days: int = 90   # stale alerts are exactly the triage noise this clears
+    comment: str = "bulk-closed: low/informational, no analyst action required"
+    dry_run: bool = False
+
+
+@router.post("/api/defender/bulk-resolve")
+def api_defender_bulk_resolve(b: BulkResolve):
+    """Resolve every low/informational Defender item still awaiting triage.
+
+    `dry_run` returns the list of items that would be closed so the UI can ask for
+    confirmation with real numbers. Never touches items already resolved/closed.
+    """
+    wanted = {x.strip().lower() for x in b.severities}
+    sources = set(b.sources)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, b.max_age_days))
+    done_states = {"resolved", "closed", "false_positive", "dismissed"}
+
+    matched = []
+    for e in itdr_poller._load_events():
+        if e.get("source") not in sources:
+            continue
+        if str(e.get("status") or "").lower() in done_states:
+            continue
+        if str(e.get("severity") or "").lower() not in wanted:
+            continue
+        created = str(e.get("created_at") or e.get("timestamp") or "")[:19].replace("Z", "")
+        try:
+            ts = datetime.fromisoformat(created).replace(tzinfo=timezone.utc)
+        except Exception:
+            ts = None
+        if ts is not None and ts < cutoff:
+            continue
+        matched.append(e)
+
+    if b.dry_run:
+        return {"dry_run": True, "matched": len(matched),
+                "items": [{"id": e["id"], "source": e["source"], "severity": e.get("severity"),
+                           "title": (e.get("title") or "")[:120]} for e in matched],
+                "write_capabilities": itdr_poller.write_capabilities(
+                    itdr_poller.get_tenant("default") or (itdr_poller.get_tenants() or [None])[0])}
+
+    resolved, pushed, push_failed = 0, 0, []
+    for e in matched:
+        r = _apply_defender_action(e["source"], e["id"], "resolve", b.comment)
+        resolved += 1 if r.get("event") else 0
+        d = r.get("defender") or {}
+        if d.get("pushed"):
+            pushed += 1
+        elif d.get("detail"):
+            push_failed.append({"id": e["id"], "detail": d["detail"]})
+    return {"success": True, "matched": len(matched), "resolved": resolved,
+            "defender_pushed": pushed, "defender_skipped": len(push_failed),
+            "reasons": sorted({x["detail"] for x in push_failed})[:4]}
 
 
 @router.get("/api/defender/alerts")
 def api_defender_alerts(source: str = "", limit: int = 200):
-    """Stored Defender events; source filters xdr alerts / incidents / endpoint alerts."""
+    """Stored Defender events; source filters xdr alerts / incidents / endpoint alerts.
+
+    Endpoint alerts are the alerts_v2 events Microsoft Defender for Endpoint produced
+    (tagged at ingest), so no separate legacy-MDE feed is required.
+    """
+    key = source.strip().lower()
     wanted = {"alerts": "defenderAlert", "incidents": "defenderIncident", "endpoint": "mdeAlert"}
-    src = wanted.get(source.strip().lower(), source.strip())
+    src = wanted.get(key, source.strip())
     events = [e for e in itdr_poller.get_events(limit=5000)
               if str(e.get("source", "")).startswith(("defender", "mde"))]
-    if src:
+    if key == "endpoint":
+        events = [e for e in events if _is_endpoint_event(e)]
+    elif key == "alerts":
+        events = [e for e in events if e.get("source") == src and not _is_endpoint_event(e)]
+    elif src:
         events = [e for e in events if e.get("source") == src]
     events.sort(key=lambda e: e.get("created_at") or "", reverse=True)
     return {"count": len(events), "alerts": [_defender_event_out(e) for e in events[:limit]]}
