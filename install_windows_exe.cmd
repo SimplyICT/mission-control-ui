@@ -11,10 +11,16 @@ echo === SOC Agent (packaged .exe) Installer ===
 if not exist "%AGENT_DIR%" mkdir "%AGENT_DIR%"
 cd /d "%AGENT_DIR%"
 
-rem Stop the current agent (packaged or script) before replacing it.
+rem Stop the current agent (packaged or script) before replacing it. The script
+rem agent's command line is "<python> agent.py --server ...", so matching on
+rem 'SOCAgent' alone misses it and the old process keeps the WebSocket, which made
+rem an "installed" run look like a no-op in the console.
 schtasks /delete /tn SOCAgent /f >nul 2>nul
 taskkill /f /im SOCAgent.exe >nul 2>nul
-powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -match 'SOCAgent' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" >nul 2>nul
+sc stop SOCAgent >nul 2>nul
+sc delete SOCAgent >nul 2>nul
+powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='pythonw.exe' or Name='SOCAgent.exe'\" | Where-Object { $_.CommandLine -match 'agent\.py|SOCAgent' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" >nul 2>nul
+timeout /t 2 /nobreak >nul 2>nul
 
 echo Downloading SOCAgent.exe...
 curl -sL --max-time 300 http://%SERVER%/api/agent/download/exe -o "%AGENT_DIR%\SOCAgent.exe"
@@ -28,5 +34,9 @@ echo "%AGENT_DIR%\SOCAgent.exe" --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\
 schtasks /create /tn SOCAgent /tr "cmd.exe /c \"%AGENT_DIR%\start.cmd\"" /sc onstart /ru SYSTEM /f >nul 2>nul
 
 echo Starting agent...
-start /b "" cmd.exe /c "%AGENT_DIR%\start.cmd"
+rem Start through the Task Scheduler: a child of this installer dies with the RMM
+rem session, and the task is onstart-only, so the host would keep the old agent
+rem until the next reboot. /run starts it detached, as SYSTEM.
+schtasks /run /tn SOCAgent >nul 2>nul
+if errorlevel 1 start /b "" cmd.exe /c "%AGENT_DIR%\start.cmd"
 echo Done — packaged agent installed to %AGENT_DIR%
