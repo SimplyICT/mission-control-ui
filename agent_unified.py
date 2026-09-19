@@ -19,6 +19,7 @@ Packaging:
 """
 import argparse
 import asyncio
+import base64
 import hashlib
 import json
 import logging
@@ -26,21 +27,48 @@ import os
 import platform
 import py_compile
 import re
+import shlex
 import shutil
+import signal
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
+from datetime import datetime, timezone
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.8"
+AGENT_VERSION = "1.1.9"
 RECONNECT_BASE = 5
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
 
+# Response-action limits. The server never sees more than these; a fetch that
+# would exceed the hard cap is refused rather than silently truncated, because
+# a truncated artifact is worse evidence than a clear refusal.
+FETCH_DEFAULT_BYTES = 1024 * 1024
+FETCH_HARD_BYTES = 2 * 1024 * 1024
+SCRIPT_MAX_BYTES = 64 * 1024
+SCRIPT_DEFAULT_TIMEOUT = 60
+SCRIPT_MAX_TIMEOUT = 300
+OUTPUT_TAIL = 4000
+
+# Isolation is applied through one named iptables chain so release can remove
+# exactly what isolate added, even if the chain is re-applied between the two.
+ISOLATION_CHAIN = "SOC_ISOLATE"
+ISOLATION_RULE_PREFIX = "SOC_ISOLATE_"
+WINDOWS_ISOLATION_ALLOW_IN = ISOLATION_RULE_PREFIX + "ALLOW_COLLECTOR_IN"
+WINDOWS_ISOLATION_ALLOW_OUT = ISOLATION_RULE_PREFIX + "ALLOW_COLLECTOR_OUT"
+WINDOWS_ISOLATION_BLOCK_IN = ISOLATION_RULE_PREFIX + "BLOCK_IN"
+WINDOWS_ISOLATION_BLOCK_OUT = ISOLATION_RULE_PREFIX + "BLOCK_OUT"
+
 _agent_id = None
+
+# Collector address, learned from --server. isolate() needs it to keep the
+# control channel open while everything else is blocked.
+_collector = {"host": "", "port": 0}
 
 
 # ═══════════════════════════════════════════════════════
@@ -279,40 +307,570 @@ async def cmd_kill(args: dict) -> dict:
         return {"success": False, "error": str(e)}
 
 
+# ═══════════════════════════════════════════════════════
+#  Isolation helpers
+# ═══════════════════════════════════════════════════════
+
+def _set_collector(server: str) -> None:
+    """Remember the collector we are connected to (host[,port])."""
+    host, _, port = str(server or "").partition(":")
+    _collector["host"] = host.strip()
+    _collector["port"] = int(port) if port.strip().isdigit() else 0
+
+
+def _collector_ip() -> str:
+    """Collector host as a literal IP — firewall rules cannot take a hostname."""
+    host = str(_collector.get("host") or "").strip()
+    if not host:
+        return ""
+    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host):
+        return host
+    try:
+        info = socket.getaddrinfo(host, _collector.get("port") or None, proto=socket.IPPROTO_TCP)
+        return info[0][4][0] if info else ""
+    except Exception:
+        return ""
+
+
+def _isolation_state_file() -> str:
+    for base in (os.path.expanduser("~"), os.path.dirname(_agent_script_path())):
+        if base and os.path.isdir(base):
+            return os.path.join(base, ".soc-agent-isolation.json")
+    return ".soc-agent-isolation.json"
+
+
+def _save_isolation_state(fields: dict) -> None:
+    try:
+        with open(_isolation_state_file(), "w", encoding="utf-8") as f:
+            json.dump(fields, f, indent=2)
+    except Exception as e:
+        logger.warning("Could not record isolation state: %s", e)
+
+
+def _clear_isolation_state() -> None:
+    try:
+        os.remove(_isolation_state_file())
+    except Exception:
+        pass
+
+
+def _linux_isolation_rules(collector_ip: str, collector_port: int) -> list[list[str]]:
+    """iptables argv for isolation, in apply order.
+
+    iptables is first-match-wins, so every ACCEPT has to sit above the terminal
+    DROP: an allow rule appended after the DROP is dead code and would silently
+    lock the collector out, leaving no remote way to release the host.
+    """
+    chain = ISOLATION_CHAIN
+    rules = [
+        ["iptables", "-N", chain],
+        ["iptables", "-F", chain],
+        # Loopback is host-local IPC, not egress; dropping it breaks the agent's
+        # own health checks without isolating anything.
+        ["iptables", "-A", chain, "-i", "lo", "-j", "ACCEPT"],
+    ]
+    if collector_ip:
+        # Replies for the live collector session, both directions, before the
+        # port rules so an already-open control channel survives a port change
+        # on the collector side.
+        rules += [
+            ["iptables", "-A", chain, "-s", collector_ip,
+             "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+            ["iptables", "-A", chain, "-d", collector_ip,
+             "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+        ]
+        if collector_port:
+            rules += [
+                ["iptables", "-A", chain, "-s", collector_ip, "-p", "tcp",
+                 "--sport", str(collector_port), "-j", "ACCEPT"],
+                ["iptables", "-A", chain, "-d", collector_ip, "-p", "tcp",
+                 "--dport", str(collector_port), "-j", "ACCEPT"],
+            ]
+    else:
+        # Unresolved collector: keeping established flows is the only safe
+        # default. A hard drop with no allow rule would strand a host that can
+        # only be released over the network.
+        rules.append(["iptables", "-A", chain,
+                      "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"])
+    rules.append(["iptables", "-A", chain, "-j", "DROP"])
+    # -I 1 (insert at the top), not -A: a permissive ACCEPT already present in
+    # INPUT/OUTPUT must not be reached before the isolation chain.
+    rules += [
+        ["iptables", "-I", "INPUT", "1", "-j", chain],
+        ["iptables", "-I", "OUTPUT", "1", "-j", chain],
+    ]
+    return rules
+
+
+def _windows_isolation_rules(collector_ip: str, collector_port: int) -> list[list[str]]:
+    """netsh argv for isolation, in apply order.
+
+    Allow rules are added first as required, but ordering alone does NOT keep
+    the collector reachable on Windows: Windows Firewall evaluates block rules
+    before allow rules regardless of creation order. The block rules therefore
+    carry a remoteip exclusion for the collector, which is what actually leaves
+    the control channel open.
+    """
+    rules = []
+    if collector_ip:
+        allow_in = ["netsh", "advfirewall", "firewall", "add", "rule",
+                    "name=" + WINDOWS_ISOLATION_ALLOW_IN, "dir=in", "action=allow",
+                    "protocol=TCP", "remoteip=" + collector_ip]
+        allow_out = ["netsh", "advfirewall", "firewall", "add", "rule",
+                     "name=" + WINDOWS_ISOLATION_ALLOW_OUT, "dir=out", "action=allow",
+                     "protocol=TCP", "remoteip=" + collector_ip]
+        if collector_port:
+            allow_in.append("localport=" + str(collector_port))
+            allow_out.append("remoteport=" + str(collector_port))
+        rules += [allow_in, allow_out]
+        blocked = "remoteip=!" + collector_ip
+    else:
+        blocked = ""
+    for name, direction in ((WINDOWS_ISOLATION_BLOCK_IN, "in"),
+                            (WINDOWS_ISOLATION_BLOCK_OUT, "out")):
+        block = ["netsh", "advfirewall", "firewall", "add", "rule",
+                 "name=" + name, "dir=" + direction, "action=block"]
+        if blocked:
+            block.append(blocked)
+        rules.append(block)
+    return rules
+
+
+def _apply_isolation_windows(rules: list[list[str]]) -> dict:
+    # Legacy rules would otherwise survive release and keep the host blocked.
+    _legacy_windows_isolation_cleanup()
+    for argv in rules:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=20)
+        if r.returncode != 0:
+            # Never leave a half-applied ruleset behind: drop whatever landed
+            # and report the failure so the analyst can retry cleanly.
+            _release_isolation_windows()
+            return {"success": False, "error": (r.stderr or r.stdout).strip() or " ".join(argv)}
+    return {"success": True, "detail": "isolated (both directions blocked except collector)"}
+
+
+def _apply_isolation_linux(rules: list[list[str]]) -> dict:
+    # Isolate is idempotent: drop the jumps an earlier isolate left behind first,
+    # otherwise repeated calls stack duplicate jumps in INPUT/OUTPUT. Failures
+    # are expected when nothing is isolated yet.
+    for target in ("INPUT", "OUTPUT"):
+        subprocess.run(["iptables", "-D", target, "-j", ISOLATION_CHAIN],
+                       capture_output=True, text=True, timeout=20)
+    applied = []
+    for argv in rules:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=20)
+        msg = (r.stderr or r.stdout).strip()
+        if r.returncode != 0:
+            # -N fails when the chain already exists; -F, the rule adds and the
+            # jump inserts failing is a real problem.
+            if argv[1] == "-N" and "exist" in msg.lower():
+                continue
+            if argv[1] == "-F" and "no chain" in msg.lower():
+                continue
+            for undo in reversed(applied):
+                subprocess.run(undo, capture_output=True, text=True, timeout=20)
+            return {"success": False, "error": msg or " ".join(argv)}
+        applied.append(_linux_undo(argv))
+    return {"success": True, "detail": "isolated (both directions blocked except collector)"}
+
+
+def _linux_undo(argv: list[str]) -> list[str]:
+    """Inverse of one applied iptables argv, for rollback.
+
+    Rollback runs in reverse apply order, so the chain is flushed by -F's undo
+    before -N's undo tries to delete it.
+    """
+    if len(argv) > 1 and argv[1] == "-I":
+        return ["iptables", "-D", argv[2], "-j", argv[-1]]
+    if len(argv) > 2 and argv[1] == "-A":
+        return ["iptables", "-D"] + argv[2:]
+    if len(argv) > 1 and argv[1] == "-N":
+        return ["iptables", "-X", ISOLATION_CHAIN]
+    return ["iptables", "-F", ISOLATION_CHAIN]
+
+
+def _legacy_windows_isolation_cleanup() -> None:
+    """Delete the pre-1.1.9 inbound block rule.
+
+    Older builds isolated with a single EDR_ISOLATE rule and a later release
+    only removed that same name; leaving it behind would keep an isolated host
+    blocked with no command able to clear it.
+    """
+    subprocess.run(["netsh", "advfirewall", "firewall", "delete", "rule", "name=EDR_ISOLATE"],
+                   capture_output=True, text=True, timeout=20)
+
+
+def _release_isolation_windows() -> dict:
+    """Delete every rule isolate may have added. Idempotent."""
+    names = [WINDOWS_ISOLATION_ALLOW_IN, WINDOWS_ISOLATION_ALLOW_OUT,
+             WINDOWS_ISOLATION_BLOCK_IN, WINDOWS_ISOLATION_BLOCK_OUT]
+    missing = []
+    for name in names:
+        r = subprocess.run(
+            ["netsh", "advfirewall", "firewall", "delete", "rule", "name=" + name],
+            capture_output=True, text=True, timeout=20,
+        )
+        if r.returncode != 0:
+            missing.append(name)
+    _legacy_windows_isolation_cleanup()
+    if len(missing) == len(names):
+        return {"success": True, "detail": "not isolated"}
+    return {"success": True, "detail": "released"}
+
+
+def _release_isolation_linux() -> dict:
+    """Remove exactly what isolate added: the jumps, then the chain. Idempotent."""
+    chain = ISOLATION_CHAIN
+    existed = subprocess.run(["iptables", "-n", "-L", chain],
+                             capture_output=True, text=True, timeout=20).returncode == 0
+    for target in ("INPUT", "OUTPUT"):
+        # Loop: isolate is idempotent but an older build could have inserted the
+        # jump more than once; delete every copy.
+        for _ in range(10):
+            if subprocess.run(["iptables", "-D", target, "-j", chain],
+                              capture_output=True, text=True, timeout=20).returncode != 0:
+                break
+    if existed:
+        subprocess.run(["iptables", "-F", chain], capture_output=True, text=True, timeout=20)
+        subprocess.run(["iptables", "-X", chain], capture_output=True, text=True, timeout=20)
+    return {"success": True, "detail": "released" if existed else "not isolated"}
+
+
 @handler("isolate")
 async def cmd_isolate(args: dict) -> dict:
+    """Isolate the host: block both directions, keep the collector reachable."""
     plat = get_platform()
     try:
         if plat == "windows":
-            # Windows: block all non-essential traffic via Windows Firewall
-            r = subprocess.run(
-                ["netsh", "advfirewall", "firewall", "add", "rule",
-                 "name=EDR_ISOLATE", "dir=in", "action=block", "enable=yes"],
-                capture_output=True, text=True, timeout=15,
-            )
-            return {"success": r.returncode == 0, "detail": r.stderr.strip() or "isolated"}
+            rules = _windows_isolation_rules(_collector_ip(), _collector["port"])
+            result = _apply_isolation_windows(rules)
+        elif plat == "linux":
+            rules = _linux_isolation_rules(_collector_ip(), _collector["port"])
+            result = _apply_isolation_linux(rules)
         else:
-            from edr_actions import isolate_agent
-            return isolate_agent("local")
+            return {"success": False, "error": f"isolation is not supported on {plat}"}
+        if result.get("success"):
+            _save_isolation_state({
+                "isolated_at": datetime.now(timezone.utc).isoformat(),
+                "platform": plat,
+                "collector_ip": _collector_ip(),
+                "collector_port": _collector["port"],
+            })
+        return result
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 @handler("release")
 async def cmd_release(args: dict) -> dict:
+    """Release the host: remove exactly the rules isolate added."""
     plat = get_platform()
     try:
         if plat == "windows":
-            r = subprocess.run(
-                ["netsh", "advfirewall", "firewall", "delete", "rule", "name=EDR_ISOLATE"],
-                capture_output=True, text=True, timeout=15,
-            )
-            return {"success": r.returncode == 0, "detail": "released"}
+            result = _release_isolation_windows()
+        elif plat == "linux":
+            result = _release_isolation_linux()
         else:
-            from edr_actions import release_agent
-            return release_agent("local")
+            return {"success": False, "error": f"isolation is not supported on {plat}"}
+        if result.get("success"):
+            _clear_isolation_state()
+        return result
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════
+#  Response actions: quarantine, fetch, service, run_script
+# ═══════════════════════════════════════════════════════
+
+SERVICE_ACTIONS = ("start", "stop", "restart", "disable", "enable", "status")
+
+
+def _quarantine_dir() -> str:
+    """Quarantine root for this platform."""
+    override = os.environ.get("SOC_AGENT_QUARANTINE_DIR")
+    if override:
+        return override
+    if get_platform() == "windows":
+        # %ProgramData% is the documented system-wide location; the literal
+        # fallback covers service environments with a stripped environment block.
+        base = os.environ.get("ProgramData") or r"C:\ProgramData"
+        return os.path.join(base, "SOCAgent", "quarantine")
+    return "/var/lib/soc-agent/quarantine"
+
+
+def _resolve_path(value) -> str:
+    raw = str(value or "").strip()
+    return os.path.abspath(os.path.expanduser(raw)) if raw else ""
+
+
+def _sha256_file(path: str) -> tuple[str, int]:
+    digest = hashlib.sha256()
+    size = 0
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
+    return digest.hexdigest(), size
+
+
+@handler("quarantine")
+async def cmd_quarantine(args: dict) -> dict:
+    """Move a file into quarantine, hashing it before it leaves the scene."""
+    path = _resolve_path(args.get("path"))
+    if not path:
+        return {"success": False, "error": "path required"}
+    if not os.path.isfile(path):
+        return {"success": False, "error": f"file not found: {path}"}
+    try:
+        # Hash first: once the file is moved the evidence must still carry the
+        # digest of the bytes as they were found.
+        sha256, size = _sha256_file(path)
+        qdir = _quarantine_dir()
+        os.makedirs(qdir, mode=0o700, exist_ok=True)
+        dest = os.path.join(qdir, f"{sha256[:12]}_{os.path.basename(path)}")
+        if os.path.exists(dest):
+            # Collision on digest+name means different bytes; keep both rather
+            # than overwrite the earlier evidence copy.
+            dest = os.path.join(qdir, f"{sha256[:12]}_{int(time.time())}_{os.path.basename(path)}")
+        shutil.move(path, dest)
+        if os.path.exists(path):
+            return {"success": False, "error": f"failed to move {path} to {dest}"}
+        with open(dest + ".json", "w", encoding="utf-8") as f:
+            json.dump({
+                "original_path": path,
+                "quarantined_to": dest,
+                "sha256": sha256,
+                "size": size,
+                "quarantined_at": datetime.now(timezone.utc).isoformat(),
+            }, f, indent=2)
+        return {"success": True, "quarantined_to": dest, "sha256": sha256, "size": size}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@handler("fetch")
+async def cmd_fetch(args: dict) -> dict:
+    """Return a file's bytes (base64) for the case, bounded by a byte cap."""
+    path = _resolve_path(args.get("path"))
+    if not path:
+        return {"success": False, "error": "path required"}
+    if not os.path.isfile(path):
+        return {"success": False, "error": f"file not found: {path}"}
+    try:
+        max_bytes = int(args.get("max_bytes") or FETCH_DEFAULT_BYTES)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "max_bytes must be an integer"}
+    if max_bytes <= 0:
+        return {"success": False, "error": "max_bytes must be positive"}
+    if max_bytes > FETCH_HARD_BYTES:
+        return {"success": False, "error": f"max_bytes exceeds hard cap {FETCH_HARD_BYTES}"}
+    try:
+        size = os.path.getsize(path)
+        if size > max_bytes:
+            return {"success": False,
+                    "error": f"file is {size} bytes, over the {max_bytes} byte cap"}
+        # Read one byte past the cap so a file that grows between stat and read
+        # is refused instead of silently truncated.
+        with open(path, "rb") as f:
+            data = f.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            return {"success": False, "error": f"file grew past the {max_bytes} byte cap"}
+        return {
+            "success": True,
+            "name": os.path.basename(path),
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+            "content_b64": base64.b64encode(data).decode("ascii"),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _windows_service_commands(name: str, action: str) -> list[list[str]]:
+    sc = "sc.exe"
+    if action == "start":
+        return [[sc, "start", name]]
+    if action == "stop":
+        return [[sc, "stop", name]]
+    if action == "restart":
+        # sc.exe reports an already-stopped service as an error; the start that
+        # follows is what decides whether the restart worked.
+        return [[sc, "stop", name], [sc, "start", name]]
+    if action == "disable":
+        return [[sc, "config", name, "start=", "disabled"]]
+    if action == "enable":
+        return [[sc, "config", name, "start=", "auto"]]
+    return [[sc, "query", name]]
+
+
+def _service_windows(name: str, action: str) -> dict:
+    chunks = []
+    ok = True
+    for argv in _windows_service_commands(name, action):
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        chunks.append((r.stdout or r.stderr).strip())
+        if r.returncode != 0 and not (action == "restart" and argv[1] == "stop"):
+            ok = False
+            break
+    return {"success": ok, "detail": " | ".join(c for c in chunks if c) or "ok"}
+
+
+@handler("service")
+async def cmd_service(args: dict) -> dict:
+    """Start/stop/restart/enable/disable/query a service."""
+    name = str(args.get("name") or "").strip()
+    action = str(args.get("action") or "").strip().lower()
+    if not name:
+        return {"success": False, "error": "name required", "detail": ""}
+    if action not in SERVICE_ACTIONS:
+        return {"success": False, "error": f"unsupported action: {action}", "detail": ""}
+    try:
+        if get_platform() == "windows":
+            return _service_windows(name, action)
+        # argv list, never a shell string: a hostile service name must not be
+        # able to become a second command.
+        r = subprocess.run(["systemctl", action, name],
+                           capture_output=True, text=True, timeout=60)
+        return {"success": r.returncode == 0,
+                "detail": (r.stderr or r.stdout).strip() or "ok"}
+    except Exception as e:
+        return {"success": False, "error": str(e), "detail": str(e)}
+
+
+SCRIPT_INTERPRETERS = {
+    "powershell": (["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"], ".ps1"),
+    "pwsh": (["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"], ".ps1"),
+    "cmd": (["/c"], ".bat"),
+    "sh": ([], ".sh"),
+    "bash": ([], ".sh"),
+}
+
+
+def _script_command(alias: str, script_path: str, extra: list[str]) -> tuple[list[str], str]:
+    """Build (argv, file encoding) for one interpreter. Raises ValueError if unusable."""
+    plat = get_platform()
+    if alias in ("sh", "bash"):
+        if plat == "windows":
+            raise ValueError(f"interpreter {alias!r} is not available on Windows")
+        return ["/bin/" + alias, script_path] + extra, "utf-8"
+    if alias == "cmd":
+        if plat != "windows":
+            raise ValueError("interpreter 'cmd' is only available on Windows")
+        return ["cmd"] + SCRIPT_INTERPRETERS["cmd"][0] + [script_path] + extra, "utf-8"
+    if alias in ("powershell", "pwsh"):
+        static, _ = SCRIPT_INTERPRETERS[alias]
+        if plat == "windows":
+            program = "powershell" if alias == "powershell" else "pwsh"
+        else:
+            program = shutil.which(alias) or ""
+            if not program:
+                raise ValueError(f"interpreter {alias!r} is not installed")
+        # utf-8-sig on purpose: Windows PowerShell 5.1 reads a BOM-less file as
+        # ANSI and mangles any non-ASCII byte the analyst sent.
+        return [program] + static + [script_path] + extra, "utf-8-sig"
+    raise ValueError(f"unsupported interpreter: {alias}")
+
+
+def _script_spawn_flags() -> dict:
+    """POSIX: put the script in its own process group so a timeout can kill
+    everything it spawned, not just the shell it started."""
+    return {"start_new_session": True} if os.name == "posix" else {}
+
+
+def _kill_script(proc) -> None:
+    """Kill the script and its children."""
+    try:
+        if os.name == "posix":
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        else:
+            # Windows has no process groups; taskkill /T is the tree kill.
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                           capture_output=True, timeout=15)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
+
+@handler("run_script")
+async def cmd_run_script(args: dict) -> dict:
+    """Run an analyst-supplied script with bounded size, time and output."""
+    if args.get("confirm") is not True:
+        return {"success": False, "error": "confirm must be true"}
+    script = args.get("script")
+    if not isinstance(script, str) or not script.strip():
+        return {"success": False, "error": "script required"}
+    if len(script.encode("utf-8")) > SCRIPT_MAX_BYTES:
+        return {"success": False, "error": f"script exceeds {SCRIPT_MAX_BYTES} bytes"}
+    try:
+        timeout = int(args.get("timeout_secs") or SCRIPT_DEFAULT_TIMEOUT)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "timeout_secs must be an integer"}
+    if timeout <= 0:
+        return {"success": False, "error": "timeout_secs must be positive"}
+    timeout = min(timeout, SCRIPT_MAX_TIMEOUT)
+
+    raw_args = args.get("args")
+    if raw_args is None:
+        extra = []
+    elif isinstance(raw_args, list):
+        extra = [str(a) for a in raw_args]
+    elif isinstance(raw_args, str):
+        extra = shlex.split(raw_args)
+    else:
+        return {"success": False, "error": "args must be a list or string"}
+
+    plat = get_platform()
+    alias = str(args.get("interpreter") or "").strip().lower()
+    if not alias:
+        alias = "powershell" if plat == "windows" else "sh"
+    suffix = SCRIPT_INTERPRETERS.get(alias, ([], ".sh"))[1]
+
+    tmpdir = None
+    try:
+        tmpdir = tempfile.mkdtemp(prefix="soc-agent-run-")
+        script_path = os.path.join(tmpdir, "task" + suffix)
+        argv, encoding = _script_command(alias, script_path, extra)
+        with open(script_path, "w", encoding=encoding) as f:
+            f.write(script)
+        proc = await asyncio.create_subprocess_exec(
+            *argv, cwd=tmpdir, **_script_spawn_flags(),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        # Shield the reader from the timeout: cancelling communicate() leaves
+        # the transport unable to see pipe EOF, so wait() would then block for
+        # the script's full lifetime instead of the requested timeout.
+        reader = asyncio.ensure_future(proc.communicate())
+        try:
+            out, err = await asyncio.wait_for(asyncio.shield(reader), timeout=timeout)
+        except asyncio.TimeoutError:
+            _kill_script(proc)
+            try:
+                # Drain what the script managed to write before the kill.
+                out, err = await asyncio.wait_for(reader, timeout=10)
+            except Exception:
+                out, err = b"", b""
+            return {"success": False, "error": f"timeout after {timeout}s", "exit_code": -1,
+                    "stdout_tail": out.decode("utf-8", "replace")[-OUTPUT_TAIL:],
+                    "stderr_tail": err.decode("utf-8", "replace")[-OUTPUT_TAIL:]}
+        code = proc.returncode if proc.returncode is not None else -1
+        return {
+            "success": code == 0,
+            "exit_code": code,
+            "stdout_tail": out.decode("utf-8", "replace")[-OUTPUT_TAIL:],
+            "stderr_tail": err.decode("utf-8", "replace")[-OUTPUT_TAIL:],
+        }
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    finally:
+        # The script is one-shot evidence collection; never leave the temp copy
+        # on disk, even when the run failed or timed out.
+        if tmpdir:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ═══════════════════════════════════════════════════════
@@ -323,6 +881,7 @@ async def _polling_mode(server: str):
     """HTTP polling mode — polls the server for commands every 30s.
     Used when aiohttp is not available (e.g., macOS without pip).
     """
+    _set_collector(server)
     import urllib.request as _ur
     import json as _json
     import uuid as _uuid
@@ -713,6 +1272,8 @@ async def _handle_frame(ws, data: dict) -> None:
 async def run(server: str, api_key: str = ""):
     """Connect to SOC server and handle commands.
     Uses aiohttp WebSocket if available, falls back to HTTP polling."""
+    # isolate() must know the collector before any command can arrive.
+    _set_collector(server)
     try:
         import aiohttp
         _has_aiohttp = True
