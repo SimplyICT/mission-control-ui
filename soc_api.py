@@ -733,6 +733,51 @@ def api_agents_list(request: Request, limit: int = 500, select: str = ""):
                                 "version": a["version"]} for a in agents]}
 
 
+@router.get("/api/agents/needs-hands")
+def api_agents_needs_hands():
+    """Hosts the automatic convergence cannot fix, with the captured reason.
+
+    Written by trmm-converge-agents.py after each maintenance run (agent_converge.json):
+    a host still behind after its installer retries, or one whose RMM record is offline
+    while its agent keeps checking in. Enriched here with the agent's live state so the
+    Agents page can show version, staleness and the installer output side by side.
+    """
+    snap_file = BASE_DIR / "agent_converge.json"
+    if not snap_file.exists():
+        return {"count": 0, "items": [], "generated_at": "", "published": {},
+                "note": "no convergence run recorded yet"}
+    try:
+        snap = json.loads(snap_file.read_text(encoding="utf-8"))
+    except Exception as e:
+        return {"count": 0, "items": [], "error": f"unreadable snapshot: {e}"}
+
+    telemetry = _load_telemetry()
+    online = _online_agent_ids()
+    by_host = {}
+    for key, info in telemetry.items():
+        by_host[key.split("-", 1)[-1].lower()] = (key, info)
+    items = []
+    for it in snap.get("items", []):
+        key, info = by_host.get(str(it.get("host", "")).lower(), (None, {}))
+        system = ((info.get("data") or {}).get("system") or {}) if isinstance(info.get("data"), dict) else {}
+        kind = agent_build_kind(system)
+        items.append({
+            **it,
+            "key": key or "",
+            "reported_version": system.get("agent_version", ""),
+            "build": kind,
+            "platform": system.get("platform", ""),
+            "last_seen": info.get("last_seen", ""),
+            "online": bool(key and key in online),
+            "latest_version": published_meta(kind)["version"],
+            "still_behind": needs_update(system.get("agent_version"), kind),
+        })
+    return {"count": len(items), "items": items,
+            "generated_at": snap.get("generated_at", ""), "published": snap.get("published", {}),
+            # the address agents must actually reach (never the browser's Host)
+            "collector": agent_update_base()}
+
+
 @router.get("/api/agents/{agent_id}/telemetry")
 def api_agent_telemetry(agent_id: str):
     telemetry = _load_telemetry()
