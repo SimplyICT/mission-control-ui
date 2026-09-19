@@ -898,6 +898,16 @@ def api_agent_install_batch():
     return JSONResponse({"error": "installer not found"}, status_code=404)
 
 
+@router.get("/api/agent/tools/agent-repair.ps1")
+def api_tool_agent_repair():
+    """Diagnose (and with -Fix, repair) a Windows host whose agent will not run."""
+    f = BASE_DIR / "agent-repair.ps1"
+    if f.exists():
+        return Response(f.read_bytes(), media_type="text/plain",
+                        headers={"Cache-Control": "no-store"})
+    return JSONResponse({"error": "tool not found"}, status_code=404)
+
+
 @router.get("/api/agent/tools/wazuh-remove.ps1")
 def api_tool_wazuh_remove_ps1():
     """Wazuh/OSSEC remover for Windows endpoints (fetched by TRMM as SYSTEM)."""
