@@ -20,6 +20,7 @@ Tables:
   external_tokens — API tokens (VT, OTX etc.)
   settings        — key/value settings
   agent_commands  — command outbox for agents (WS/poll)
+  agent_response_audit — analyst-triggered endpoint response actions (audit)
 """
 
 import json
@@ -225,6 +226,20 @@ CREATE TABLE IF NOT EXISTS agent_commands (
     updated TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_cmds_agent ON agent_commands(agent_id, status);
+CREATE TABLE IF NOT EXISTS agent_response_audit (
+    id TEXT PRIMARY KEY,
+    cmd_id TEXT,
+    agent_id TEXT,
+    actor TEXT,
+    action TEXT,
+    args TEXT,
+    case_id TEXT,
+    queue_id TEXT,
+    comment TEXT,
+    created TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_resp_agent ON agent_response_audit(agent_id, created);
+CREATE INDEX IF NOT EXISTS idx_resp_cmd ON agent_response_audit(cmd_id);
 """
 
 
@@ -936,3 +951,74 @@ def latest_commands(agent_id: str = "", limit: int = 50) -> list[dict]:
     sql += " ORDER BY created DESC LIMIT ?"
     params.append(limit)
     return _rows(sql, tuple(params))
+
+
+# ── Endpoint response audit ───────────────────────────────────────────────
+
+def record_response(cmd_id: str, agent_id: str, actor: str, action: str,
+                    args: dict | None = None, case_id: str = "", queue_id: str = "",
+                    comment: str = "") -> str:
+    """Audit one analyst-triggered response action (who did what to which host).
+
+    Written at enqueue time, so a row exists even when the agent never picks the
+    command up — the command row carries the status, this table carries intent
+    and attribution.
+    """
+    rid = _gen_id("resp")
+    _exec(
+        "INSERT INTO agent_response_audit "
+        "(id, cmd_id, agent_id, actor, action, args, case_id, queue_id, comment, created) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (rid, cmd_id, agent_id, actor, action, json.dumps(args or {}, default=str),
+         case_id, queue_id, comment, _now()),
+    )
+    return rid
+
+
+def list_responses(agent_id: str = "", limit: int = 50) -> list[dict]:
+    """Audit rows joined with the live command row.
+
+    The join is what distinguishes pending from done: status/result only exist
+    once the agent's result lands in agent_commands.
+    """
+    sql = ("SELECT a.*, c.status AS status, c.result AS result, c.updated AS updated "
+           "FROM agent_response_audit a LEFT JOIN agent_commands c ON c.id = a.cmd_id")
+    params: list = []
+    if agent_id:
+        sql += " WHERE a.agent_id = ?"
+        params.append(agent_id)
+    sql += " ORDER BY a.created DESC LIMIT ?"
+    params.append(limit)
+    return _rows(sql, tuple(params))
+
+
+def get_response_by_cmd(cmd_id: str) -> dict | None:
+    return _one(
+        "SELECT a.*, c.status AS status, c.result AS result, c.updated AS updated "
+        "FROM agent_response_audit a LEFT JOIN agent_commands c ON c.id = a.cmd_id "
+        "WHERE a.cmd_id = ? ORDER BY a.created DESC LIMIT 1",
+        (cmd_id,),
+    )
+
+
+def set_response_meta(cmd_id: str, meta: dict) -> bool:
+    """Merge server-side bookkeeping into the audit row's args blob.
+
+    Evidence paths and the note-dispatched marker ride in the args JSON instead
+    of new columns so the audit schema stays as specified; their keys are
+    '_'-prefixed so callers can tell them apart from action arguments.
+    """
+    row = _one("SELECT id, args FROM agent_response_audit WHERE cmd_id = ? "
+               "ORDER BY created DESC LIMIT 1", (cmd_id,))
+    if row is None:
+        return False
+    try:
+        args = json.loads(row.get("args") or "{}")
+    except Exception:
+        args = {}
+    if not isinstance(args, dict):
+        args = {}
+    args.update(meta or {})
+    _exec("UPDATE agent_response_audit SET args=? WHERE id=?",
+          (json.dumps(args, default=str), row["id"]))
+    return True

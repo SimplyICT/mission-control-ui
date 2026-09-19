@@ -26,6 +26,7 @@ Registered from app.py via include_router(). Auth: app.py middleware gates
 
 import concurrent.futures
 import asyncio
+import base64
 import hashlib
 import hmac
 import json
@@ -61,6 +62,7 @@ import platform_core
 from soc_store import (
     enqueue_command, pending_commands, command_result,
     get_command, latest_commands, rules_get,
+    record_response, list_responses, get_response_by_cmd, set_response_meta,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -420,10 +422,13 @@ async def _agent_ws_loop(ws: WebSocket, legacy: bool = False):
                         "args": json.loads(cmd.get("args") or "{}"),
                     })
             elif kind == "result" and agent_key:
-                command_result(msg.get("id", ""), msg.get("result", {}))
+                cmd_id = msg.get("id", "")
+                command_result(cmd_id, msg.get("result", {}))
                 loop_local = asyncio.get_running_loop()
                 loop_local.run_in_executor(_scan_executor, _persist_agent_result,
                                            agent_key, msg.get("command", ""), msg.get("result", {}))
+                loop_local.run_in_executor(_scan_executor, _response_result_hook,
+                                           cmd_id, msg.get("result", {}))
             elif kind == "update" and agent_key:
                 info = msg.get("data", {}) or {}
                 telemetry = _load_telemetry()
@@ -885,6 +890,7 @@ async def api_agent_result(agent_id: str, request: Request):
         body = await request.json()
         command_result(body.get("id", ""), body.get("result", {}))
         _persist_agent_result(agent_id, body.get("command", ""), body.get("result", {}))
+        _response_result_hook(body.get("id", ""), body.get("result", {}))
     except Exception:
         pass
     return {}
@@ -1613,6 +1619,416 @@ def _enqueue_and_deliver(agent_key: str, command: str, args: dict | None = None)
     if _deliver_sync(agent_key, cmd):
         return {"success": True, "pending": True, "id": cmd["id"], "delivered": True}
     return {"success": True, "pending": True, "id": cmd["id"], "delivered": False}
+
+
+# ── Agent response actions (close the loop on a finding) ──────────────────
+#
+# One catalogue drives the API, the validation and the SPA: an action the UI can
+# render is exactly an action the server accepts, so the two cannot drift.
+# Adding an action means adding an entry here AND a @handler in agent_unified.py.
+
+RESPONSE_SERVICE_ACTIONS = ("start", "stop", "restart", "disable", "enable", "status")
+RESPONSE_FETCH_DEFAULT = 1024 * 1024
+RESPONSE_FETCH_MAX = 2 * 1024 * 1024
+RESPONSE_SCRIPT_MAX = 64 * 1024
+RESPONSE_SCRIPT_TIMEOUT_DEFAULT = 60
+RESPONSE_SCRIPT_TIMEOUT_MAX = 300
+EVIDENCE_DIR = BASE_DIR / "evidence"
+
+RESPONSE_ACTIONS: dict[str, dict] = {
+    "collect": {
+        "label": "Collect telemetry",
+        "description": "Ask the agent for a fresh host collection (processes, network, packages).",
+        "params": {},
+    },
+    "ping": {
+        "label": "Ping",
+        "description": "Liveness check over the agent channel.",
+        "params": {},
+    },
+    "system": {
+        "label": "System info",
+        "description": "OS, hostname, uptime and agent version.",
+        "params": {},
+    },
+    "processes": {
+        "label": "List processes",
+        "description": "Current process list with parent PIDs and command lines.",
+        "params": {},
+    },
+    "network": {
+        "label": "List connections",
+        "description": "Listening sockets and established connections.",
+        "params": {},
+    },
+    "kill": {
+        "label": "Kill process",
+        "description": "Terminate one process by PID.",
+        "params": {
+            "pid": {"label": "PID", "type": "int", "required": True},
+            "signal": {"label": "Signal", "type": "text", "options": ["TERM", "KILL"]},
+        },
+    },
+    "isolate": {
+        "label": "Isolate host",
+        "description": "Block traffic in both directions except the collector channel.",
+        "params": {},
+    },
+    "release": {
+        "label": "Release host",
+        "description": "Remove exactly what isolate added; normal traffic resumes.",
+        "params": {},
+    },
+    "quarantine": {
+        "label": "Quarantine file",
+        "description": "Move a file into the agent's quarantine vault and record its hash.",
+        "params": {"path": {"label": "File path", "type": "text", "required": True}},
+    },
+    "fetch": {
+        "label": "Fetch artifact",
+        "description": "Pull a file's bytes back as evidence (max 2 MiB).",
+        "params": {
+            "path": {"label": "File path", "type": "text", "required": True},
+            "max_bytes": {"label": "Max bytes (default 1 MiB)", "type": "int"},
+        },
+    },
+    "service": {
+        "label": "Service control",
+        "description": "Start, stop, restart a service or change its start mode.",
+        "params": {
+            "name": {"label": "Service name", "type": "text", "required": True},
+            "action": {"label": "Action", "type": "text", "required": True,
+                       "options": list(RESPONSE_SERVICE_ACTIONS)},
+        },
+    },
+    "run_script": {
+        "label": "Run script",
+        "description": "Run a bounded script on the host (64 KiB, max 300 s) and return its output.",
+        "params": {
+            "script": {"label": "Script", "type": "textarea", "required": True},
+            "interpreter": {"label": "Interpreter", "type": "text"},
+            "args": {"label": "Arguments", "type": "textarea"},
+            "timeout_secs": {"label": "Timeout seconds (default 60)", "type": "int"},
+            "confirm": {"label": "I understand this runs on the host", "type": "bool",
+                        "required": True},
+        },
+    },
+}
+
+
+def _truthy(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _resp_int(value, name: str, lo: int | None = None, hi: int | None = None) -> int:
+    """Strict integer coercion — '12.5', '' and true are rejected, '12' is not."""
+    if isinstance(value, bool) or value is None:
+        raise ValueError(f"'{name}' must be an integer")
+    if isinstance(value, int):
+        num = value
+    elif isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        num = int(value.strip())
+    else:
+        raise ValueError(f"'{name}' must be an integer")
+    if lo is not None and num < lo:
+        raise ValueError(f"'{name}' must be >= {lo}")
+    if hi is not None and num > hi:
+        raise ValueError(f"'{name}' must be <= {hi}")
+    return num
+
+
+def _validate_response_args(action: str, raw: object) -> dict:
+    """Coerce and validate one action's args; ValueError carries a client-safe message.
+
+    Only fields the catalogue declares are forwarded, so a UI typo cannot reach
+    the agent as an argument no handler understands.
+    """
+    spec = RESPONSE_ACTIONS[action]
+    if not isinstance(raw, dict):
+        raw = {}
+    args = {name: raw[name] for name in spec["params"]
+            if name in raw and raw[name] is not None}
+    for name, p in spec["params"].items():
+        if p.get("required") and str(args.get(name) or "").strip() == "":
+            raise ValueError(f"'{name}' is required for {action}")
+    if action == "kill":
+        args["pid"] = _resp_int(args.get("pid"), "pid", 1)
+        if args.get("signal"):
+            sig = str(args["signal"]).strip().upper()
+            if sig not in ("TERM", "KILL"):
+                raise ValueError("'signal' must be TERM or KILL")
+            args["signal"] = sig
+        else:
+            # An empty signal reaches the agent as the literal 'kill -' argument;
+            # drop it so the agent's own TERM default applies.
+            args.pop("signal", None)
+    elif action in ("quarantine", "fetch"):
+        args["path"] = str(args["path"]).strip()
+        if action == "fetch":
+            args["max_bytes"] = (RESPONSE_FETCH_DEFAULT if "max_bytes" not in args else
+                                 _resp_int(args["max_bytes"], "max_bytes", 1, RESPONSE_FETCH_MAX))
+    elif action == "service":
+        args["name"] = str(args["name"]).strip()
+        act = str(args.get("action", "")).strip().lower()
+        if act not in RESPONSE_SERVICE_ACTIONS:
+            raise ValueError(f"'action' must be one of {', '.join(RESPONSE_SERVICE_ACTIONS)}")
+        args["action"] = act
+    elif action == "run_script":
+        script = str(args["script"])
+        if len(script.encode("utf-8")) > RESPONSE_SCRIPT_MAX:
+            raise ValueError(f"'script' exceeds {RESPONSE_SCRIPT_MAX} bytes")
+        args["script"] = script
+        if not _truthy(args.get("confirm")):
+            raise ValueError("run_script requires confirm: true")
+        args["confirm"] = True
+        args["timeout_secs"] = (RESPONSE_SCRIPT_TIMEOUT_DEFAULT if "timeout_secs" not in args else
+                                _resp_int(args["timeout_secs"], "timeout_secs", 1,
+                                          RESPONSE_SCRIPT_TIMEOUT_MAX))
+        if "interpreter" in args:
+            args["interpreter"] = str(args["interpreter"]).strip()
+        if "args" in args:
+            tail = args["args"]
+            # The agent takes a list or a string; keep a list intact so an
+            # argument containing spaces is not re-split by its shlex pass.
+            args["args"] = ([str(x) for x in tail] if isinstance(tail, (list, tuple))
+                            else str(tail))
+    return args
+
+
+def _response_actor(request: Request, override: str = "") -> str:
+    """Who ran the action.
+
+    A trusted session identity outranks the client-supplied field, so a caller
+    cannot attribute its action to someone else; `actor` still names the caller
+    for API clients that carry no dashboard session, and 'dashboard' is the
+    last resort.
+    """
+    try:
+        # Lazy import: app.py includes this router, so a module-level import cycles.
+        from app import _get_authenticated_user
+        user = _get_authenticated_user(request) or {}
+        named = str(user.get("username") or user.get("email") or "").strip()
+        if named:
+            return named[:64]
+    except Exception:
+        pass
+    return (str(override or "").strip() or "dashboard")[:64]
+
+
+def _resp_json(raw, fallback):
+    if raw is None or raw == "":
+        return fallback
+    if isinstance(raw, dict):
+        return raw
+    try:
+        val = json.loads(raw)
+    except Exception:
+        return fallback
+    return val if isinstance(val, type(fallback)) else fallback
+
+
+def _response_row_out(row: dict) -> dict:
+    """Audit row (raw TEXT columns) shaped for the responder UI."""
+    args = _resp_json(row.get("args"), {})
+    meta = {k: v for k, v in args.items() if k.startswith("_")}
+    out = dict(row)
+    out["args"] = {k: v for k, v in args.items() if not k.startswith("_")}
+    out["result"] = _resp_json(row.get("result"), None)
+    out["status"] = row.get("status") or "unknown"
+    out["evidence"] = str((meta.get("_evidence") or {}).get("path") or "")
+    return out
+
+
+def _response_rows(agent_id: str, limit: int) -> list[dict]:
+    limit = max(1, min(int(limit), 500))
+    return [_response_row_out(r) for r in list_responses(agent_id, limit)]
+
+
+@router.get("/api/agent/lookup")
+def api_agent_lookup(host: str = ""):
+    """Resolve a finding's host name to an agent key.
+
+    Findings carry a bare hostname (queue details.agent, Defender device) while
+    the agent key is '<platform>-<hostname>', so match on the trailing segment
+    too; the UI uses `found` to decide whether a Respond affordance is possible.
+    Unknown host is not an error.
+    """
+    want = (host or "").strip().lower()
+    miss = {"found": False, "agent_id": "", "name": "", "version": "", "build": "", "online": False}
+    if not want:
+        return miss
+    online = _online_agent_ids()
+    for a in _agent_list():
+        key = str(a.get("id") or "")
+        tail = key.split("-", 1)[-1] if "-" in key else key
+        if want in (key.lower(), tail.lower(),
+                    str(a.get("hostname") or "").lower(), str(a.get("name") or "").lower()):
+            # Two liveness signals, because neither is complete on its own: a WS
+            # held by the other uvicorn worker is invisible here, and 10-minute
+            # telemetry can be stale for a host that is answering right now.
+            return {"found": True, "agent_id": key,
+                    "name": a.get("name") or tail,
+                    "version": a.get("version") or "",
+                    "build": a.get("build") or "",
+                    "online": key in online or a.get("status") == "online"}
+    return miss
+
+
+@router.get("/api/agent/respond/actions")
+def api_agent_respond_actions():
+    """Action catalogue — the single source of truth the SPA renders."""
+    return RESPONSE_ACTIONS
+
+
+@router.post("/api/agent/{agent_id}/respond")
+async def api_agent_respond(agent_id: str, request: Request):
+    """Run one response action against one endpoint, attributed and audited."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    action = str(body.get("action") or "").strip()
+    if action not in RESPONSE_ACTIONS:
+        allowed = ", ".join(RESPONSE_ACTIONS)
+        return JSONResponse(
+            {"success": False, "error": f"unknown action '{action}'; allowed: {allowed}"},
+            status_code=400)
+    try:
+        args = _validate_response_args(action, body.get("args"))
+    except ValueError as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+
+    actor = _response_actor(request, body.get("actor", ""))
+    res = _enqueue_and_deliver(agent_id, action, args)
+    try:
+        record_response(res["id"], agent_id, actor, action, args,
+                        case_id=str(body.get("case_id") or ""),
+                        queue_id=str(body.get("queue_id") or ""),
+                        comment=str(body.get("comment") or "")[:500])
+    except Exception as e:
+        # The command is already dispatched; a failed audit write must not
+        # pretend the action never happened.
+        logger.warning("response audit write failed: %s", e)
+    # Mirror the EDR page's isolation state so both surfaces agree (the EDR
+    # endpoints do the same, unconditionally, for queued commands too).
+    if action in ("isolate", "release"):
+        try:
+            state = _load_isolation()
+            if action == "isolate":
+                state[agent_id] = {"isolated_at": _now()}
+            else:
+                state.pop(agent_id, None)
+            _save_isolation(state)
+        except Exception as e:
+            logger.warning("isolation state sync failed: %s", e)
+    return {"success": True, "id": res["id"], "delivered": bool(res.get("delivered")),
+            "action": action}
+
+
+@router.get("/api/agent/responses")
+def api_agent_responses(limit: int = 50):
+    rows = _response_rows("", limit)
+    return {"responses": rows, "count": len(rows)}
+
+
+@router.get("/api/agent/{agent_id}/responses")
+def api_agent_responses_for(agent_id: str, limit: int = 50):
+    rows = _response_rows(agent_id, limit)
+    return {"responses": rows, "count": len(rows)}
+
+
+def _response_result_summary(action: str, result: dict) -> str:
+    """One-line outcome for the finding note (the full payload stays in the row)."""
+    if not result.get("success"):
+        return str(result.get("error") or "failed")[:200]
+    if action == "fetch":
+        return f"{result.get('size', 0)} bytes, sha256 {str(result.get('sha256') or '')[:12]}"
+    if action == "quarantine":
+        return f"quarantined to {result.get('quarantined_to', '')}"
+    if action == "service":
+        return str(result.get("detail") or "ok")[:200]
+    if action == "run_script":
+        return f"exit code {result.get('exit_code')}"
+    return "ok"
+
+
+def _store_response_evidence(cmd_id: str, action: str, result: dict) -> str:
+    """Write fetched bytes under <deployed dir>/evidence; never into SQLite."""
+    if action != "fetch" or not result.get("success") or not result.get("content_b64"):
+        return ""
+    try:
+        blob = base64.b64decode(result["content_b64"])
+    except Exception as e:
+        logger.warning("evidence decode failed for %s: %s", cmd_id, e)
+        return ""
+    # The agent supplies the name; keep it a plain filename or a compromised host
+    # could write outside the evidence dir.
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", str(result.get("name") or ""))[-80:] or "artifact.bin"
+    try:
+        EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+        path = EVIDENCE_DIR / f"{cmd_id}_{name}"
+        path.write_bytes(blob)
+    except Exception as e:
+        logger.warning("evidence write failed for %s: %s", cmd_id, e)
+        return ""
+    set_response_meta(cmd_id, {"_evidence": {"path": str(path), "name": name,
+                                             "sha256": str(result.get("sha256") or ""),
+                                             "size": len(blob), "stored": _now()}})
+    return str(path)
+
+
+def _response_result_hook(cmd_id: str, result: dict) -> None:
+    """Tie a landed response result back to the finding it was run from.
+
+    Called from the two result ingress points (WS loop, /api/agent/{id}/result)
+    and never from the respond handler: at request time there is no result to
+    report, only a queued command.
+    """
+    if not cmd_id:
+        return
+    try:
+        row = get_response_by_cmd(cmd_id)
+        if row is None:
+            return
+        stored = _resp_json(row.get("args"), {})
+        if stored.get("_notified"):
+            # Both ingress points can carry the same result; the note must not
+            # be appended twice.
+            return
+        action = str(row.get("action") or "")
+        result = result if isinstance(result, dict) else {}
+        evidence = _store_response_evidence(cmd_id, action, result)
+        text = (f"Response action '{action}' on {row.get('agent_id')} "
+                f"{'succeeded' if result.get('success') else 'failed'}: "
+                f"{_response_result_summary(action, result)}")
+        if evidence:
+            text += f" (evidence: {evidence})"
+        case_id = str(row.get("case_id") or "")
+        if case_id:
+            try:
+                case = next((c for c in itdr_poller.get_cases() if c.get("id") == case_id), None)
+                if case is not None:
+                    itdr_poller.update_case(case_id, {
+                        "notes": (case.get("notes") or "")
+                                 + f"\n[{datetime.now(timezone.utc):%Y-%m-%d %H:%M} {row.get('actor') or 'dashboard'}] {text}",
+                        "updated_at": _now()})
+            except Exception as e:
+                logger.warning("response case note failed: %s", e)
+        queue_id = str(row.get("queue_id") or "")
+        if queue_id:
+            try:
+                soc_queue.add_note(queue_id, str(row.get("actor") or "dashboard"), text)
+            except Exception as e:
+                logger.warning("response queue note failed: %s", e)
+        set_response_meta(cmd_id, {"_notified": True})
+    except Exception as e:
+        logger.warning("response result hook failed: %s", e)
 
 
 @router.get("/api/edr/summary")
