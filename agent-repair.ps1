@@ -106,7 +106,17 @@ if (-not $target) {
     if ($target -eq $exe) {
         $p = Start-Process -FilePath $exe -ArgumentList @("--server", $Server, "--key", $Key) -PassThru -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err
     } else {
-        $p = Start-Process -FilePath "python" -ArgumentList @($py, "--server", $Server, "--key", $Key) -PassThru -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err
+        # "python" is often not on the SYSTEM PATH (this raised InvalidOperationException
+        # on several hosts): resolve it the way the installer does.
+        $pyCmd = $null
+        foreach ($cand in @("C:\Program Files\Python312\python.exe", "C:\Program Files\Python311\python.exe", "python.exe")) {
+            if (Test-Path $cand) { $pyCmd = $cand; break }
+            $w = Get-Command $cand -ErrorAction SilentlyContinue
+            if ($w) { $pyCmd = $w.Source; break }
+        }
+        if (-not $pyCmd) { Say "  no Python interpreter found - cannot run the script agent"; $pyCmd = "python.exe" }
+        Say "  python: $pyCmd"
+        $p = Start-Process -FilePath $pyCmd -ArgumentList @($py, "--server", $Server, "--key", $Key) -PassThru -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err
     }
     Start-Sleep -Seconds 15
     if ($p -and -not $p.HasExited) {

@@ -32,7 +32,9 @@ echo @echo off > start.cmd
 echo cd /d "%AGENT_DIR%" >> start.cmd
 echo "%AGENT_DIR%\SOCAgent.exe" --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent.log" 2^>^&1 >> start.cmd
 
-schtasks /create /tn SOCAgent /tr "cmd.exe /c \"%AGENT_DIR%\start.cmd\"" /sc onstart /ru SYSTEM /f >nul 2>nul
+rem Repeat trigger, not just onstart: a crash or a killed process then recovers on its
+rem own within five minutes instead of waiting for the next reboot.
+schtasks /create /tn SOCAgent /tr "cmd.exe /c \"%AGENT_DIR%\start.cmd\"" /sc minute /mo 5 /ru SYSTEM /f >nul 2>nul
 
 echo Starting agent...
 rem Start through the Task Scheduler: a child of this installer dies with the RMM
