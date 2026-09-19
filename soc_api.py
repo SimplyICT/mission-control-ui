@@ -2188,25 +2188,116 @@ async def api_socqueue_notes(item_id: str, request: Request):
 
 @router.get("/api/platform/onboarding")
 def api_platform_onboarding(org_id: str = "default"):
-    tokens = platform_core.get_tokens()
+    """Onboarding state, derived from live data instead of static instructions.
+
+    Every field is read from the running system: enrolled agents (telemetry), the
+    published agent artifact (script/exe meta), M365 tenant probes, and SIEM ingest
+    counters. The page renders a checklist from `checklist`; commands in `install`
+    use the canonical agent base so they work as pasted.
+    """
+    base = agent_update_base()
+    host = base.split("//", 1)[-1].rstrip("/")          # host:port, for --server
+    host_ip = host.split(":")[0]                        # bare host, for syslog targets
+    script_meta, exe = agent_meta(), exe_meta()
+    agents = _agent_list()
+    online_ids = _online_agent_ids()
+    behind = [a for a in agents if a.get("needs_update")]
+    known_platforms = {"windows", "linux", "darwin", "macos", "freebsd"}
+    platforms, builds = {}, {}
+    for a in agents:
+        plat = str(a.get("platform") or "").lower()
+        plat = plat if plat in known_platforms else "unknown"   # telemetry keys can yield junk fragments
+        platforms[plat] = platforms.get(plat, 0) + 1
+        builds[a.get("build", "script")] = builds.get(a.get("build", "script"), 0) + 1
+    online = [a for a in agents if a.get("id") in online_ids]
+
+    tenants = []
+    for t in itdr_poller.get_tenants():
+        perms = itdr_poller.graph_permissions(t)
+        mde = itdr_poller.mde_permissions(t)
+        tenants.append({"id": t.get("id"), "name": t.get("name"),
+                        "configured": itdr_poller.is_configured(t),
+                        "identity": perms.get("identity", ""), "xdr": perms.get("defender", ""),
+                        "endpoint": mde.get("status", ""), "endpoint_via": mde.get("via", ""),
+                        "xdr_missing_roles": perms.get("defender_missing_roles", [])})
+    tenant0 = itdr_poller.get_tenants()[0] if itdr_poller.get_tenants() else None
+    caps = itdr_poller.write_capabilities(tenant0) if tenant0 else {}
+    siem = {}
+    try:
+        import siem_ingest
+        siem = siem_ingest.get_summary()
+    except Exception as e:
+        logger.warning("onboarding: siem summary failed: %s", e)
+
+    devices_done = len(agents) > 0
+    fleet_current = devices_done and not behind
+    m365_done = bool(tenants) and all(t["configured"] for t in tenants)
+    xdr_done = bool(tenants) and all(t["xdr"] == "ok" for t in tenants)
+    logs_done = int(siem.get("total_logs") or 0) > 0
+    checklist = [
+        {"key": "device_auth", "label": "Device authentication enabled",
+         "done": bool(_EDR_WS_KEY), "detail": "agents present the shared key on the WebSocket handshake" if _EDR_WS_KEY else "EDR_WS_KEY is not set — any host that can reach the collector can enrol"},
+        {"key": "devices", "label": "At least one device enrolled",
+         "done": devices_done, "detail": f"{len(agents)} enrolled · {len(online)} online"},
+        {"key": "fleet_current", "label": "Every agent on the published version",
+         "done": fleet_current,
+         "detail": f"published {script_meta['version']}" + (f" · {len(behind)} behind" if behind else " · all current")},
+        {"key": "m365_tenant", "label": "M365 tenant connected",
+         "done": m365_done, "detail": f"{len(tenants)} tenant(s) with credentials" if tenants else "no tenant registered"},
+        {"key": "m365_xdr", "label": "Defender XDR readable",
+         "done": xdr_done, "detail": "SecurityAlert.Read.All + SecurityIncident.Read.All" if xdr_done else "roles not granted for at least one tenant"},
+        {"key": "m365_writeback", "label": "Analyst decisions push back to Defender",
+         "done": not (caps.get("missing") or []),
+         "detail": ("resolved/dismissed items update Defender" if not (caps.get("missing") or [])
+                    else "missing: " + ", ".join(caps.get("missing") or []))},
+        {"key": "log_sources", "label": "Log source sending events",
+         "done": logs_done, "detail": f"{int(siem.get('total_logs') or 0)} events ingested"
+                                      + ("" if siem.get("syslog_active") else " · syslog receiver disabled (SIEM_SYSLOG_PORT=0)")},
+    ]
+
     return {
-        "instructions": {
-            "steps": {
-                "edr_agent": {
-                    "linux": "curl -s http://173.208.232.91:8095/api/agent/download/windows -o agent.py && python3 agent.py --server 173.208.232.91:8095",
-                    "manual": "Deploy agent_unified.py on the endpoint with --server 173.208.232.91:8095",
-                },
-                "siem_ingest": {
-                    "http": "POST JSON events to http://173.208.232.91:8095/api/siem/ingest",
-                    "syslog": "Configure SIEM_SYSLOG_PORT in mission-control-ui/.env to enable syslog ingestion",
-                },
-                "m365_itdr": {
-                    "setup": "ITDR_* credentials configured in mission-control-ui/.env — run itdr_poller.poll_cycle() to ingest identity events",
-                    "env": "ITDR_TENANT_ID, ITDR_CLIENT_ID, ITDR_CLIENT_SECRET",
-                },
+        "organization": org_id,
+        "base_url": base,
+        "checklist": checklist,
+        "progress": {"done": sum(1 for c in checklist if c["done"]), "total": len(checklist)},
+        "devices": {
+            "enrolled": len(agents), "online": len(online), "offline": len(agents) - len(online),
+            "by_platform": platforms, "by_build": builds,
+            "behind_count": len(behind),
+            "behind": [{"name": a.get("name"), "platform": a.get("platform"),
+                        "version": a.get("version"), "latest_version": a.get("latest_version")} for a in behind[:20]],
+            "published": {
+                "script": {**script_meta, "download": f"{base}{download_path('script')}"},
+                "exe": {**exe, "download": f"{base}{download_path('exe')}"} if exe.get("version") else {},
             },
+            "device_auth": {"key_configured": bool(_EDR_WS_KEY),
+                            "installers_carry_key": True,
+                            "header": "X-EDR-Key"},
         },
-        "deploy_token": tokens[-1]["token"] if tokens else "",
+        "install": {
+            "windows_exe": f'cmd /c "curl -o install-exe.cmd {base}/api/agent/install/windows-exe && install-exe.cmd"',
+            "windows_script": f'cmd /c "curl -o install.cmd {base}/api/agent/install/windows-batch && install.cmd"',
+            "windows_note": "windows_exe needs no Python on the target and is the current fleet default; windows_script installs Python 3.12 first.",
+            "linux": f"curl -fsSL {base}/api/agent/download/agent?platform=linux -o /tmp/agent_unified.py && "
+                     f"sudo python3 /tmp/agent_unified.py --server {host} --key <EDR_WS_KEY>",
+            "linux_note": "No packaged Linux installer yet: run it under systemd (Restart=always) — the agent does not self-install a unit.",
+        },
+        "m365": {
+            "tenants": tenants,
+            "write_capabilities": caps,
+            "configure_hint": "Identity (ITDR) → Tenants: add tenant_id / client_id / client_secret, then Grant admin consent for the roles listed there.",
+            "uri": "#/itdr",
+        },
+        "log_sources": {
+            "http_ingest": {"url": f"{base}/api/siem/ingest",
+                            "curl": f"curl -X POST {base}/api/siem/ingest -H 'Content-Type: application/json' "
+                                    f"-d '{{\"source\":\"custom\",\"message\":\"hello\",\"severity\":\"info\"}}'",
+                            "auth": "none — the endpoint is unauthenticated"},
+            "syslog": {"port": siem.get("syslog_port", 0), "active": bool(siem.get("syslog_active")),
+                       "target": f"udp://{host_ip}:{siem.get('syslog_port') or 514}"},
+            "ingested": int(siem.get("total_logs") or 0),
+            "by_source": siem.get("by_source", {}),
+        },
     }
 
 
