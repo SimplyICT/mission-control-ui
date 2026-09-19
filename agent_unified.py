@@ -366,8 +366,11 @@ def _linux_isolation_rules(collector_ip: str, collector_port: int) -> list[list[
         ["iptables", "-N", chain],
         ["iptables", "-F", chain],
         # Loopback is host-local IPC, not egress; dropping it breaks the agent's
-        # own health checks without isolating anything.
+        # own health checks without isolating anything. Both interface checks
+        # are needed: one chain serves INPUT and OUTPUT, and -i lo never matches
+        # locally generated packets (their in-interface is undefined).
         ["iptables", "-A", chain, "-i", "lo", "-j", "ACCEPT"],
+        ["iptables", "-A", chain, "-o", "lo", "-j", "ACCEPT"],
     ]
     if collector_ip:
         # Replies for the live collector session, both directions, before the
