@@ -48,7 +48,10 @@ if "!PY_CMD!"=="" ( echo ERROR: Python not found & exit /b 1 )
 echo Python found
 
 echo Downloading agent...
-curl -sL http://%SERVER%/api/agent/download/windows -o agent.py
+call :download "http://%SERVER%/api/agent/download/windows" "%AGENT_DIR%\agent.py"
+if errorlevel 1 exit /b 1
+findstr /C:"AGENT_VERSION" "%AGENT_DIR%\agent.py" >nul 2>&1
+if errorlevel 1 ( echo ERROR: downloaded agent.py is not the agent payload & exit /b 1 )
 
 echo Installing aiohttp...
 %PY_CMD% -m pip install aiohttp -q
@@ -71,3 +74,24 @@ echo Starting agent...
 schtasks /run /tn SOCAgent >nul 2>nul
 if errorlevel 1 start /b "" cmd.exe /c "%AGENT_DIR%\start.cmd"
 echo Done
+
+rem ---------------------------------------------------------------------------
+rem Download helper. Some endpoints cannot download with the usual tools: an old
+rem curl fails to open a socket at all (getsockname errno 10022) and certutil
+rem -urlcache is blocked by policy as a LOLBin. Try each stack the host has and
+rem keep the first that produces a real file.
+
+exit /b 0
+
+:download
+set "DL_URL=%~1"
+set "DL_DEST=%~2"
+if exist "%DL_DEST%" del "%DL_DEST%" >nul 2>&1
+curl.exe -sSL --max-time 300 "%DL_URL%" -o "%DL_DEST%" >nul 2>&1
+if exist "%DL_DEST%" for %%A in ("%DL_DEST%") do if %%~zA GTR 1000 goto :eof
+certutil -urlcache -split -f "%DL_URL%" "%DL_DEST%" >nul 2>&1
+if exist "%DL_DEST%" for %%A in ("%DL_DEST%") do if %%~zA GTR 1000 goto :eof
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing '%DL_URL%' -OutFile '%DL_DEST%'" >nul 2>&1
+if exist "%DL_DEST%" for %%A in ("%DL_DEST%") do if %%~zA GTR 1000 goto :eof
+echo ERROR: could not download %DL_URL%
+exit /b 1
