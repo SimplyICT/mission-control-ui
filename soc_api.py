@@ -47,6 +47,7 @@ import soc_queue
 import rule_engine
 import siem_ingest
 import itdr_poller
+import itdr_detections
 import fim_store
 import vuln_store
 import threat_intel
@@ -1117,6 +1118,8 @@ def _defender_event_out(e: dict) -> dict:
         "category": e.get("category", ""),
         "service_source": e.get("service_source", ""),
         "endpoint": _is_endpoint_event(e),
+        "soc_status": e.get("soc_status", ""),
+        "actioned": itdr_detections.is_soc_actioned(e),
         "mitre": e.get("mitre") or [],
         "description": e.get("description", ""),
         "incident_id": e.get("incident_id", ""),
@@ -1171,6 +1174,8 @@ def _apply_defender_action(source: str, item_id: str, action: str,
     applied = {"event": False, "case": None, "queue": None, "defender": None}
     status_map = {"resolve": "resolved", "dismiss": "false_positive",
                   "reopen": "open", "assign": "investigating"}
+    # reopen must clear the SOC decision, not leave the event looking actioned
+    clears = action == "reopen"
     now = datetime.now(timezone.utc)
 
     # 1. stored event
@@ -1179,7 +1184,12 @@ def _apply_defender_action(source: str, item_id: str, action: str,
         for e in events:
             if e.get("id") == item_id and e.get("source") == source:
                 e["status"] = status_map.get(action, e.get("status"))
-                e["soc_status"] = status_map.get(action, e.get("soc_status"))
+                if clears:
+                    e["soc_status"] = ""
+                    e["actioned_at"] = ""
+                elif action in ("resolve", "dismiss"):
+                    e["soc_status"] = status_map[action]
+                    e["actioned_at"] = now.isoformat()
                 if comment:
                     e["notes"] = (e.get("notes") or "") + f"\n[{now:%Y-%m-%d %H:%M} soc] {comment[:500]}"
                 e["updated_at"] = now.isoformat()
@@ -1262,13 +1272,12 @@ def api_defender_bulk_resolve(b: BulkResolve):
     wanted = {x.strip().lower() for x in b.severities}
     sources = set(b.sources)
     cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, b.max_age_days))
-    done_states = {"resolved", "closed", "false_positive", "dismissed"}
 
     matched = []
     for e in itdr_poller._load_events():
         if e.get("source") not in sources:
             continue
-        if str(e.get("status") or "").lower() in done_states:
+        if itdr_detections.is_soc_actioned(e):
             continue
         if str(e.get("severity") or "").lower() not in wanted:
             continue

@@ -323,13 +323,34 @@ def detect_defender_event(event: dict, all_events: list[dict]) -> dict | None:
     }
 
 
+SOC_DONE_STATES = {"resolved", "closed", "false_positive", "dismissed", "benign"}
+
+
+def is_soc_actioned(event: dict) -> bool:
+    """True when an analyst already closed this event (or the source did).
+
+    SOC-side `soc_status` always wins; the source status is only trusted for
+    Defender events (Graph says new/active/resolved there) so unrelated feeds that
+    happen to carry a `status` field are not filtered out by accident.
+    """
+    if str(event.get("soc_status") or "").strip().lower() in SOC_DONE_STATES:
+        return True
+    if str(event.get("source") or "").startswith(("defender", "mde")):
+        return str(event.get("status") or "").strip().lower() in SOC_DONE_STATES
+    return False
+
+
 def run_detections(events: list[dict]) -> list[dict]:
     """Run all detection rules against the latest events.
     Returns list of detection results (alerts/cases to create).
     """
     alerts = []
+    # An actioned event must not produce detections: otherwise dismissing an alert
+    # re-creates its case and review-queue item on the next poll, so resolutions
+    # appear to bounce back.
+    live = [e for e in events if not is_soc_actioned(e)]
     for rule in DETECTIONS:
-        for event in events[:500]:  # Check latest 500 events
+        for event in live[:500]:  # Check latest 500 events
             try:
                 result = rule["func"](event, events)
                 if result:
