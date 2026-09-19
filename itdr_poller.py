@@ -40,7 +40,7 @@ from pathlib import Path
 
 import requests
 
-from itdr_detections import run_detections
+from itdr_detections import SOC_DONE_STATES, is_soc_actioned, run_detections
 
 logger = logging.getLogger("itdr")
 
@@ -382,6 +382,39 @@ def _save_events(events: list[dict]):
         ITDR_STORE.write_text(json.dumps(events, indent=2, default=str), encoding="utf-8")
     except Exception as e:
         logger.warning("Failed to save ITDR events: %s", e)
+
+
+def mark_event_decision(event_id: str, status: str = "", note: str = "",
+                        analyst: str = "soc") -> dict | None:
+    """Record an analyst decision on the event itself.
+
+    Every resolution entry point (M365 Defender panel, ITDR cases tab, review
+    queue) goes through here: `soc_status` is what makes run_detections() skip the
+    event, so a decision taken in any one view stops the case being re-raised.
+    `status="open"` clears the decision (reopen).
+    """
+    events = _load_events()
+    hit = None
+    for e in events:
+        if e.get("id") != event_id:
+            continue
+        now = datetime.now(timezone.utc)
+        if status:                      # "" = note only, leave the decision alone
+            if status == "open":
+                e["soc_status"] = ""
+                e["actioned_at"] = ""
+            else:
+                e["soc_status"] = status
+                e["actioned_at"] = now.isoformat()
+            e["status"] = status
+        e["updated_at"] = now.isoformat()
+        if note:
+            e["notes"] = (e.get("notes") or "") + f"\n[{now:%Y-%m-%d %H:%M} {analyst}] {note[:500]}"
+        hit = e
+        break
+    if hit is not None:
+        _save_events(events)
+    return hit
 
 
 def store_events(new_events: list[dict], tenant: dict | None = None):
@@ -1104,7 +1137,13 @@ def poll_tenant(tenant_id: str) -> dict:
 
 
 def _create_cases_for_detections(detections: list[dict], tenant: dict) -> int:
-    """Persist new detections as open cases, deduped by (tenant, type, user) within 24h."""
+    """Persist new detections as open cases, deduped by key within 24h.
+
+    A case already decided counts as a duplicate too (measured from when it was
+    decided), so closing "Entra ID Risk — <user>" is not immediately followed by a
+    fresh case for a sibling event of the same key. Cases use per-user keys for
+    identity detections and per-event keys for Defender ones.
+    """
     created = 0
     now = datetime.now(timezone.utc)
     existing = get_cases()
@@ -1119,15 +1158,19 @@ def _create_cases_for_detections(detections: list[dict], tenant: dict) -> int:
         for c in existing:
             cur = (c.get("tenant_id"), c.get("detection_type"),
                    c.get("event_id", "") if by_event else c.get("user"))
-            if cur == key and c.get("status") in ("open", "investigating"):
-                try:
-                    ts = datetime.fromisoformat(str(c.get("created_at", "")).replace("Z", "+00:00"))
-                    if now - ts <= timedelta(hours=24):
-                        dup = True
-                        break
-                except Exception:
-                    dup = True  # unparseable ts → treat as recent to avoid spam
+            decided = str(c.get("status") or "") in SOC_DONE_STATES
+            if cur != key or not (decided or c.get("status") in ("open", "investigating")):
+                continue
+            # Decided cases age from when they were decided, open ones from creation.
+            stamp = (c.get("updated_at") or c.get("created_at")) if decided else c.get("created_at")
+            try:
+                ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+                if now - ts <= timedelta(hours=24):
+                    dup = True
                     break
+            except Exception:
+                dup = True  # unparseable ts → treat as recent to avoid spam
+                break
         # High-impact Defender findings go to the human review queue as well, so
         # they show up on the dashboard/SLA board next to every other alert.
         if det.get("severity") in ("high", "critical") and dtype.startswith(("defender_", "mde_")):

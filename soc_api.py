@@ -1025,6 +1025,8 @@ def _itdr_event_out(ev: dict) -> dict:
         "country": ev.get("country", ""),
         "location": ev.get("location", ""),
         "app": ev.get("app", ""),
+        "soc_status": ev.get("soc_status", ""),
+        "actioned": itdr_detections.is_soc_actioned(ev),
     }
 
 
@@ -1157,7 +1159,15 @@ async def api_itdr_case_update(case_id: str, request: Request):
         return JSONResponse({"error": "nothing to update (status/notes/assignee)"}, status_code=400)
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
     itdr_poller.update_case(case_id, updates)
-    return {"success": True, "case": {**case, **updates}}
+    # Stamp the event too: without it the next poll re-detects the same event and
+    # re-creates the case the analyst just closed.
+    stamped = None
+    if updates.get("status") and case.get("event_id"):
+        stamped = itdr_poller.mark_event_decision(
+            case["event_id"],
+            "open" if updates["status"] in ("open", "investigating") else updates["status"],
+            str(body.get("notes") or ""), analyst="case")
+    return {"success": True, "case": {**case, **updates}, "event_actioned": bool(stamped)}
 
 
 class DefenderAction(BaseModel):
@@ -1174,29 +1184,17 @@ def _apply_defender_action(source: str, item_id: str, action: str,
     applied = {"event": False, "case": None, "queue": None, "defender": None}
     status_map = {"resolve": "resolved", "dismiss": "false_positive",
                   "reopen": "open", "assign": "investigating"}
-    # reopen must clear the SOC decision, not leave the event looking actioned
-    clears = action == "reopen"
     now = datetime.now(timezone.utc)
 
-    # 1. stored event
+    # 1. stored event (shared writer: this is what stops detections re-raising it)
     try:
-        events = itdr_poller._load_events()
-        for e in events:
-            if e.get("id") == item_id and e.get("source") == source:
-                e["status"] = status_map.get(action, e.get("status"))
-                if clears:
-                    e["soc_status"] = ""
-                    e["actioned_at"] = ""
-                elif action in ("resolve", "dismiss"):
-                    e["soc_status"] = status_map[action]
-                    e["actioned_at"] = now.isoformat()
-                if comment:
-                    e["notes"] = (e.get("notes") or "") + f"\n[{now:%Y-%m-%d %H:%M} soc] {comment[:500]}"
-                e["updated_at"] = now.isoformat()
-                applied["event"] = True
-                break
-        if applied["event"]:
-            itdr_poller._save_events(events)
+        if any(e.get("id") == item_id and e.get("source") == source
+               for e in itdr_poller._load_events()):
+            if action in ("resolve", "dismiss", "reopen", "assign"):
+                itdr_poller.mark_event_decision(item_id, status_map[action], comment, analyst="soc")
+            elif comment:                                   # 'note' keeps the existing state
+                itdr_poller.mark_event_decision(item_id, "", comment, analyst="soc")
+            applied["event"] = True
     except Exception as e:
         logger.warning("defender action: event update failed: %s", e)
 
@@ -1331,6 +1329,45 @@ def api_defender_alerts(source: str = "", limit: int = 200):
         events = [e for e in events if e.get("source") == src]
     events.sort(key=lambda e: e.get("created_at") or "", reverse=True)
     return {"count": len(events), "alerts": [_defender_event_out(e) for e in events[:limit]]}
+
+
+@router.post("/api/itdr/events/{event_id}/action")
+async def api_itdr_event_action(event_id: str, request: Request):
+    """Resolve / dismiss / reopen a stored ITDR event (identity, OAuth, Defender).
+
+    Defender-sourced events reuse the Defender path so the review-queue item and the
+    Microsoft Defender push-back stay in step; every other source records the
+    decision on the event and closes any open case derived from it.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    action = str(body.get("action") or "").strip().lower()
+    comment = str(body.get("comment") or "").strip()
+    if action not in ("resolve", "dismiss", "reopen"):
+        return JSONResponse({"error": "action must be resolve|dismiss|reopen"}, status_code=400)
+    event = next((e for e in itdr_poller._load_events() if e.get("id") == event_id), None)
+    if event is None:
+        return JSONResponse({"error": "event not found"}, status_code=404)
+    source = str(event.get("source") or "")
+    if source.startswith(("defender", "mde")):
+        applied = _apply_defender_action(source, event_id, action, comment)
+        return {"success": True, "action": action, "id": event_id, "source": source, "applied": applied}
+    status = {"resolve": "resolved", "dismiss": "false_positive", "reopen": "open"}[action]
+    itdr_poller.mark_event_decision(event_id, status, comment, analyst="soc")
+    case_closed = None
+    if action != "reopen":
+        for c in itdr_poller.get_cases():
+            if c.get("event_id") == event_id and c.get("status") in ("open", "investigating"):
+                itdr_poller.update_case(c["id"], {
+                    "status": status,
+                    "notes": (c.get("notes") or "") + (f"\n[{datetime.now(timezone.utc):%Y-%m-%d %H:%M} soc] {comment[:500]}" if comment else ""),
+                    "updated_at": datetime.now(timezone.utc).isoformat()})
+                case_closed = c["id"]
+                break
+    return {"success": True, "action": action, "id": event_id, "source": source,
+            "applied": {"event": True, "case": case_closed}}
 
 
 @router.get("/api/itdr/summary")
@@ -2109,8 +2146,29 @@ async def api_socqueue_claim(item_id: str, request: Request):
 
 @router.post("/api/socqueue/{item_id}/resolve")
 async def api_socqueue_resolve(item_id: str, request: Request):
-    ok = soc_queue.resolve_item(item_id, "resolved")
-    return {"success": ok}
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    resolution = str(body.get("resolution") or body.get("notes") or "resolved")
+    item = next((q for q in soc_queue.get_queue() if q.get("id") == item_id), None)
+    ok = soc_queue.resolve_item(item_id, resolution)
+    # A queue decision must stick like one taken on the M365 Defender page: stamp the
+    # event (stops re-detection) and close the case it belongs to.
+    event_actioned = False
+    case_closed = None
+    target = ((item or {}).get("details") or {}).get("alert_id") or (item or {}).get("event_id")
+    if ok and target:
+        event_actioned = bool(itdr_poller.mark_event_decision(target, "resolved", resolution, analyst="queue"))
+        for c in itdr_poller.get_cases():
+            if c.get("event_id") == target and c.get("status") in ("open", "investigating"):
+                itdr_poller.update_case(c["id"], {
+                    "status": "resolved",
+                    "notes": (c.get("notes") or "") + f"\n[{datetime.now(timezone.utc):%Y-%m-%d %H:%M} queue] {resolution[:500]}",
+                    "updated_at": datetime.now(timezone.utc).isoformat()})
+                case_closed = c["id"]
+                break
+    return {"success": ok, "event_actioned": event_actioned, "case_closed": case_closed}
 
 
 @router.post("/api/socqueue/{item_id}/escalate")
