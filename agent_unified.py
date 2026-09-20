@@ -22,6 +22,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import functools
 import logging
 import os
 import platform
@@ -37,11 +38,99 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s agent %(message)s")
+def _setup_logging() -> None:
+    """Log to a size-capped rotating file.
+
+    The service wrapper redirects stdout/stderr into a file that was never
+    truncated: 59 MB was seen on one host after a bad night and 200 MB on another.
+    On someone's working machine that is disk, backup and AV pressure, so the
+    agent owns a rotating log of its own and the wrapper's file is trimmed at start.
+    """
+    fmt = logging.Formatter("%(asctime)s agent %(message)s")
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    try:
+        from logging.handlers import RotatingFileHandler
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent.log")
+        # A host carrying a 59 MB (or 200 MB) log from before rotation existed should not
+        # have to wait for another 5 MB of writes: roll it aside once, immediately.
+        try:
+            if os.path.exists(path) and os.path.getsize(path) > LOG_MAX_BYTES:
+                for i in range(LOG_BACKUPS - 1, 0, -1):
+                    older, newer = f"{path}.{i}", f"{path}.{i + 1}"
+                    if os.path.exists(older):
+                        os.replace(older, newer)
+                os.replace(path, path + ".1")
+        except Exception as e:
+            # Windows can refuse the rename while another handle is open. Report it: a silent
+            # pass here is how a 59 MB log stayed in place unnoticed.
+            logger.warning("could not roll over the oversized agent.log: %s", e)
+        handler = RotatingFileHandler(path, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUPS,
+                                      encoding="utf-8", delay=True)
+        handler.setFormatter(fmt)
+        root.addHandler(handler)
+    except Exception as e:
+        logger.warning("log handler setup failed: %s", e)
+    if sys.stderr is not None:                 # keep a console traceback visible too
+        sh = logging.StreamHandler(sys.stderr)
+        sh.setFormatter(fmt)
+        root.addHandler(sh)
+
+
+_setup_logging()
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.11"
+AGENT_VERSION = "1.1.12"
 RECONNECT_BASE = 5
+# Politeness budget: this runs on someone's working machine. Keep the footprint
+# bounded (log size, priority) and never let two heavy jobs stack up.
+LOG_MAX_BYTES = 5 * 1024 * 1024
+LOG_BACKUPS = 3
+BOOT_LOG_MAX_BYTES = 2 * 1024 * 1024
+HEAVY_HANDLERS = ("fim_scan", "packages", "vuln_packages", "fetch", "run_script", "collect")
+_running_heavy: set = set()
+
+
+def _jitter(seconds: float, spread: float = 0.1) -> float:
+    """Spread periodic timers by +/-10% so a fleet does not arrive on one tick."""
+    try:
+        import random
+        return max(1.0, seconds * (1.0 + random.uniform(-spread, spread)))
+    except Exception:
+        return seconds
+
+
+def guarded(name: str):
+    """Refuse a second copy of the same heavy job on the same host.
+
+    The dashboard can ask for a scan while one is already running (double click, a
+    retry, an automation rule). Two concurrent full scans on a machine someone is
+    working on is exactly the load this agent must never create, so the second one
+    is refused with a clear message instead of stacking.
+
+    Decorate BELOW @handler so the registry holds the wrapper:
+        @handler("x")
+        @guarded("x")
+        async def cmd_x(...)
+    """
+    def deco(fn):
+        @functools.wraps(fn)
+        async def wrapper(args):
+            if name in _running_heavy:
+                return {"success": False, "error": f"{name} is already running on this host"}
+            _running_heavy.add(name)
+            try:
+                return await fn(args)
+            finally:
+                _running_heavy.discard(name)
+
+        return wrapper
+
+    return deco
+
+_BOOT_TIME_CACHE = None
 HEARTBEAT_INTERVAL = 30
 TELEMETRY_INTERVAL = 60
 
@@ -109,27 +198,113 @@ def collect_system_info() -> dict:
         "arch": platform.machine(),
         "agent_version": AGENT_VERSION,
         "build": "exe" if getattr(sys, "frozen", False) else "script",
-        "boot_time": _get_boot_time(),
+        "boot_time": _boot_time_cached(),
         "cpu_count": os.cpu_count() or 0,
+        "agent_metrics": _self_metrics(),
     }
 
 
-def _get_boot_time() -> str:
+def _boot_time_cached() -> str:
+    """Boot time never changes while the box is up, so compute it once.
+
+    It used to shell out to `wmic os get lastbootuptime` on EVERY register/poll —
+    a spawned process (and WmiPrvSE) with a 10 s timeout on someone's working
+    machine, every reconnection. Cheap APIs instead, cached for the process life.
+    """
+    global _BOOT_TIME_CACHE
+    if _BOOT_TIME_CACHE is not None:
+        return _BOOT_TIME_CACHE
+    value = ""
+    try:
+        plat = get_platform()
+        if plat == "windows":
+            import ctypes
+            ms = ctypes.windll.kernel32.GetTickCount64()      # no subprocess, no WMI
+            value = datetime.fromtimestamp(time.time() - ms / 1000.0).isoformat()
+        elif plat == "linux":
+            with open("/proc/uptime", "r") as fh:
+                value = datetime.fromtimestamp(time.time() - float(fh.read().split()[0])).isoformat()
+        else:
+            r = subprocess.run(["sysctl", "-n", "kern.boottime"], capture_output=True, text=True, timeout=5)
+            value = r.stdout.strip()
+    except Exception as e:
+        logger.debug("boot time unavailable: %s", e)
+    _BOOT_TIME_CACHE = value
+    return value
+
+
+def _self_metrics() -> dict:
+    """The agent's own cost, so politeness is measurable per host instead of assumed."""
+    out = {"cpu_seconds": 0.0, "rss_kb": 0}
+    try:
+        t = os.times()
+        out["cpu_seconds"] = round(float(t.user + t.system), 2)
+    except Exception:
+        pass
+    try:
+        if get_platform() == "linux":
+            with open("/proc/self/statm", "r") as fh:
+                out["rss_kb"] = int(fh.read().split()[1]) * (os.sysconf("SC_PAGE_SIZE") // 1024)
+        elif get_platform() == "windows":
+            import ctypes
+            from ctypes import wintypes
+
+            class PMC(ctypes.Structure):
+                _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                            ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                            ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t)]
+
+            pmc = PMC()
+            pmc.cb = ctypes.sizeof(PMC)
+            k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            k32.GetCurrentProcess.restype = wintypes.HANDLE
+            psapi = ctypes.WinDLL("psapi", use_last_error=True)
+            psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(PMC), wintypes.DWORD]
+            psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+            if psapi.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(pmc), pmc.cb):
+                out["rss_kb"] = int(pmc.WorkingSetSize / 1024)
+    except Exception:
+        pass
+    return out
+
+
+def _lower_priority() -> str:
+    """Run below normal priority: the agent is a guest on this machine.
+
+    A heavy response action (or a scan) must never compete with the person using
+    the box or a foreground service. Best effort — never fatal.
+    """
     try:
         if get_platform() == "windows":
-            r = subprocess.run(["wmic", "os", "get", "lastbootuptime"], capture_output=True, text=True, timeout=10)
-            if r.returncode == 0:
-                return r.stdout.strip().split("\n")[-1].strip()[:14]
-        elif get_platform() == "linux":
-            r = subprocess.run(["uptime", "-s"], capture_output=True, text=True, timeout=5)
-            if r.returncode == 0:
-                return r.stdout.strip()
-        elif get_platform() == "macos":
-            r = subprocess.run(["sysctl", "-n", "kern.boottime"], capture_output=True, text=True, timeout=5)
-            if r.returncode == 0:
-                return r.stdout.strip()
-    except: pass
-    return ""
+            import ctypes
+            from ctypes import wintypes
+            BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
+            k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            k32.GetCurrentProcess.restype = wintypes.HANDLE
+            k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            k32.SetPriorityClass.restype = wintypes.BOOL
+            ok = k32.SetPriorityClass(k32.GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS)
+            if ok:
+                return "below-normal"
+            return f"unchanged (err {ctypes.get_last_error()})"
+        os.nice(10)          # niceness can only be raised without privileges
+        return "nice+10"
+    except Exception as e:
+        logger.debug("could not lower priority: %s", e)
+        return "unchanged"
+
+
+def _trim_boot_log() -> None:
+    """Bound the stdout/stderr redirect file the service wrapper writes."""
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-boot.log")
+        if os.path.exists(path) and os.path.getsize(path) > BOOT_LOG_MAX_BYTES:
+            with open(path, "w"):
+                pass
+    except Exception:
+        pass
 
 
 def collect_processes(limit: int = 100) -> list[dict]:
@@ -267,6 +442,7 @@ async def cmd_ping(args: dict) -> dict:
 
 
 @handler("collect")
+@guarded("collect")
 async def cmd_collect(args: dict) -> dict:
     return {
         "success": True,
@@ -653,6 +829,7 @@ async def cmd_quarantine(args: dict) -> dict:
 
 
 @handler("fetch")
+@guarded("fetch")
 async def cmd_fetch(args: dict) -> dict:
     """Return a file's bytes (base64) for the case, bounded by a byte cap."""
     path = _resolve_path(args.get("path"))
@@ -798,6 +975,7 @@ def _kill_script(proc) -> None:
 
 
 @handler("run_script")
+@guarded("run_script")
 async def cmd_run_script(args: dict) -> dict:
     """Run an analyst-supplied script with bounded size, time and output."""
     if args.get("confirm") is not True:
@@ -938,10 +1116,10 @@ async def _polling_mode(server: str):
                         )
                 except: pass
             
-            await asyncio.sleep(30)
+            await asyncio.sleep(_jitter(HEARTBEAT_INTERVAL))
         except Exception as e:
             logger.warning("Poll error: %s", str(e)[:60])
-            await asyncio.sleep(60)
+            await asyncio.sleep(_jitter(TELEMETRY_INTERVAL))
 
 # ═══════════════════════════════════════════════════════
 #  Self-update
@@ -1408,12 +1586,16 @@ async def run(server: str, api_key: str = ""):
         wait = min(wait * 2, 300)
 
 
+
 def main():
     parser = argparse.ArgumentParser(description="Unified SOC Agent")
     parser.add_argument("--server", default="173.208.232.91:8095", help="SOC server")
     parser.add_argument("--key", default="", help="API key")
     args = parser.parse_args()
 
+    _trim_boot_log()
+    logger.info("agent %s starting (priority=%s, log cap=%d MB x %d)",
+                AGENT_VERSION, _lower_priority(), LOG_MAX_BYTES // (1024 * 1024), LOG_BACKUPS)
     try:
         asyncio.run(run(args.server, args.key))
     except KeyboardInterrupt:
@@ -1510,6 +1692,7 @@ async def cmd_self_update(args: dict) -> dict:
             "error": result["error"]}
 
 @handler("fim_scan")
+@guarded("fim_scan")
 async def cmd_fim_scan(args: dict) -> dict:
     """File Integrity Monitoring — scan watched files and report changes.
     
@@ -1620,6 +1803,7 @@ async def cmd_fim_scan(args: dict) -> dict:
 
 
 @handler("packages")
+@guarded("packages")
 async def cmd_packages(args: dict) -> dict:
     """Collect installed packages from the system.
     

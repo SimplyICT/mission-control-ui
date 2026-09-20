@@ -149,9 +149,9 @@ try {
 
 if (-not (Test-Path $startCmd)) {
     if (Test-Path $exe) {
-        "@echo off`r`ncd /d `"$Dir`"`r`n`"$exe`" --server $Server --key $Key >> `"$Dir\agent.log`" 2>&1" | Set-Content -Path $startCmd -Encoding ASCII
+        "@echo off`r`ncd /d `"$Dir`"`r`n`"$exe`" --server $Server --key $Key >> `"$Dir\agent-boot.log`" 2>&1" | Set-Content -Path $startCmd -Encoding ASCII
     } else {
-        "@echo off`r`ncd /d `"$Dir`"`r`npython `"$py`" --server $Server --key $Key >> `"$Dir\agent.log`" 2>&1" | Set-Content -Path $startCmd -Encoding ASCII
+        "@echo off`r`ncd /d `"$Dir`"`r`npython `"$py`" --server $Server --key $Key >> `"$Dir\agent-boot.log`" 2>&1" | Set-Content -Path $startCmd -Encoding ASCII
     }
     Say "  start.cmd written"
 }

@@ -47,6 +47,10 @@ del "%TEMP%\py-installer.exe" 2>nul
 if "!PY_CMD!"=="" ( echo ERROR: Python not found & exit /b 1 )
 echo Python found
 
+rem The agent caps its own log at 5 MB, but hosts that ran an older build can carry
+rem a very large file (59 MB / 200 MB seen). Nothing holds it now - the agent was
+rem stopped above - so trim it here rather than leaving it to the OS.
+if exist "%AGENT_DIR%\agent.log" for %%A in ("%AGENT_DIR%\agent.log") do if %%~zA GTR 10485760 del "%AGENT_DIR%\agent.log"
 echo Downloading agent...
 call :download "http://%SERVER%/api/agent/download/windows" "%AGENT_DIR%\agent.py"
 if errorlevel 1 exit /b 1
@@ -67,7 +71,7 @@ if errorlevel 1 (
 echo Creating startup task...
 echo @echo off > start.cmd
 echo cd /d "%AGENT_DIR%" >> start.cmd
-echo %PY_CMD% agent.py --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent.log" 2^>^&1 >> start.cmd
+echo %PY_CMD% agent.py --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent-boot.log" 2^>^&1 >> start.cmd
 rem Repeat trigger, not just onstart: a crash or a killed process then recovers on its
 rem own within five minutes instead of waiting for the next reboot.
 schtasks /create /tn SOCAgent /tr "cmd.exe /c \"%AGENT_DIR%\start.cmd\"" /sc minute /mo 5 /ru SYSTEM /f >nul 2>nul

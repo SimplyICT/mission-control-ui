@@ -22,6 +22,10 @@ sc delete SOCAgent >nul 2>nul
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='pythonw.exe' or Name='SOCAgent.exe'\" | Where-Object { $_.CommandLine -match 'agent\.py|SOCAgent' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" >nul 2>nul
 timeout /t 2 /nobreak >nul 2>nul
 
+rem The agent caps its own log at 5 MB, but hosts that ran an older build can carry
+rem a very large file (59 MB / 200 MB seen). Nothing holds it now - the agent was
+rem stopped above - so trim it here rather than leaving it to the OS.
+if exist "%AGENT_DIR%\agent.log" for %%A in ("%AGENT_DIR%\agent.log") do if %%~zA GTR 10485760 del "%AGENT_DIR%\agent.log"
 echo Downloading SOCAgent.exe...
 call :download "http://%SERVER%/api/agent/download/exe" "%AGENT_DIR%\SOCAgent.exe"
 if errorlevel 1 exit /b 1
@@ -30,7 +34,7 @@ for %%A in ("%AGENT_DIR%\SOCAgent.exe") do if %%~zA LSS 100000 ( echo ERROR: dow
 echo Creating startup task...
 echo @echo off > start.cmd
 echo cd /d "%AGENT_DIR%" >> start.cmd
-echo "%AGENT_DIR%\SOCAgent.exe" --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent.log" 2^>^&1 >> start.cmd
+echo "%AGENT_DIR%\SOCAgent.exe" --server %SERVER% --key %KEY% ^>^> "%AGENT_DIR%\agent-boot.log" 2^>^&1 >> start.cmd
 
 rem Repeat trigger, not just onstart: a crash or a killed process then recovers on its
 rem own within five minutes instead of waiting for the next reboot.
