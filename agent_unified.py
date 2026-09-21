@@ -66,23 +66,29 @@ def _setup_logging() -> None:
         except Exception as e:
             # Windows can refuse the rename while another handle is open. Report it: a silent
             # pass here is how a 59 MB log stayed in place unnoticed.
-            logger.warning("could not roll over the oversized agent.log: %s", e)
+            # NOT logger.<level>: this runs at import, before the module-level logger is
+            # bound. Referring to it here killed every host whose log needed rolling over
+            # (NameError at import -> no agent process -> host stuck on its old version).
+            logging.getLogger("agent").warning("could not roll over the oversized agent.log: %s", e)
         handler = RotatingFileHandler(path, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUPS,
                                       encoding="utf-8", delay=True)
         handler.setFormatter(fmt)
         root.addHandler(handler)
     except Exception as e:
-        logger.warning("log handler setup failed: %s", e)
+        logging.getLogger("agent").warning("log handler setup failed: %s", e)
     if sys.stderr is not None:                 # keep a console traceback visible too
         sh = logging.StreamHandler(sys.stderr)
         sh.setFormatter(fmt)
         root.addHandler(sh)
 
 
-_setup_logging()
+try:
+    _setup_logging()
+except Exception:       # never fatal: the agent must start even with no log
+    pass
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.12"
+AGENT_VERSION = "1.1.13"
 RECONNECT_BASE = 5
 # Politeness budget: this runs on someone's working machine. Keep the footprint
 # bounded (log size, priority) and never let two heavy jobs stack up.
