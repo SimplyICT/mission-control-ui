@@ -38,6 +38,11 @@ import time
 import uuid
 from datetime import datetime, timezone
 
+LOG_MAX_BYTES = 5 * 1024 * 1024
+LOG_BACKUPS = 3
+BOOT_LOG_MAX_BYTES = 2 * 1024 * 1024
+HEAVY_HANDLERS = ("fim_scan", "packages", "vuln_packages", "fetch", "run_script", "collect")
+
 def _setup_logging() -> None:
     """Log to a size-capped rotating file.
 
@@ -47,6 +52,11 @@ def _setup_logging() -> None:
     agent owns a rotating log of its own and the wrapper's file is trimmed at start.
     """
     fmt = logging.Formatter("%(asctime)s agent %(message)s")
+    # aiohttp logs "Unclosed connection" at WARNING on every transport teardown: 190 of the
+    # last 400 lines were that, which is what filled a 5 MB window in minutes on a quiet
+    # host. It says nothing actionable and the disk is someone else's.
+    for noisy in ("aiohttp", "aiohttp.client", "asyncio"):
+        logging.getLogger(noisy).setLevel(logging.ERROR)
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     for h in list(root.handlers):
@@ -88,14 +98,10 @@ except Exception:       # never fatal: the agent must start even with no log
     pass
 logger = logging.getLogger("agent")
 
-AGENT_VERSION = "1.1.13"
+AGENT_VERSION = "1.1.15"
 RECONNECT_BASE = 5
 # Politeness budget: this runs on someone's working machine. Keep the footprint
 # bounded (log size, priority) and never let two heavy jobs stack up.
-LOG_MAX_BYTES = 5 * 1024 * 1024
-LOG_BACKUPS = 3
-BOOT_LOG_MAX_BYTES = 2 * 1024 * 1024
-HEAVY_HANDLERS = ("fim_scan", "packages", "vuln_packages", "fetch", "run_script", "collect")
 _running_heavy: set = set()
 
 
@@ -1120,6 +1126,17 @@ async def _polling_mode(server: str):
                             server=server,
                             to_version=cmd_data.get("latest_version", ""),
                         )
+                    elif cmd:
+                        # Same rule on the poll path: report, never hang. An older build
+                        # would otherwise leave the analyst's action on "sent" with no
+                        # explanation at all.
+                        err = _json.dumps({
+                            "type": "result", "id": cmd_id, "command": cmd,
+                            "result": {"success": False,
+                                       "error": f"unsupported command '{cmd}' on agent {AGENT_VERSION}"},
+                        }).encode()
+                        _ur.urlopen(_ur.Request(result_url, data=err,
+                                                headers={"Content-Type": "application/json"}), timeout=15)
                 except: pass
             
             await asyncio.sleep(_jitter(HEARTBEAT_INTERVAL))
@@ -1450,6 +1467,12 @@ async def _handle_frame(ws, data: dict) -> None:
             "disks": collect_disks(),
         }
         await ws.send_json({"type": "telemetry", "id": cmd_id, "data": telemetry})
+    else:
+        # Never drop a command silently: an older build (or an exe without that handler)
+        # would leave the analyst's action on "sent" forever with no explanation.
+        await ws.send_json({"type": "result", "id": cmd_id, "command": cmd,
+                            "result": {"success": False,
+                                       "error": f"unsupported command '{cmd}' on agent {AGENT_VERSION}"}})
 
 
 # ═══════════════════════════════════════════════════════
