@@ -58,6 +58,7 @@ import report_generator
 import playbook_engine
 import settings_store
 import platform_core
+import skills_lib
 
 from soc_store import (
     enqueue_command, pending_commands, command_result,
@@ -2532,6 +2533,68 @@ async def api_playbooks_toggle(pb_id: str):
     if pb is None:
         return JSONResponse({"error": "not found"}, status_code=404)
     return pb
+
+
+# ── Skills library (vendored cybersecurity playbooks) ─────────────────────
+#
+# Route order matters: /api/skills/match is declared before /api/skills/{name} so
+# "match" is not swallowed as a skill name.
+
+def event_techniques(obj: dict) -> list[str]:
+    """MITRE technique ids carried by a stored defender/ITDR event or case.
+
+    Sources disagree on the key: Graph payloads use `mitreTechniques`, ITDR events
+    store `mitre`, cases may use `mitre_attack`; values are lists or comma strings.
+    Tolerant by design so triage can call it on any stored record.
+    """
+    if not isinstance(obj, dict):
+        return []
+    out = []
+    for key in ("mitre", "mitreTechniques", "mitre_attack"):
+        val = obj.get(key)
+        if not val:
+            continue
+        if isinstance(val, str):
+            parts = val.split(",")
+        elif isinstance(val, (list, tuple, set)):
+            parts = list(val)
+        else:
+            continue
+        for p in parts:
+            tid = str(p).strip()
+            if tid and tid not in out:
+                out.append(tid)
+    return out
+
+
+@router.get("/api/skills/match")
+def api_skills_match(techniques: str = "", detection_type: str = "", q: str = "",
+                     limit: int = 3, include_offensive: bool = False):
+    """Rank skills against an event/case: technique ids, free text, detection type."""
+    matches = skills_lib.match(techniques=techniques, detection_type=detection_type,
+                               q=q, limit=limit, include_offensive=include_offensive)
+    return {"count": len(matches), "matches": matches}
+
+
+@router.get("/api/skills/{name}")
+def api_skill_get(name: str):
+    """One skill record plus the head of its SKILL.md body."""
+    rec = skills_lib.get(name)
+    if rec is None:
+        return JSONResponse({"error": "unknown skill"}, status_code=404)
+    return rec
+
+
+@router.get("/api/skills")
+def api_skills(q: str = "", subdomain: str = "", technique: str = "",
+               limit: int = 50, include_offensive: bool = False):
+    """Bounded browse/search over the index; offensive content stays out by default."""
+    skills = skills_lib.search(q=q, subdomain=subdomain, technique=technique,
+                               limit=limit, include_offensive=include_offensive)
+    idx = skills_lib.load_index()
+    return {"count": len(skills), "counts": skills_lib.counts(),
+            "source": idx.get("source", ""), "license": idx.get("license", ""),
+            "skills": skills}
 
 
 # ── Reports ───────────────────────────────────────────────────────────────
