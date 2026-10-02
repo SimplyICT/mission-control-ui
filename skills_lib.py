@@ -21,6 +21,14 @@ SEARCH_MAX = 200  # hard ceiling: a caller cannot pull the whole 818-record inde
 MATCH_MAX = 50
 
 # detection_type -> the subdomain whose playbooks fit it, worth a small ranking bonus.
+# Domains whose skills describe something an analyst does next (triage, hunt, respond,
+# collect evidence). Used as a ranking bonus, not a filter.
+ACTION_SUBDOMAINS = {
+    "incident-response", "soc-operations", "security-operations", "threat-hunting",
+    "threat-detection", "digital-forensics", "malware-analysis", "endpoint-security",
+    "ransomware-defense", "vulnerability-management",
+}
+
 _DETECTION_SUBDOMAINS = {
     "defender_alert": "endpoint-security",
     "defender_incident": "incident-response",
@@ -207,6 +215,13 @@ def match(techniques=None, detection_type="", q="", limit=3, include_offensive=F
         if sub_bonus and str(s.get("subdomain", "")) == sub_bonus:
             score += 1
             candidates.append((1, f"subdomain: {sub_bonus}"))
+        # A technique tag alone does not make a skill the right *next step*: a T1003.001
+        # alert matched "deploying-edr-agent-with-crowdstrike" first, purely on alphabetical
+        # tie-break, ahead of the credential-dump playbooks. Weight the analyst-response
+        # domains so the suggestion is actionable rather than merely related.
+        if str(s.get("subdomain", "")) in ACTION_SUBDOMAINS:
+            score += 2
+            candidates.append((2, f"subdomain: {s.get('subdomain')}"))
         if not candidates:
             continue
         rec = _public_record(s)

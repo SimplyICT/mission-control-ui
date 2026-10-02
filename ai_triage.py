@@ -287,6 +287,7 @@ def _playbook_grounding(
     techniques: list[str],
     detection_type: str,
     limit: int = _PLAYBOOK_MAX_SKILLS,
+    context: str = "",
 ) -> tuple[str, list[str]]:
     """Look up matching defensive playbooks. Returns (prompt_block, names).
 
@@ -295,9 +296,13 @@ def _playbook_grounding(
     if skills_lib is None:
         return "", []
     try:
+        # `context` is the alert title/description: keyword overlap is what separates a
+        # playbook that is merely tagged with the technique from one that fits this alert
+        # ("Sensitive credential memory read" should reach the memory-forensics skills).
         matches = skills_lib.match(
             techniques=techniques,
             detection_type=detection_type or "",
+            q=context or "",
             limit=limit,
         )
     except Exception as e:
@@ -360,6 +365,8 @@ def triage_alert(alert: dict) -> dict:
     playbook_block, grounded_by = _playbook_grounding(
         _extract_techniques(alert),
         alert.get("detection_type") or filled["source"],
+        context=f"{alert.get('title') or alert.get('rule_description') or ''} "
+                f"{alert.get('description') or ''}".strip(),
     )
 
     prompt = ALERT_TRIAGE_PROMPT.format(playbooks=playbook_block, **filled)
@@ -432,7 +439,10 @@ def triage_batch_correlated(alerts: list[dict]) -> dict:
         detection_type = a.get("detection_type") or a.get("source") or a.get("agent_name") or ""
         if detection_type:
             break
-    playbook_block, grounded_by = _playbook_grounding(techniques, detection_type)
+    playbook_block, grounded_by = _playbook_grounding(
+        techniques, detection_type,
+        context=" ".join(str(a.get("title") or "") for a in alerts[:5]).strip(),
+    )
 
     prompt = BATCH_TRIAGE_PROMPT.format(
         count=len(alerts),
